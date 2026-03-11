@@ -1663,19 +1663,189 @@ elif page == "💰 Value Bets":
                 except Exception as e:
                     st.warning(f"Squiggle consensus unavailable: {e}")
 
+                # ── Line betting ──────────────────────────────────────────────
+                st.markdown("---")
+                st.markdown("### 📏 Line Betting (Handicap)")
+                st.markdown("*Our model's predicted margin vs the bookmaker's line — find games where the line is off*")
+                try:
+                    line_df = get_odds_api(odds_key) if odds_key else pd.DataFrame()
+                    # Re-fetch with line market
+                    try:
+                        line_raw = _requests_module.get(
+                            "https://api.the-odds-api.com/v4/sports/aussierules_afl/odds",
+                            params={"apiKey": odds_key, "regions": "au",
+                                    "markets": "spreads", "oddsFormat": "decimal"},
+                            timeout=15)
+                        line_raw.raise_for_status()
+                        line_rows = []
+                        for game in line_raw.json():
+                            ht = normalise_team(game.get("home_team",""))
+                            at = normalise_team(game.get("away_team",""))
+                            if ht not in current_elos or at not in current_elos:
+                                continue
+                            our_h, pred_margin = get_our_prob(ht, at)
+                            for bm in game.get("bookmakers",[]):
+                                for market in bm.get("markets",[]):
+                                    if market.get("key") != "spreads": continue
+                                    for outcome in market.get("outcomes",[]):
+                                        team  = normalise_team(outcome.get("name",""))
+                                        point = float(outcome.get("point", 0))
+                                        price = float(outcome.get("price", 0))
+                                        if team not in [ht, at]: continue
+                                        # point is the handicap applied TO that team
+                                        # +6.5 means they get 6.5 pts start
+                                        our_margin = pred_margin if team == ht else -pred_margin
+                                        # Does our predicted margin cover this line?
+                                        covers = our_margin + point > 0
+                                        line_rows.append({
+                                            "Match": f"{ht} vs {at}",
+                                            "Team": team,
+                                            "Line": f"{point:+.1f}",
+                                            "Line Odds": f"${price:.2f}",
+                                            "Our Pred Margin": f"{our_margin:+.0f}",
+                                            "Covers Line?": "✅ Yes" if covers else "❌ No",
+                                            "Bookmaker": bm.get("title",""),
+                                            "_covers": covers,
+                                            "_margin_gap": our_margin + point,
+                                        })
+                        if line_rows:
+                            ldf = pd.DataFrame(line_rows)
+                            # Show only where model covers the line
+                            covers_df = ldf[ldf["_covers"]].sort_values("_margin_gap", ascending=False)
+                            if not covers_df.empty:
+                                st.dataframe(
+                                    covers_df[["Match","Team","Line","Line Odds","Our Pred Margin","Covers Line?","Bookmaker"]],
+                                    use_container_width=True, hide_index=True)
+                                st.caption("Shows bets where our model's predicted margin covers the handicap line")
+                            else:
+                                st.info("No line bets where our model covers the spread this round.")
+                        else:
+                            st.info("No line/spread markets available from bookmakers right now.")
+                    except Exception as le:
+                        st.info(f"Line betting data unavailable: {le}")
+                except Exception as e:
+                    st.warning(f"Could not load line betting: {e}")
+
+                # ── Multi builder ─────────────────────────────────────────────
+                st.markdown("---")
+                st.markdown("### 🎰 Multi Builder")
+                st.markdown("*Build a multi from the round's value bets — shows combined odds and expected value*")
+
+                value_games = [(g["Home"], g["Away"], g["H Edge%"], g["A Edge%"],
+                                g["Best Home Odds"], g["Best Away Odds"],
+                                g["Best Home Bookie"], g["Best Away Bookie"])
+                               for _, g in best.iterrows()
+                               if g["best_edge"] >= min_edge]
+
+                if not value_games:
+                    st.info("No value bets available to build a multi — try lowering the edge threshold.")
+                else:
+                    st.markdown("**Select legs for your multi:**")
+                    multi_legs = []
+                    for ht, at, h_edge, a_edge, h_odds, a_odds, h_bookie, a_bookie in value_games:
+                        our_h2, _ = get_our_prob(ht, at)
+                        our_a2 = 1 - our_h2
+                        is_home = h_edge >= a_edge
+                        default_team = ht if is_home else at
+                        default_odds = h_odds if is_home else a_odds
+                        default_bookie = h_bookie if is_home else a_bookie
+                        default_prob = our_h2 if is_home else our_a2
+
+                        col_chk, col_sel, col_odds = st.columns([1, 3, 2])
+                        with col_chk:
+                            include = st.checkbox(f"{ht} vs {at}", key=f"multi_{ht}_{at}", value=True)
+                        with col_sel:
+                            selection = st.selectbox(
+                                "Pick",
+                                [f"{ht} (${h_odds:.2f})", f"{at} (${a_odds:.2f})"],
+                                index=0 if is_home else 1,
+                                key=f"sel_{ht}_{at}",
+                                label_visibility="collapsed"
+                            )
+                        with col_odds:
+                            chosen_team = ht if selection.startswith(ht) else at
+                            chosen_odds = h_odds if chosen_team == ht else a_odds
+                            chosen_prob = our_h2 if chosen_team == ht else our_a2
+                            chosen_edge = h_edge if chosen_team == ht else a_edge
+                            st.markdown(f"<div style='padding-top:6px;color:#{'2ecc71' if chosen_edge>0 else 'e74c3c'}'>"
+                                        f"Edge: {chosen_edge:+.1f}%</div>", unsafe_allow_html=True)
+
+                        if include:
+                            multi_legs.append({
+                                "match": f"{ht} vs {at}",
+                                "team": chosen_team,
+                                "odds": chosen_odds,
+                                "prob": chosen_prob,
+                                "edge": chosen_edge,
+                            })
+
+                    if multi_legs:
+                        st.markdown("---")
+                        combined_odds = 1.0
+                        combined_prob = 1.0
+                        for leg in multi_legs:
+                            combined_odds *= leg["odds"]
+                            combined_prob *= leg["prob"]
+
+                        implied_prob = 1.0 / combined_odds
+                        multi_edge = (combined_prob - implied_prob) * 100
+                        multi_stake = bankroll * max(combined_prob - implied_prob, 0) / (combined_odds - 1) / kelly_divisor * 100 if combined_odds > 1 else 0
+                        multi_return = multi_stake * combined_odds
+
+                        # Display summary card
+                        leg_colour = "#1a4a1a" if multi_edge > 0 else "#4a1a1a"
+                        leg_lines = "".join([
+                            f'<div style="color:#aaa;font-size:0.8rem;padding:3px 0;border-bottom:1px solid #1a2a3a">'
+                            f'✔ <span style="color:white">{l["team"]}</span> '
+                            f'<span style="color:#666">({l["match"]})</span> '
+                            f'@ <span style="color:#f39c12">${l["odds"]:.2f}</span> '
+                            f'— model: <span style="color:#3498db">{l["prob"]*100:.1f}%</span></div>'
+                            for l in multi_legs
+                        ])
+                        multi_card = f"""
+<div style="background:{leg_colour};border:1px solid #{'2ecc71' if multi_edge>0 else 'e74c3c'};border-radius:10px;padding:16px;margin-top:12px">
+  <div style="font-size:1rem;font-weight:700;color:white;margin-bottom:10px">
+    {len(multi_legs)}-Leg Multi Summary
+  </div>
+  {leg_lines}
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px">
+    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem">Combined Odds</div>
+      <div style="color:#f39c12;font-weight:700;font-size:1.1rem">${combined_odds:.2f}</div>
+    </div>
+    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem">Our Win Prob</div>
+      <div style="color:#3498db;font-weight:700;font-size:1.1rem">{combined_prob*100:.1f}%</div>
+    </div>
+    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem">Edge</div>
+      <div style="color:{'#2ecc71' if multi_edge>0 else '#e74c3c'};font-weight:700;font-size:1.1rem">{multi_edge:+.1f}%</div>
+    </div>
+    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem">Kelly Stake → Return</div>
+      <div style="color:#{'2ecc71' if multi_edge>0 else '#aaa'};font-weight:700">${multi_stake:.2f} → ${multi_return:.2f}</div>
+    </div>
+  </div>
+  {'<div style="color:#e74c3c;font-size:0.78rem;margin-top:8px">⚠️ Negative edge — this multi has no mathematical value. Consider removing low-edge legs.</div>' if multi_edge <= 0 else '<div style="color:#2ecc71;font-size:0.78rem;margin-top:8px">✅ Positive edge multi — each additional leg multiplies both the odds AND our probability, so value compounds.</div>'}
+</div>"""
+                        st.markdown(multi_card, unsafe_allow_html=True)
+                        st.caption("Note: Multis are high variance — even positive-edge multis lose most of the time. Recommended stake is much smaller than singles.")
+
                 # ── Glossary ──────────────────────────────────────────────────
                 st.markdown("---")
                 with st.expander("📖 How to read this page"):
                     st.markdown("""
 **Edge** — the gap between our model's win probability and the bookmaker's implied probability (after removing their vig/margin). Positive edge means we think the team is more likely to win than the odds suggest.
 
-**Kelly Stake** — mathematically optimal bet size from the Kelly Criterion: `edge / (odds - 1)`. Quarter Kelly is recommended — full Kelly is theoretically optimal but causes huge swings. As a rule: if you wouldn't be comfortable losing the stake, bet less.
+**Kelly Stake** — mathematically optimal bet size from the Kelly Criterion: `edge / (odds - 1)`. Quarter Kelly is recommended — full Kelly is theoretically optimal but causes huge swings.
 
-**Expected Return** — stake × odds if the bet wins. This is not guaranteed profit — it's the return *if* the model is right. Over many bets, positive edge should be profitable.
+**Line Betting** — instead of picking a winner, you bet on a team to win by more than (or lose by less than) a set margin. Our model's predicted margin is compared against the bookmaker's line.
 
-**Vig** — the bookmaker's built-in margin (overround). Typical AFL vig is 4–7%. Lower vig = better value for punters.
+**Multi Builder** — combines multiple bets into one. The combined probability = multiply each leg's probability together. If all legs have positive edge, the multi also has positive edge. But each extra leg also increases variance significantly.
 
-**Squiggle Consensus** — average win probability from ~15 independent computer models. Big divergence from consensus (>10%) can mean either we see something others don't, or we're wrong — worth investigating.
+**Expected Return** — stake × odds if the bet wins. Over many bets, positive edge should be profitable — but requires a large sample size to realise.
+
+**Vig** — the bookmaker's built-in margin. Typical AFL vig is 4–7%. Lower vig = better value.
 
 ⚠️ *This is a model-based tool, not financial advice. Betting involves real financial risk. Only bet what you can afford to lose.*
 """)
