@@ -320,16 +320,27 @@ def build_prediction_features(home_team: str, away_team: str,
                                LONG_TRAVEL_KM, PERTH_TRAVEL_THRESHOLD_KM)
     import pandas as _pd
 
-    h_elo = elo_ratings.get(home_team, 1500)
-    a_elo = elo_ratings.get(away_team, 1500)
+    # Force everything to plain Python floats — guards against pandas
+    # Series/DatetimeArray leaking in from cached DataFrames
+    def _f(v, default=0.0):
+        try:
+            val = v
+            if hasattr(val, 'iloc'):  val = val.iloc[-1]
+            elif hasattr(val, 'item'): val = val.item()
+            return float(val)
+        except Exception:
+            return float(default)
+
+    h_elo = _f(elo_ratings.get(home_team, 1500), 1500)
+    a_elo = _f(elo_ratings.get(away_team, 1500), 1500)
 
     hs  = team_stats.get(home_team, {})
     as_ = team_stats.get(away_team, {})
 
-    h_form = hs.get("last5_avg", 0)
-    a_form = as_.get("last5_avg", 0)
-    h_std  = hs.get("last5_std", 20)
-    a_std  = as_.get("last5_std", 20)
+    h_form = _f(hs.get("last5_avg", 0))
+    a_form = _f(as_.get("last5_avg", 0))
+    h_std  = _f(hs.get("last5_std", 20), 20)
+    a_std  = _f(as_.get("last5_std", 20), 20)
 
     h_travel = travel_distance_km(home_team, venue)
     a_travel = travel_distance_km(away_team, venue)
@@ -411,7 +422,7 @@ def build_prediction_features(home_team: str, away_team: str,
 
     feats = {
         # Elo
-        "elo_diff":               h_elo - a_elo + home_advantage,
+        "elo_diff":               h_elo - a_elo + float(home_advantage),
         # Form
         "form_diff":              h_form - a_form,
         "home_form":              h_form,
