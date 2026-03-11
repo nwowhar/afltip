@@ -365,6 +365,7 @@ def build_prediction_features(home_team: str, away_team: str,
                                season_stats: pd.DataFrame = None,
                                lineup_pav: dict = None,
                                enriched_df: pd.DataFrame = None,
+                               experience_df: pd.DataFrame = None,
                                home_advantage: float = 50.0) -> dict:
     """Build a full feature dict for an upcoming game prediction."""
     from data.fetcher import (travel_distance_km, PERTH_VENUES,
@@ -524,5 +525,23 @@ def build_prediction_features(home_team: str, away_team: str,
         from data.lineup import get_lineup_pav_diff
         pav_feats = get_lineup_pav_diff(home_team, away_team, lineup_pav)
         feats.update(pav_feats)
+
+    # Experience features from PAV career data
+    feats["exp_avg_diff"]        = 0.0
+    feats["exp_veteran_diff"]    = 0.0
+    feats["exp_developing_diff"] = 0.0
+    if experience_df is not None and not experience_df.empty:
+        from datetime import datetime as _dt2
+        yr = _dt2.now().year
+        def _exp(team, col):
+            row = experience_df[(experience_df["team"] == team) &
+                                (experience_df["year"] == yr)]
+            if row.empty:
+                row = experience_df[(experience_df["team"] == team) &
+                                    (experience_df["year"] == yr - 1)]
+            return float(row.iloc[0][col]) if not row.empty and col in row.columns else 0.0
+        feats["exp_avg_diff"]        = _exp(home_team, "avg_career_games")   - _exp(away_team, "avg_career_games")
+        feats["exp_veteran_diff"]    = _exp(home_team, "pct_veterans")       - _exp(away_team, "pct_veterans")
+        feats["exp_developing_diff"] = _exp(home_team, "pct_developing")     - _exp(away_team, "pct_developing")
 
     return feats
