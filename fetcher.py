@@ -110,7 +110,12 @@ def get_upcoming_games() -> pd.DataFrame:
     df = pd.DataFrame(r.json().get("games", []))
     if df.empty:
         return df
-    return df[df["complete"] < 100].copy()
+    incomplete = df[df["complete"] < 100].copy()
+    if incomplete.empty:
+        return incomplete
+    # Only return the next/current round — the lowest round number with incomplete games
+    next_round = incomplete["round"].min()
+    return incomplete[incomplete["round"] == next_round].copy()
 
 def get_teams() -> list:
     r = requests.get(f"{SQUIGGLE_BASE}?q=teams", headers=HEADERS, timeout=15)
