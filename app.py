@@ -161,10 +161,31 @@ if page == "📊 Dashboard":
     with c4: st.markdown(mc(f"{metrics['n_games']:,}", "Training Games"), unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown("## UPCOMING GAMES")
 
     try:
-        upcoming = get_upcoming_games()
+        # Fetch all incomplete games for the year so we can offer a round picker
+        import requests as _req
+        _r = _req.get(f"https://api.squiggle.com.au/?q=games;year={datetime.now().year}",
+                      headers={"User-Agent": "AFL-Predictor/1.0"}, timeout=15)
+        _all_games = pd.DataFrame(_r.json().get("games", []))
+        _incomplete = _all_games[_all_games["complete"] < 100] if not _all_games.empty else pd.DataFrame()
+
+        if not _incomplete.empty:
+            available_rounds = sorted(_incomplete["round"].unique())
+            default_round    = int(_incomplete["round"].min())
+            col_title, col_picker = st.columns([2, 1])
+            with col_title:
+                st.markdown("## UPCOMING GAMES")
+            with col_picker:
+                selected_round = st.selectbox("Round", available_rounds,
+                                              index=available_rounds.index(default_round),
+                                              label_visibility="collapsed")
+            upcoming = _incomplete[_incomplete["round"] == selected_round].copy()
+            st.markdown(f"*Round {selected_round} — {len(upcoming)} games*")
+        else:
+            st.markdown("## UPCOMING GAMES")
+            upcoming = pd.DataFrame()
+
         lineup_df = load_lineups()
         lineup_strength = {}
         if not lineup_df.empty and not pav_df.empty:
