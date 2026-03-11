@@ -37,25 +37,31 @@ def build_elo_ratings(games_df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     away_elos_pre = []
 
     for _, row in df.iterrows():
-        home = row["hteam"]
-        away = row["ateam"]
+        home = str(row["hteam"]).strip()
+        away = str(row["ateam"]).strip()
 
-        # Initialise if needed (regress toward mean each new season)
+        # Skip bad rows
+        if not home or not away or home == "nan" or away == "nan":
+            home_elos_pre.append(INITIAL_ELO)
+            away_elos_pre.append(INITIAL_ELO)
+            continue
+
+        # Initialise if needed
         if home not in elo_ratings:
-            elo_ratings[home] = INITIAL_ELO
+            elo_ratings[home] = float(INITIAL_ELO)
         if away not in elo_ratings:
-            elo_ratings[away] = INITIAL_ELO
+            elo_ratings[away] = float(INITIAL_ELO)
 
-        # Record pre-game Elos
-        home_elo = elo_ratings[home] + HOME_ADVANTAGE
-        away_elo = elo_ratings[away]
+        # Record pre-game Elos — always floats
+        home_elo = float(elo_ratings[home]) + HOME_ADVANTAGE
+        away_elo = float(elo_ratings[away])
 
-        home_elos_pre.append(elo_ratings[home])
-        away_elos_pre.append(elo_ratings[away])
+        home_elos_pre.append(float(elo_ratings[home]))
+        away_elos_pre.append(float(elo_ratings[away]))
 
         # Determine result
-        hscore = row.get("hscore", 0) or 0
-        ascore = row.get("ascore", 0) or 0
+        hscore = float(row.get("hscore", 0) or 0)
+        ascore = float(row.get("ascore", 0) or 0)
         if hscore > ascore:
             result = 1.0
         elif hscore < ascore:
@@ -65,8 +71,8 @@ def build_elo_ratings(games_df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
         # Update
         new_home, new_away = update_elo(home_elo, away_elo, result)
-        elo_ratings[home] = new_home - HOME_ADVANTAGE  # Remove home adjustment after update
-        elo_ratings[away] = new_away
+        elo_ratings[home] = float(new_home) - HOME_ADVANTAGE
+        elo_ratings[away] = float(new_away)
 
     df["home_elo_pre"] = home_elos_pre
     df["away_elo_pre"] = away_elos_pre
@@ -76,8 +82,12 @@ def build_elo_ratings(games_df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
 def regress_elos_to_mean(elo_dict: dict, regress_factor: float = 0.3) -> dict:
     """Regress Elos toward the mean at season start (standard practice)."""
-    mean = np.mean(list(elo_dict.values()))
-    return {team: elo + regress_factor * (mean - elo) for team, elo in elo_dict.items()}
+    # Force all values to float first — guards against any non-numeric contamination
+    clean = {team: float(elo) for team, elo in elo_dict.items()
+             if isinstance(elo, (int, float, np.floating, np.integer))}
+    mean = np.mean(list(clean.values()))
+    return {team: float(elo + regress_factor * (mean - elo))
+            for team, elo in clean.items()}
 
 def win_probability_from_elo(home_elo: float, away_elo: float) -> float:
     """Win probability for home team including home advantage."""
