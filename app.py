@@ -130,7 +130,6 @@ with st.sidebar:
         "🔬 Feature Importance",
         "📉 Backtest",
         "👕 Lineup Strength",
-        "🤖 AI Analysis",
         "💰 Value Bets",
     ])
     st.markdown("---")
@@ -1376,269 +1375,66 @@ elif page == "👕 Lineup Strength":
         st.info("PAV data not available.")
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# AI ANALYSIS
-# ═══════════════════════════════════════════════════════════════════════════════
-elif page == "🤖 AI Analysis":
-    st.markdown("# AI MODEL ANALYSIS")
-    st.markdown("*Claude analyses your model's current performance and suggests improvements*")
-
-    # ── Gather all model data to send ────────────────────────────────────────
-    fi_summary = ""
-    if fi_df is not None and not fi_df.empty:
-        top_feats = fi_df.head(10)[["feature", "group", "importance"]].copy()
-        top_feats["importance"] = top_feats["importance"].round(4)
-        fi_summary = top_feats.to_string(index=False)
-
-    yearly_acc = []
-    avail_feats = [f for f in CORE_FEATURES if f in df.columns]
-    for year in sorted(df["year"].unique()):
-        ydf = df[df["year"] == year].dropna(subset=avail_feats + ["home_win"])
-        if len(ydf) < 10: continue
-        preds = win_model.predict(ydf[avail_feats].values)
-        acc = (preds == ydf["home_win"].values).mean()
-        yearly_acc.append(f"  {year}: {acc*100:.1f}%")
-    yearly_acc_str = "\n".join(yearly_acc)
-
-    # Team travel records from df
-    travel_records = []
-    for team in sorted(teams):
-        away = df[(df["ateam"] == team) & (df["travel_away_km"] >= 1000)] if "travel_away_km" in df.columns else pd.DataFrame()
-        if len(away) >= 5:
-            margins = (away["ascore"] - away["hscore"]).dropna()
-            wr = (margins > 0).mean()
-            travel_records.append(f"  {team}: {len(away)} long trips, {wr*100:.0f}% win rate, avg margin {margins.mean():+.1f}")
-    travel_str = "\n".join(travel_records[:10])
-
-    context = f"""
-You are analysing an AFL match prediction model. Here is everything we know about it:
-
-## Model Overview
-- Algorithm: Gradient Boosting (scikit-learn) for both win probability and margin
-- Training data: {start_year} to present ({metrics['n_games']:,} games)
-- Features: {metrics['n_features']} total across Elo, form, travel, rest, streak, season stats, PAV lineup
-
-## Performance Metrics
-- Win prediction accuracy (5-fold CV): {metrics['win_accuracy']*100:.1f}%
-- Elo-only baseline accuracy: {metrics['base_accuracy']*100:.1f}%
-- Accuracy gain from all features vs Elo-only: {metrics.get('accuracy_gain',0)*100:+.1f}%
-- Margin prediction R²: {metrics['margin_r2']:.3f}
-- Margin R² std dev: {metrics['margin_r2_std']:.3f}
-
-## Accuracy by Year (in-sample)
-{yearly_acc_str}
-
-## Top 10 Feature Importances (GBM impurity-based)
-{fi_summary}
-
-## Feature Groups in Model
-- Elo rating differential (home advantage = 50 pts)
-- Rolling form: last 3/5 game avg margin, consistency (std dev)
-- Travel: raw km, Perth flag, travel×rest fatigue interaction
-- Rest days: days since last game, capped at 21 (summer break → neutral 7 days)
-- Streak: signed win/loss streak
-- Last margin: last game, last 3, last 5 averages
-- Season stats: clearances, inside 50s, contested possessions, tackles, hitouts, clangers (from AFL Tables)
-- PAV lineup: Player Approximate Value sum for selected 22 (when lineups announced)
-
-## Previous Ablation Test Results (rough)
-- Elo: -1.85% when removed (clear positive contribution)
-- Form rolling: -0.1% (neutral)
-- Travel raw: +0.39% when removed (slightly hurts accuracy — possibly redundant with Elo)
-- Rest days: -0.1% (neutral)
-- Streak: -0.29% (neutral)
-- Season stats: -0.05% (neutral)
-- PAV lineup: +0.05% (neutral — limited by season-level proxy, not per-game lineups)
-
-## Team Travel Records (long trips >1000km)
-{travel_str}
-
-## Known Limitations
-- Season stats are season averages, not rolling — they don't capture mid-season form shifts
-- PAV is season-level proxy until Thursday lineup announcements
-- No weather/conditions data
-- No head-to-head historical matchup data
-- No individual player injury data beyond PAV lineup
-- Training data mixes pre and post rule-change eras (2019 6-6-6 alignment rule)
-
-Please provide:
-1. A frank assessment of model strengths and weaknesses
-2. The 3-5 highest-impact improvements we could realistically make
-3. Any concerns about the current feature set (overfitting, redundancy, data leakage)
-4. Your take on why the season stats and travel features showed neutral ablation results
-5. Specific suggestions for new data sources or features worth pursuing
-"""
-
-    col_run, col_focus = st.columns([2, 1])
-    with col_focus:
-        focus = st.selectbox("Analysis focus", [
-            "Full overview",
-            "Feature engineering only",
-            "Travel & fatigue deep dive",
-            "How to improve accuracy beyond 67%",
-            "Data quality & leakage risks",
-        ])
-    with col_run:
-        run_analysis = st.button("🤖 Run AI Analysis", use_container_width=True)
-
-    if focus != "Full overview":
-        context += f"\n\nFocus your analysis specifically on: {focus}"
-
-    if run_analysis:
-        with st.spinner("Claude is analysing your model..."):
-            try:
-                import requests as _req
-                # Get API key from Streamlit secrets
-                try:
-                    api_key = st.secrets["ANTHROPIC_API_KEY"]
-                except Exception:
-                    st.error("No API key found. Add ANTHROPIC_API_KEY to your Streamlit secrets at share.streamlit.io → App settings → Secrets.")
-                    st.stop()
-
-                response = _req.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-api-key": api_key,
-                        "anthropic-version": "2023-06-01",
-                    },
-                    json={
-                        "model": "claude-sonnet-4-20250514",
-                        "max_tokens": 1500,
-                        "messages": [{"role": "user", "content": context}]
-                    },
-                    timeout=60
-                )
-                data = response.json()
-                analysis = ""
-                for block in data.get("content", []):
-                    if block.get("type") == "text":
-                        analysis += block["text"]
-
-                if analysis:
-                    st.markdown("---")
-                    st.markdown(analysis)
-                else:
-                    st.warning(f"No response received. API response: {data}")
-
-            except Exception as e:
-                st.error(f"API call failed: {e}")
-
-    else:
-        st.markdown("---")
-        st.markdown("""
-**What this does:** Sends your full model stats — feature importances, accuracy by year,
-ablation results, travel records, and known limitations — to Claude for analysis.
-
-You'll get back a frank assessment of what's working, what's not, and the highest-impact
-things to build next. Pick a focus area if you want to drill into something specific.
-""")
-        # Show the context that will be sent
-        with st.expander("📋 Preview data being sent to Claude"):
-            st.text(context)
-
-# ═══════════════════════════════════════════════════════════════════════════════
 # VALUE BETS
 # ═══════════════════════════════════════════════════════════════════════════════
 elif page == "💰 Value Bets":
-    st.markdown("# VALUE BETS")
-    st.markdown("*Compares our model's probabilities against bookmaker odds and Squiggle consensus to find edges*")
+    st.markdown("# 💰 VALUE BETS")
+    st.markdown("*Find edges between our model's probabilities and bookmaker odds*")
 
-    # ── Squiggle consensus (free, no key needed) ──────────────────────────────
-    st.markdown("## 📡 Squiggle Model Consensus")
-    st.markdown("*Aggregated win probabilities from ~15 computer models*")
+    # ── Helper to get our model prob for any matchup ──────────────────────────
+    def get_our_prob(ht, at):
+        def _sf(v, d=0.0):
+            try:
+                if v is None: return float(d)
+                if hasattr(v,'iloc'): v=v.iloc[-1]
+                if hasattr(v,'item'): v=v.item()
+                return float(v)
+            except: return float(d)
+        hs_ = team_stats.get(ht, {})
+        as_ = team_stats.get(at, {})
+        h_elo = _sf(current_elos.get(ht, 1500), 1500)
+        a_elo = _sf(current_elos.get(at, 1500), 1500)
+        h_form = _sf(hs_.get("last5_avg", 0))
+        a_form = _sf(as_.get("last5_avg", 0))
+        feats = {
+            "elo_diff": h_elo - a_elo + 50.0, "form_diff": h_form - a_form,
+            "home_form": h_form, "away_form": a_form,
+            "home_consistency": _sf(hs_.get("last5_std", 20), 20),
+            "away_consistency": _sf(as_.get("last5_std", 20), 20),
+            **{k: 0.0 for k in ["travel_diff","travel_home_km","travel_away_km",
+               "travel_fatigue_diff","home_travel_fatigue","away_travel_fatigue",
+               "travel_win_rate_diff","travel_margin_diff","perth_win_rate_diff",
+               "is_perth_game","days_rest_diff","cl_diff","i50_diff","cp_diff",
+               "tk_diff","ho_diff","clanger_diff","pav_total_diff","pav_off_diff",
+               "pav_def_diff","pav_mid_diff"]},
+            "days_rest_home": 7.0, "days_rest_away": 7.0,
+            "streak_diff": _sf(hs_.get("streak",0)) - _sf(as_.get("streak",0)),
+            "home_streak": _sf(hs_.get("streak",0)), "away_streak": _sf(as_.get("streak",0)),
+            "last_margin_diff": _sf(hs_.get("last_margin",0)) - _sf(as_.get("last_margin",0)),
+            "last3_diff": _sf(hs_.get("last3_avg",0)) - _sf(as_.get("last3_avg",0)),
+            "last5_diff": h_form - a_form,
+        }
+        pred = predict_game(win_model, margin_model, feats)
+        return pred["home_win_prob"] / 100.0, pred["predicted_margin"]
 
-    try:
-        consensus_df = get_squiggle_consensus()
-        if consensus_df.empty:
-            st.info("No Squiggle consensus data available for current round.")
-        else:
-            # Match consensus to our predictions
-            rows = []
-            for _, row in consensus_df.iterrows():
-                ht = normalise_team(str(row.get("hteam","")))
-                at = normalise_team(str(row.get("ateam","")))
-                if ht not in current_elos or at not in current_elos:
-                    continue
+    # ── Bankroll input ────────────────────────────────────────────────────────
+    st.markdown("---")
+    bc1, bc2, bc3 = st.columns(3)
+    with bc1:
+        bankroll = st.number_input("💵 Bankroll ($)", min_value=10, max_value=100000,
+                                    value=1000, step=50)
+    with bc2:
+        kelly_fraction = st.selectbox("Kelly sizing",
+                                       ["Full Kelly", "Half Kelly (safer)", "Quarter Kelly (recommended)"],
+                                       index=2)
+    with bc3:
+        min_edge = st.slider("Min edge to show (%)", 0, 15, 3)
 
-                sq_prob = float(row["consensus_home_prob"])
-                n_models = int(row["n_models"])
-
-                # Get our model's probability using inline builder
-                def _sf(v, d=0.0):
-                    try:
-                        if v is None: return float(d)
-                        if hasattr(v,'iloc'): v=v.iloc[-1]
-                        if hasattr(v,'item'): v=v.item()
-                        return float(v)
-                    except: return float(d)
-
-                from data.fetcher import travel_distance_km
-                _PV = {"Optus Stadium","Perth Stadium","Subiaco Oval"}
-                h_elo = _sf(current_elos.get(ht,1500),1500)
-                a_elo = _sf(current_elos.get(at,1500),1500)
-                hs_  = team_stats.get(ht,{})
-                as__ = team_stats.get(at,{})
-                h_form = _sf(hs_.get("last5_avg",0))
-                a_form = _sf(as__.get("last5_avg",0))
-
-                our_feats = {
-                    "elo_diff": h_elo - a_elo + 50.0,
-                    "form_diff": h_form - a_form,
-                    "home_form": h_form, "away_form": a_form,
-                    "home_consistency": _sf(hs_.get("last5_std",20),20),
-                    "away_consistency": _sf(as__.get("last5_std",20),20),
-                    "travel_diff": 0.0, "travel_home_km": 0.0, "travel_away_km": 0.0,
-                    "travel_fatigue_diff": 0.0, "home_travel_fatigue": 0.0, "away_travel_fatigue": 0.0,
-                    "travel_win_rate_diff": 0.0, "travel_margin_diff": 0.0, "perth_win_rate_diff": 0.0,
-                    "is_perth_game": 0.0, "days_rest_diff": 0.0, "days_rest_home": 7.0, "days_rest_away": 7.0,
-                    "streak_diff": _sf(hs_.get("streak",0))-_sf(as__.get("streak",0)),
-                    "home_streak": _sf(hs_.get("streak",0)), "away_streak": _sf(as__.get("streak",0)),
-                    "last_margin_diff": _sf(hs_.get("last_margin",0))-_sf(as__.get("last_margin",0)),
-                    "last3_diff": _sf(hs_.get("last3_avg",0))-_sf(as__.get("last3_avg",0)),
-                    "last5_diff": h_form - a_form,
-                    "cl_diff":0.0,"i50_diff":0.0,"cp_diff":0.0,"tk_diff":0.0,"ho_diff":0.0,"clanger_diff":0.0,
-                    "pav_total_diff":0.0,"pav_off_diff":0.0,"pav_def_diff":0.0,"pav_mid_diff":0.0,
-                }
-                pred = predict_game(win_model, margin_model, our_feats)
-                our_prob = pred["home_win_prob"] / 100.0
-                diff = our_prob - sq_prob
-
-                rows.append({
-                    "Home": ht, "Away": at,
-                    "Our Model": f"{our_prob*100:.1f}%",
-                    "Squiggle Consensus": f"{sq_prob*100:.1f}%",
-                    "Difference": f"{diff*100:+.1f}%",
-                    "Models": n_models,
-                    "_diff": diff,
-                    "_our": our_prob,
-                    "_sq": sq_prob,
-                })
-
-            if rows:
-                sq_display = pd.DataFrame(rows)
-
-                def colour_diff(val):
-                    try:
-                        v = float(val.replace("%",""))
-                        if v > 5: return "color: #2ecc71; font-weight: bold"
-                        if v < -5: return "color: #e74c3c; font-weight: bold"
-                    except: pass
-                    return ""
-
-                st.dataframe(
-                    sq_display[["Home","Away","Our Model","Squiggle Consensus","Difference","Models"]]
-                    .style.applymap(colour_diff, subset=["Difference"]),
-                    use_container_width=True, hide_index=True
-                )
-                st.caption("🟢 Green = our model is more bullish on home team than consensus  🔴 Red = more bearish")
-    except Exception as e:
-        st.warning(f"Could not load Squiggle consensus: {e}")
+    kelly_divisor = {"Full Kelly": 1, "Half Kelly (safer)": 2, "Quarter Kelly (recommended)": 4}[kelly_fraction]
 
     st.markdown("---")
 
-    # ── Live bookmaker odds (requires API key) ────────────────────────────────
-    st.markdown("## 🎰 Bookmaker Value Bets")
-
+    # ── Fetch odds ────────────────────────────────────────────────────────────
     odds_key = ""
     try:
         odds_key = st.secrets.get("ODDS_API_KEY", "")
@@ -1646,136 +1442,240 @@ elif page == "💰 Value Bets":
         pass
 
     if not odds_key:
-        st.info("""
-**To enable live bookmaker odds:**
-1. Get a free API key at [the-odds-api.com](https://the-odds-api.com) (~500 free requests/month, plenty for weekly use)
-2. In Streamlit Cloud → your app → **Settings → Secrets**, add:
-```
-ODDS_API_KEY = "your_key_here"
-```
-3. Refresh the app
-
-Free tier covers TAB, Sportsbet, Neds, Ladbrokes and more.
-""")
+        st.info("Add your `ODDS_API_KEY` to Streamlit secrets to enable live bookmaker odds.")
     else:
-        with st.spinner("Fetching live odds..."):
+        with st.spinner("Fetching live odds from TAB, Sportsbet, Neds, Ladbrokes..."):
             odds_df = get_odds_api(odds_key)
 
         if odds_df.empty:
             st.info("No AFL odds available right now — check back closer to game day.")
         else:
-            # Pick best (highest) odds per game across bookmakers
-            best_odds = (
-                odds_df.groupby(["home_team","away_team"])
-                .agg(best_home_odds=("home_odds","max"), best_away_odds=("away_odds","max"),
-                     bookmakers=("bookmaker", lambda x: ", ".join(sorted(set(x)))))
-                .reset_index()
-            )
+            # Per-bookmaker odds so user can shop lines
+            all_game_rows = []
+            games_seen = {}
 
-            value_rows = []
-            for _, row in best_odds.iterrows():
+            for _, row in odds_df.iterrows():
                 ht = normalise_team(row["home_team"])
                 at = normalise_team(row["away_team"])
+                bm = row["bookmaker"]
+                h_odds = float(row["home_odds"])
+                a_odds = float(row["away_odds"])
+                game_key = f"{ht}|{at}"
+
                 if ht not in current_elos or at not in current_elos:
                     continue
 
-                h_odds = float(row["best_home_odds"])
-                a_odds = float(row["best_away_odds"])
+                if game_key not in games_seen:
+                    our_h, pred_margin = get_our_prob(ht, at)
+                    games_seen[game_key] = (our_h, pred_margin)
+                else:
+                    our_h, pred_margin = games_seen[game_key]
+
+                our_a = 1.0 - our_h
                 h_implied = 1.0 / h_odds
                 a_implied = 1.0 / a_odds
-                # Remove vig to get fair implied probs
                 total_implied = h_implied + a_implied
                 h_fair = h_implied / total_implied
                 a_fair = a_implied / total_implied
                 vig = (total_implied - 1.0) * 100
 
-                # Our model probability
-                hs_ = team_stats.get(ht, {})
-                as__ = team_stats.get(at, {})
-                def _sf2(v, d=0.0):
-                    try:
-                        if v is None: return float(d)
-                        if hasattr(v,'iloc'): v=v.iloc[-1]
-                        if hasattr(v,'item'): v=v.item()
-                        return float(v)
-                    except: return float(d)
-                h_elo2 = _sf2(current_elos.get(ht,1500),1500)
-                a_elo2 = _sf2(current_elos.get(at,1500),1500)
-                h_form2 = _sf2(hs_.get("last5_avg",0))
-                a_form2 = _sf2(as__.get("last5_avg",0))
-                our_feats2 = {
-                    "elo_diff": h_elo2-a_elo2+50.0, "form_diff": h_form2-a_form2,
-                    "home_form": h_form2, "away_form": a_form2,
-                    "home_consistency": _sf2(hs_.get("last5_std",20),20),
-                    "away_consistency": _sf2(as__.get("last5_std",20),20),
-                    **{k:0.0 for k in ["travel_diff","travel_home_km","travel_away_km",
-                       "travel_fatigue_diff","home_travel_fatigue","away_travel_fatigue",
-                       "travel_win_rate_diff","travel_margin_diff","perth_win_rate_diff",
-                       "is_perth_game","days_rest_diff","cl_diff","i50_diff","cp_diff",
-                       "tk_diff","ho_diff","clanger_diff","pav_total_diff","pav_off_diff",
-                       "pav_def_diff","pav_mid_diff"]},
-                    "days_rest_home":7.0,"days_rest_away":7.0,
-                    "streak_diff":_sf2(hs_.get("streak",0))-_sf2(as__.get("streak",0)),
-                    "home_streak":_sf2(hs_.get("streak",0)),"away_streak":_sf2(as__.get("streak",0)),
-                    "last_margin_diff":_sf2(hs_.get("last_margin",0))-_sf2(as__.get("last_margin",0)),
-                    "last3_diff":_sf2(hs_.get("last3_avg",0))-_sf2(as__.get("last3_avg",0)),
-                    "last5_diff":h_form2-a_form2,
-                }
-                pred2 = predict_game(win_model, margin_model, our_feats2)
-                our_h = pred2["home_win_prob"] / 100.0
-                our_a = 1.0 - our_h
+                h_edge = (our_h - h_fair) * 100
+                a_edge = (our_a - a_fair) * 100
+                h_kelly_pct = max(our_h - h_fair, 0) / (h_odds - 1) * 100 / kelly_divisor
+                a_kelly_pct = max(our_a - a_fair, 0) / (a_odds - 1) * 100 / kelly_divisor
+                h_stake = bankroll * h_kelly_pct / 100
+                a_stake = bankroll * a_kelly_pct / 100
+                h_return = h_stake * h_odds
+                a_return = a_stake * a_odds
 
-                h_edge = our_h - h_fair
-                a_edge = our_a - a_fair
-                h_kelly = max(h_edge / (h_odds - 1), 0) * 100
-                a_kelly = max(a_edge / (a_odds - 1), 0) * 100
-
-                # Flag best value bet for this game
-                best_edge = h_edge if h_edge > a_edge else a_edge
-                best_team = ht if h_edge > a_edge else at
-                best_odds_val = h_odds if h_edge > a_edge else a_odds
-                best_kelly = h_kelly if h_edge > a_edge else a_kelly
-                best_our_prob = our_h if h_edge > a_edge else our_a
-                best_fair = h_fair if h_edge > a_edge else a_fair
-
-                value_rows.append({
-                    "Match": f"{ht} vs {at}",
-                    "Value Bet": best_team,
-                    "Odds": f"${best_odds_val:.2f}",
-                    "Our Prob": f"{best_our_prob*100:.1f}%",
-                    "Fair Prob": f"{best_fair*100:.1f}%",
-                    "Edge": f"{best_edge*100:+.1f}%",
-                    "Kelly %": f"{best_kelly:.1f}%",
-                    "Vig": f"{vig:.1f}%",
-                    "Bookmakers": row["bookmakers"],
-                    "_edge": best_edge,
+                all_game_rows.append({
+                    "match_key": game_key,
+                    "Home": ht, "Away": at,
+                    "Bookmaker": bm,
+                    "Home Odds": h_odds, "Away Odds": a_odds,
+                    "Our H%": our_h, "Our A%": our_a,
+                    "H Fair%": h_fair, "A Fair%": a_fair,
+                    "H Edge%": h_edge, "A Edge%": a_edge,
+                    "H Kelly%": h_kelly_pct, "A Kelly%": a_kelly_pct,
+                    "H Stake": h_stake, "A Stake": a_stake,
+                    "H Return": h_return, "A Return": a_return,
+                    "Vig%": vig, "Pred Margin": pred_margin,
                 })
 
-            if value_rows:
-                vdf = pd.DataFrame(value_rows).sort_values("_edge", ascending=False)
+            if not all_game_rows:
+                st.info("No matching teams found in odds data.")
+            else:
+                full_df = pd.DataFrame(all_game_rows)
 
-                # Highlight value bets (edge > 3%)
-                value_bets = vdf[vdf["_edge"] > 0.03]
-                no_value = vdf[vdf["_edge"] <= 0.03]
+                # ── Best odds per game ────────────────────────────────────────
+                best = (full_df.groupby("match_key")
+                        .apply(lambda g: pd.Series({
+                            "Home": g["Home"].iloc[0],
+                            "Away": g["Away"].iloc[0],
+                            "Best Home Odds": g["Home Odds"].max(),
+                            "Best Home Bookie": g.loc[g["Home Odds"].idxmax(), "Bookmaker"],
+                            "Best Away Odds": g["Away Odds"].max(),
+                            "Best Away Bookie": g.loc[g["Away Odds"].idxmax(), "Bookmaker"],
+                            "Our H%": g["Our H%"].iloc[0],
+                            "H Fair%": g["H Fair%"].iloc[0],
+                            "A Fair%": g["A Fair%"].iloc[0],
+                            "H Edge%": g["H Edge%"].max(),
+                            "A Edge%": g["A Edge%"].max(),
+                            "Pred Margin": g["Pred Margin"].iloc[0],
+                        }))
+                        .reset_index(drop=True))
 
-                if not value_bets.empty:
-                    st.markdown("### 🎯 Value Opportunities (Edge > 3%)")
-                    st.dataframe(
-                        value_bets[["Match","Value Bet","Odds","Our Prob","Fair Prob","Edge","Kelly %","Bookmakers"]],
-                        use_container_width=True, hide_index=True
-                    )
+                # ── Value bet cards ───────────────────────────────────────────
+                best["best_edge"] = best[["H Edge%","A Edge%"]].max(axis=1)
+                value = best[best["best_edge"] >= min_edge].sort_values("best_edge", ascending=False)
 
-                st.markdown("### All Games")
-                st.dataframe(
-                    vdf[["Match","Value Bet","Odds","Our Prob","Fair Prob","Edge","Kelly %","Vig","Bookmakers"]],
-                    use_container_width=True, hide_index=True
-                )
+                if value.empty:
+                    st.info(f"No bets found with edge ≥ {min_edge}%. Try lowering the minimum edge slider.")
+                else:
+                    st.markdown(f"### 🎯 {len(value)} Value Bet{'s' if len(value)>1 else ''} Found (Edge ≥ {min_edge}%)")
+
+                    for _, g in value.iterrows():
+                        ht = g["Home"]
+                        at = g["Away"]
+                        h_edge = g["H Edge%"]
+                        a_edge = g["A Edge%"]
+                        is_home_value = h_edge >= a_edge
+                        val_team  = ht if is_home_value else at
+                        val_odds  = g["Best Home Odds"] if is_home_value else g["Best Away Odds"]
+                        val_bookie= g["Best Home Bookie"] if is_home_value else g["Best Away Bookie"]
+                        val_edge  = h_edge if is_home_value else a_edge
+                        val_our   = g["Our H%"] if is_home_value else (1 - g["Our H%"])
+                        val_fair  = g["H Fair%"] if is_home_value else g["A Fair%"]
+                        kelly_pct = max(val_our - val_fair, 0) / (val_odds - 1) / kelly_divisor * 100
+                        stake     = bankroll * kelly_pct / 100
+                        exp_return= stake * val_odds
+                        exp_profit= exp_return - stake
+
+                        # Colour by edge strength
+                        if val_edge >= 10:  card_colour = "#1a4a1a"; badge = "🔥 STRONG VALUE"
+                        elif val_edge >= 5: card_colour = "#1a3a1a"; badge = "✅ GOOD VALUE"
+                        else:               card_colour = "#1a2a2a"; badge = "👀 MARGINAL VALUE"
+
+                        pred_margin_str = f"{abs(g['Pred Margin']):.0f} pts"
+                        winner_str = ht if g["Pred Margin"] > 0 else at
+
+                        card = f"""
+<div style="background:{card_colour};border:1px solid #2ecc71;border-radius:10px;padding:16px;margin-bottom:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div>
+      <span style="font-size:1.1rem;font-weight:700;color:white">{ht}</span>
+      <span style="color:#e94560;margin:0 8px">vs</span>
+      <span style="font-size:1.1rem;font-weight:700;color:white">{at}</span>
+    </div>
+    <span style="background:#2ecc71;color:#000;font-size:0.72rem;font-weight:700;padding:3px 8px;border-radius:4px">{badge}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">
+    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem;margin-bottom:4px">BET ON</div>
+      <div style="color:#2ecc71;font-weight:700;font-size:1rem">{val_team}</div>
+      <div style="color:#666;font-size:0.7rem">@ {val_bookie}</div>
+    </div>
+    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem;margin-bottom:4px">ODDS</div>
+      <div style="color:white;font-weight:700;font-size:1.1rem">${val_odds:.2f}</div>
+      <div style="color:#666;font-size:0.7rem">implied {1/val_odds*100:.1f}%</div>
+    </div>
+    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem;margin-bottom:4px">OUR MODEL</div>
+      <div style="color:#3498db;font-weight:700;font-size:1.1rem">{val_our*100:.1f}%</div>
+      <div style="color:#2ecc71;font-size:0.7rem">edge: +{val_edge:.1f}%</div>
+    </div>
+    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem;margin-bottom:4px">KELLY STAKE</div>
+      <div style="color:#f39c12;font-weight:700;font-size:1.1rem">${stake:.2f}</div>
+      <div style="color:#666;font-size:0.7rem">{kelly_pct:.1f}% of bankroll</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+    <div style="background:#0a1628;border-radius:6px;padding:8px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem">Expected Return</div>
+      <div style="color:#2ecc71;font-weight:600">${exp_return:.2f}</div>
+      <div style="color:#666;font-size:0.7rem">profit: ${exp_profit:.2f}</div>
+    </div>
+    <div style="background:#0a1628;border-radius:6px;padding:8px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem">Model Prediction</div>
+      <div style="color:white;font-weight:600">{winner_str} by ~{pred_margin_str}</div>
+    </div>
+    <div style="background:#0a1628;border-radius:6px;padding:8px;text-align:center">
+      <div style="color:#aaa;font-size:0.68rem">Best Opp. Odds</div>
+      <div style="color:white;font-weight:600">${g["Best Home Odds"] if not is_home_value else g["Best Away Odds"]:.2f} ({g["Best Home Bookie"] if not is_home_value else g["Best Away Bookie"]})</div>
+    </div>
+  </div>
+</div>"""
+                        st.markdown(card, unsafe_allow_html=True)
 
                 st.markdown("---")
-                st.markdown("""
-**How to read this:**
-- **Edge** = our model probability minus bookmaker's fair (vig-removed) probability. Positive = value.
-- **Kelly %** = suggested bet size as % of bankroll using Kelly Criterion. Use ¼ Kelly (divide by 4) for safer sizing.
-- **Vig** = bookmaker's margin built into the odds. Lower is better.
-- Only bet where edge is consistently positive over many bets — one game means nothing.
+
+                # ── Full odds comparison table ────────────────────────────────
+                with st.expander("📊 Full odds comparison across all bookmakers"):
+                    display_cols = full_df[["Home","Away","Bookmaker",
+                                            "Home Odds","Away Odds","H Edge%","A Edge%","Vig%"]].copy()
+                    display_cols["H Edge%"] = display_cols["H Edge%"].round(1)
+                    display_cols["A Edge%"] = display_cols["A Edge%"].round(1)
+                    display_cols["Vig%"]    = display_cols["Vig%"].round(2)
+                    st.dataframe(display_cols.sort_values(["Home","Away","Bookmaker"]),
+                                 use_container_width=True, hide_index=True)
+
+                # ── Squiggle consensus comparison ─────────────────────────────
+                st.markdown("---")
+                st.markdown("### 📡 Squiggle Model Consensus")
+                st.markdown("*How our model compares to ~15 other computer models*")
+                try:
+                    consensus_df = get_squiggle_consensus()
+                    if not consensus_df.empty:
+                        sq_rows = []
+                        for _, row in consensus_df.iterrows():
+                            ht = normalise_team(str(row.get("hteam","")))
+                            at = normalise_team(str(row.get("ateam","")))
+                            if ht not in current_elos or at not in current_elos: continue
+                            sq_prob = float(row["consensus_home_prob"])
+                            our_h, _ = get_our_prob(ht, at)
+                            diff = (our_h - sq_prob) * 100
+                            sq_rows.append({
+                                "Home": ht, "Away": at,
+                                "Our Model": f"{our_h*100:.1f}%",
+                                "Squiggle Consensus": f"{sq_prob*100:.1f}%",
+                                "Difference": f"{diff:+.1f}%",
+                                "Models Polled": int(row["n_models"]),
+                                "_diff": diff,
+                            })
+                        if sq_rows:
+                            sqdf = pd.DataFrame(sq_rows).sort_values("_diff", key=abs, ascending=False)
+                            def _cdiff(val):
+                                try:
+                                    v = float(str(val).replace("%",""))
+                                    if v > 5:  return "color:#2ecc71;font-weight:bold"
+                                    if v < -5: return "color:#e74c3c;font-weight:bold"
+                                except: pass
+                                return ""
+                            st.dataframe(
+                                sqdf[["Home","Away","Our Model","Squiggle Consensus","Difference","Models Polled"]]
+                                .style.applymap(_cdiff, subset=["Difference"]),
+                                use_container_width=True, hide_index=True)
+                            st.caption("🟢 We're higher than consensus on home team  🔴 We're lower")
+                    else:
+                        st.info("Squiggle consensus not available for current round.")
+                except Exception as e:
+                    st.warning(f"Squiggle consensus unavailable: {e}")
+
+                # ── Glossary ──────────────────────────────────────────────────
+                st.markdown("---")
+                with st.expander("📖 How to read this page"):
+                    st.markdown("""
+**Edge** — the gap between our model's win probability and the bookmaker's implied probability (after removing their vig/margin). Positive edge means we think the team is more likely to win than the odds suggest.
+
+**Kelly Stake** — mathematically optimal bet size from the Kelly Criterion: `edge / (odds - 1)`. Quarter Kelly is recommended — full Kelly is theoretically optimal but causes huge swings. As a rule: if you wouldn't be comfortable losing the stake, bet less.
+
+**Expected Return** — stake × odds if the bet wins. This is not guaranteed profit — it's the return *if* the model is right. Over many bets, positive edge should be profitable.
+
+**Vig** — the bookmaker's built-in margin (overround). Typical AFL vig is 4–7%. Lower vig = better value for punters.
+
+**Squiggle Consensus** — average win probability from ~15 independent computer models. Big divergence from consensus (>10%) can mean either we see something others don't, or we're wrong — worth investigating.
+
+⚠️ *This is a model-based tool, not financial advice. Betting involves real financial risk. Only bet what you can afford to lose.*
 """)
