@@ -157,6 +157,7 @@ with st.sidebar:
         "📉 Backtest",
         "👕 Lineup Strength",
         "💰 Value Bets",
+        "📖 How It Works",
     ], key="page")
     st.markdown("---")
     st.markdown("<small style='color:#666'>Data: Squiggle API + AFL Tables<br>Model: Gradient Boosting + Elo + PAV</small>", unsafe_allow_html=True)
@@ -1206,6 +1207,23 @@ elif page == "👕 Lineup Strength":
 
     lineup_df = load_lineups()
 
+    # Debug expander — always visible so we can diagnose issues
+    with st.expander("🔧 Lineup debug info"):
+        st.markdown(f"**Lineup rows fetched:** {len(lineup_df)}")
+        if not lineup_df.empty:
+            st.markdown(f"**Columns:** {list(lineup_df.columns)}")
+            st.markdown(f"**Rounds in data:** {sorted(lineup_df['round'].unique()) if 'round' in lineup_df.columns else 'no round column'}")
+            team_col = "teamname" if "teamname" in lineup_df.columns else "team"
+            st.markdown(f"**Teams found:** {sorted(lineup_df[team_col].unique()) if team_col in lineup_df.columns else 'no team column'}")
+            st.markdown(f"**Sample rows:**")
+            st.dataframe(lineup_df.head(5), use_container_width=True)
+        else:
+            st.warning("lineup_df is empty — either lineups aren't announced yet or the fetch failed.")
+        st.markdown(f"**PAV rows:** {len(pav_df)}")
+        if not pav_df.empty:
+            st.markdown(f"**PAV columns:** {list(pav_df.columns)}")
+            st.markdown(f"**PAV years:** {sorted(pav_df['year'].unique()) if 'year' in pav_df.columns else 'no year column'}")
+
     if lineup_df.empty:
         st.info("No lineup data available yet — lineups are typically announced Thursday. Check back then.")
     else:
@@ -1878,4 +1896,120 @@ elif page == "💰 Value Bets":
 **Vig** — the bookmaker's built-in margin. Typical AFL vig is 4–7%. Lower vig = better value.
 
 ⚠️ *This is a model-based tool, not financial advice. Betting involves real financial risk. Only bet what you can afford to lose.*
+""")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HOW IT WORKS
+# ═══════════════════════════════════════════════════════════════════════════════
+elif page == "📖 How It Works":
+    st.markdown("# HOW THE MODEL WORKS")
+    st.markdown("*A plain-English explanation of how win probability and margin are calculated*")
+
+    st.markdown("---")
+
+    # ── Overview ──────────────────────────────────────────────────────────────
+    st.markdown("## The Big Picture")
+    st.markdown(f"""
+The model uses **Gradient Boosting** — a machine learning technique that builds many small decision trees,
+each one correcting the mistakes of the last. It's trained on **{metrics['n_games']:,} AFL games from {start_year} to present**.
+
+For each game it outputs two things:
+- **Win probability** — the chance the home team wins (e.g. 68%)
+- **Predicted margin** — how many points the model expects the game to be won by (e.g. +14 pts)
+
+The model learns which combinations of factors best predict results by seeing thousands of historical games.
+It doesn't know anything about footy except what the numbers tell it.
+""")
+
+    st.markdown("---")
+    st.markdown("## Step by Step: How a Prediction is Made")
+
+    steps = [
+        ("1️⃣", "Elo Ratings", "#e94560",
+         "Elo is a chess-style rating system applied to AFL teams. Every team starts at 1500. After each game, ratings shift based on the result and how expected it was — beating a strong team gives you more points than beating a weak one. The home team gets a +50 point advantage built in, which reflects the real-world home ground advantage seen in AFL data. The Elo *difference* between the two teams going into a game is the single most predictive feature in the model.",
+         f"Current range in our model: {min(current_elos.values()):.0f} – {max(current_elos.values()):.0f} pts"),
+
+        ("2️⃣", "Recent Form", "#f39c12",
+         "The model looks at each team's last 5 games and calculates the average winning/losing margin. A team averaging +20 pts over their last 5 is considered in much better form than one averaging -10. It also tracks consistency — a team that wins by 40 one week and loses by 30 the next is treated differently to a team that consistently wins by 15.",
+         "Captured as: last5_avg (average margin), last5_std (consistency), last3_avg, last_margin, streak"),
+
+        ("3️⃣", "Travel & Fatigue", "#2ecc71",
+         "Interstate travel is genuinely tiring in the AFL, particularly for Perth-based teams or east coast teams flying to Perth. The model calculates straight-line distance each team travels to the venue. This is combined with rest days to create a 'fatigue index': (km ÷ 1000) × max(14 − rest days, 0). A team flying 2,700km to Perth on 6 days rest scores ~8 on this index vs 0 for the home side.",
+         "Perth games flagged separately — historical data shows significant away disadvantage at Optus Stadium"),
+
+        ("4️⃣", "Rest Days", "#3498db",
+         "Days since each team's last game. More rest generally means fresher legs and more preparation time. The model caps this at 21 days — anything longer (pre-season gap, bye) resets to a neutral 7 days so Round 1 predictions aren't skewed by the entire off-season.",
+         "7 days = neutral baseline. <6 days = short turnaround flag. >21 days capped at neutral."),
+
+        ("5️⃣", "Season Stats", "#9b59b6",
+         "Season-average statistics from AFL Tables: clearances, inside 50s, contested possessions, tackles, hitouts, and clangers. These capture each team's playing style and execution quality across the whole season. A team that wins clearances tends to control tempo; a team with high inside 50s creates more scoring chances. Clangers are negative — direct turnovers gifting opposition possessions.",
+         "Data source: afltables.com — updated once per round"),
+
+        ("6️⃣", "PAV Lineup Strength", "#1abc9c",
+         "Player Approximate Value (PAV) is a per-player rating system from Squiggle that estimates each player's total contribution split into offensive, defensive, and midfield value. When lineups are announced (usually Thursday), we sum the PAV of each team's selected 22 to get 'team strength today'. This automatically accounts for injuries, suspensions and selection changes.",
+         "Only available after Thursday lineup announcements. Before that, PAV features default to 0."),
+    ]
+
+    for icon, title, colour, explanation, detail in steps:
+        st.markdown(f"""
+<div style="background:#0a1628;border-left:4px solid {colour};border-radius:8px;padding:16px;margin-bottom:12px">
+  <div style="font-size:1.05rem;font-weight:700;color:white;margin-bottom:8px">{icon} {title}</div>
+  <div style="color:#ccc;font-size:0.85rem;line-height:1.6;margin-bottom:8px">{explanation}</div>
+  <div style="color:#666;font-size:0.75rem;font-style:italic">{detail}</div>
+</div>""", unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("## How Win % is Calculated")
+    st.markdown("""
+The Gradient Boosting model takes all the features above, passes them through hundreds of decision trees,
+and outputs a **probability between 0 and 1**. This gets multiplied by 100 to give the win percentage shown on screen.
+
+A probability of **0.68 (68%)** means: *in games with this exact combination of factors, the home team won 68% of the time historically*.
+
+It does **not** mean the home team will definitely win — upsets happen all the time. It means if you played this game 100 times with the same conditions, the home team would win roughly 68 of them.
+
+The margin prediction is separate — it's trained to minimise the average error between predicted and actual margins across all historical games.
+""")
+
+    st.markdown("---")
+    st.markdown("## Model Performance")
+
+    pc1, pc2, pc3, pc4 = st.columns(4)
+    with pc1:
+        st.markdown(mc(f"{metrics['win_accuracy']*100:.1f}%", "Win Accuracy", "5-fold cross-validation"), unsafe_allow_html=True)
+    with pc2:
+        st.markdown(mc(f"{metrics['base_accuracy']*100:.1f}%", "Elo-Only Baseline", "without other features"), unsafe_allow_html=True)
+    with pc3:
+        st.markdown(mc(f"{metrics['margin_r2']:.3f}", "Margin R²", "variance explained"), unsafe_allow_html=True)
+    with pc4:
+        st.markdown(mc(f"{metrics['n_games']:,}", "Training Games", f"from {start_year}–present"), unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("## What the Model Doesn't Know")
+    st.markdown("""
+- **Weather and ground conditions** — wet weather significantly impacts game style and scoring
+- **In-game events** — momentum shifts, injuries during games, quarter-by-quarter patterns
+- **Coaching tactics** — specific match-ups, game plans, rotations
+- **Player fitness levels** — PAV captures presence/absence but not fitness percentage
+- **Psychological factors** — finals pressure, rivalry games, milestone matches
+- **Recent player news** — injuries announced after lineup selection
+
+The model is deliberately simple — it uses only publicly available data and finds patterns in the numbers.
+It's roughly as accurate as a well-informed human tipster (~66%), which is genuinely hard to beat consistently.
+""")
+
+    st.markdown("---")
+    st.markdown("## Comparing to Bookmakers")
+    st.markdown("""
+Bookmakers employ full teams of analysts with access to far more data. Their implied probabilities
+(converted from odds after removing the vig) are typically very well-calibrated.
+
+The **Value Bets page** finds games where our model's probability diverges from the bookmaker's implied probability.
+When our model says 65% and the bookmaker prices the team at 55% (implying ~45% after vig removal),
+that's a potential edge — but it requires our model to be *more right than the bookmaker* on that specific game,
+which is a high bar.
+
+Edge should be assessed over **many bets**, not individual games. The model's long-run accuracy of ~66%
+is the ceiling on how often value bets should win.
 """)
