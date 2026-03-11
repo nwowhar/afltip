@@ -115,11 +115,37 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
 </style>
 """, unsafe_allow_html=True)
 
+# ── Session state defaults ────────────────────────────────────────────────────
+_DEFAULTS = {
+    "start_year":      2013,
+    "page":            "📊 Dashboard",
+    "selected_round":  None,
+    "predict_home":    None,
+    "predict_away":    None,
+    "predict_venue":   "(Auto)",
+    "form_team":       None,
+    "form_n":          15,
+    "stats_year":      None,
+    "stats_stat":      None,
+    "radar_h":         None,
+    "radar_a":         None,
+    "backtest_min":    3,
+    "inout_team":      "All teams",
+    "pav_team":        "All",
+    "bankroll":        1000,
+    "kelly_fraction":  "Quarter Kelly (recommended)",
+    "min_edge":        3,
+}
+for _k, _v in _DEFAULTS.items():
+    if _k not in st.session_state:
+        st.session_state[_k] = _v
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("# 🏉 AFL Predictor")
     st.markdown("---")
-    start_year = st.slider("Training data from", 2010, 2020, 2013,
+    start_year = st.slider("Training data from", 2010, 2020,
+                           key="start_year",
                            help="Model trains on all completed games from this year to present. Earlier = more data but older game styles. 2013–2015 is a good balance.")
     page = st.radio("Navigate", [
         "📊 Dashboard",
@@ -131,7 +157,7 @@ with st.sidebar:
         "📉 Backtest",
         "👕 Lineup Strength",
         "💰 Value Bets",
-    ])
+    ], key="page")
     st.markdown("---")
     st.markdown("<small style='color:#666'>Data: Squiggle API + AFL Tables<br>Model: Gradient Boosting + Elo + PAV</small>", unsafe_allow_html=True)
 
@@ -252,6 +278,7 @@ if page == "📊 Dashboard":
             with col_picker:
                 selected_round = st.selectbox("Round", available_rounds,
                                               index=available_rounds.index(default_round),
+                                              key="selected_round",
                                               label_visibility="collapsed")
             upcoming = _incomplete[_incomplete["round"] == selected_round].copy()
             st.markdown(f"*Round {selected_round} — {len(upcoming)} games*")
@@ -620,13 +647,13 @@ elif page == "🔮 Predict a Game":
     st.markdown("# PREDICT A GAME")
 
     c1, c2, c3 = st.columns(3)
-    with c1: home_team = st.selectbox("🏠 Home Team", teams)
+    with c1: home_team = st.selectbox("🏠 Home Team", teams, key="predict_home")
     with c2:
         away_opts = [t for t in teams if t != home_team]
-        away_team = st.selectbox("✈️ Away Team", away_opts)
+        away_team = st.selectbox("✈️ Away Team", away_opts, key="predict_away")
     with c3:
         venues = sorted(set(df["venue"].dropna().unique()))
-        venue  = st.selectbox("📍 Venue", ["(Auto)"] + venues)
+        venue  = st.selectbox("📍 Venue", ["(Auto)"] + venues, key="predict_venue")
         if venue == "(Auto)": venue = ""
 
     # Load lineups for PAV
@@ -766,8 +793,8 @@ elif page == "🔮 Predict a Game":
 # ═══════════════════════════════════════════════════════════════════════════════
 elif page == "📈 Team Form":
     st.markdown("# TEAM FORM ANALYSIS")
-    selected = st.selectbox("Select Team", teams)
-    n        = st.slider("Last N games", 5, 30, 15)
+    selected = st.selectbox("Select Team", teams, key="form_team")
+    n        = st.slider("Last N games", 5, 30, 15, key="form_n")
     form     = get_team_form_df(selected, n)
 
     if form.empty:
@@ -840,7 +867,7 @@ elif page == "📋 Team Stats":
     else:
         # Get latest available year
         avail_years = sorted(season_stats["year"].unique(), reverse=True)
-        sel_year = st.selectbox("Season", avail_years, index=0)
+        sel_year = st.selectbox("Season", avail_years, index=0, key="stats_year")
         ss_year = season_stats[season_stats["year"] == sel_year].copy()
 
         if ss_year.empty:
@@ -866,7 +893,7 @@ elif page == "📋 Team Stats":
             if not stat_tab_labels:
                 st.warning("No stat columns found in scraped data.")
             else:
-                selected_stat_label = st.selectbox("Rank by stat", stat_tab_labels)
+                selected_stat_label = st.selectbox("Rank by stat", stat_tab_labels, key="stats_stat")
                 sel_stat = next(s for s in LEADERBOARD_STATS if s[1] == selected_stat_label)
                 stat_col, stat_label, lower_better, bar_colour = sel_stat
 
@@ -1047,7 +1074,7 @@ elif page == "📉 Backtest":
     st.markdown("# WALK-FORWARD BACKTEST")
     st.markdown("*Train on years 1..N-1, predict year N — true out-of-sample performance*")
 
-    min_train = st.slider("Minimum training years before testing", 2, 5, 3)
+    min_train = st.slider("Minimum training years before testing", 2, 5, 3, key="backtest_min")
 
     with st.spinner("Running walk-forward backtest..."):
         avail_feats = [f for f in CORE_FEATURES if f in df.columns]
@@ -1290,7 +1317,7 @@ elif page == "👕 Lineup Strength":
 
         # Classify changes
         all_teams = sorted(set(v["team"] for v in cur_players.values()))
-        sel_inout_team = st.selectbox("Filter by team (or All)", ["All teams"] + all_teams)
+        sel_inout_team = st.selectbox("Filter by team (or All)", ["All teams"] + all_teams, key="inout_team")
 
         inout_rows = []
         for key, data in cur_players.items():
@@ -1422,13 +1449,13 @@ elif page == "💰 Value Bets":
     bc1, bc2, bc3 = st.columns(3)
     with bc1:
         bankroll = st.number_input("💵 Bankroll ($)", min_value=10, max_value=100000,
-                                    value=1000, step=50)
+                                    value=st.session_state.bankroll, step=50, key="bankroll")
     with bc2:
         kelly_fraction = st.selectbox("Kelly sizing",
                                        ["Full Kelly", "Half Kelly (safer)", "Quarter Kelly (recommended)"],
-                                       index=2)
+                                       key="kelly_fraction")
     with bc3:
-        min_edge = st.slider("Min edge to show (%)", 0, 15, 3)
+        min_edge = st.slider("Min edge to show (%)", 0, 15, key="min_edge")
 
     kelly_divisor = {"Full Kelly": 1, "Half Kelly (safer)": 2, "Quarter Kelly (recommended)": 4}[kelly_fraction]
 
