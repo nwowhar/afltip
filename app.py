@@ -48,7 +48,8 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
 with st.sidebar:
     st.markdown("# 🏉 AFL Predictor")
     st.markdown("---")
-    start_year = st.slider("Training data from", 2010, 2020, 2013)
+    start_year = st.slider("Training data from", 2010, 2020, 2013,
+                           help="Model trains on all completed games from this year to present. Earlier = more data but older game styles. 2013–2015 is a good balance.")
     page = st.radio("Navigate", [
         "📊 Dashboard",
         "🔮 Predict a Game",
@@ -58,6 +59,7 @@ with st.sidebar:
         "🔬 Feature Importance",
         "📉 Backtest",
         "👕 Lineup Strength",
+        "🤖 AI Analysis",
     ])
     st.markdown("---")
     st.markdown("<small style='color:#666'>Data: Squiggle API + AFL Tables<br>Model: Gradient Boosting + Elo + PAV</small>", unsafe_allow_html=True)
@@ -321,6 +323,42 @@ if page == "📊 Dashboard":
                 if pav_note:
                     footer += f"  ·  {pav_note}"
 
+                # ── Factor analysis for insight panel ─────────────────────
+                factors = [
+                    # (label, home_val, away_val, home_is_better_when_higher)
+                    ("Elo Rating",          h_elo,                              a_elo,                              True),
+                    ("Form (last 5 avg)",   h_form,                             a_form,                             True),
+                    ("Current Streak",      _safe_float(hs_.get("streak",0)),   _safe_float(as__.get("streak",0)),  True),
+                    ("Last Game Margin",    _safe_float(hs_.get("last_margin",0)), _safe_float(as__.get("last_margin",0)), True),
+                    ("Travel to Venue",     h_km,                               a_km,                               False),
+                    ("Days Rest",           float(h_rest),                      float(a_rest),                      True),
+                    ("Travel Fatigue",      h_fat,                              a_fat,                              False),
+                    ("Clearances (season)", _ss(home,"avg_clearances"),         _ss(away,"avg_clearances"),         True),
+                    ("Inside 50s (season)", _ss(home,"avg_inside_50s"),         _ss(away,"avg_inside_50s"),         True),
+                    ("Contested Poss",      _ss(home,"avg_contested_possessions"), _ss(away,"avg_contested_possessions"), True),
+                    ("Tackles (season)",    _ss(home,"avg_tackles"),            _ss(away,"avg_tackles"),            True),
+                    ("Clangers (season)",   _ss(home,"avg_clangers"),           _ss(away,"avg_clangers"),           False),
+                ]
+
+                # Determine which factors favour each team
+                home_edges, away_edges, neutral = [], [], []
+                for label, hv, av, higher_better in factors:
+                    if hv == 0 and av == 0:
+                        continue
+                    diff = hv - av if higher_better else av - hv
+                    pct  = abs(diff) / (abs(hv) + abs(av) + 0.001) * 100
+                    if pct < 3:
+                        neutral.append((label, hv, av))
+                    elif diff > 0:
+                        home_edges.append((label, hv, av, pct, higher_better))
+                    else:
+                        away_edges.append((label, hv, av, pct, higher_better))
+
+                # Sort by magnitude
+                home_edges.sort(key=lambda x: -x[3])
+                away_edges.sort(key=lambda x: -x[3])
+
+                # Card
                 card_html = (
                     '<div class="team-vs">'
                     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
@@ -342,6 +380,69 @@ if page == "📊 Dashboard":
                     st.markdown(card_html, unsafe_allow_html=True)
                 with c2:
                     st.markdown(mc(winner, f"by ~{margin:.0f} pts"), unsafe_allow_html=True)
+
+                # ── Insight expander ───────────────────────────────────────
+                with st.expander(f"🔍 Why? — {home} vs {away}"):
+                    ic1, ic2 = st.columns(2)
+
+                    def edge_html(edges, team, colour):
+                        if not edges:
+                            return f'<div style="color:#666;font-size:0.8rem">No clear edges for {team}</div>'
+                        lines = []
+                        for label, hv, av, pct, hib in edges:
+                            val = hv if team == home else av
+                            opp = av if team == home else hv
+                            fmt = f"{val:.1f}" if abs(val) < 100 else f"{val:.0f}"
+                            ofmt = f"{opp:.1f}" if abs(opp) < 100 else f"{opp:.0f}"
+                            bar_w = min(int(pct * 2), 100)
+                            lines.append(
+                                f'<div style="margin-bottom:8px">'
+                                f'<div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:3px">'
+                                f'<span style="color:white">{label}</span>'
+                                f'<span style="color:{colour};font-weight:600">{fmt} <span style="color:#555">vs {ofmt}</span></span>'
+                                f'</div>'
+                                f'<div style="height:5px;background:#0f3460;border-radius:3px">'
+                                f'<div style="width:{bar_w}%;height:100%;background:{colour};border-radius:3px"></div>'
+                                f'</div></div>'
+                            )
+                        return "".join(lines)
+
+                    with ic1:
+                        st.markdown(f"**✅ {home} advantages**")
+                        st.markdown(edge_html(home_edges, home, "#2ecc71"), unsafe_allow_html=True)
+                    with ic2:
+                        st.markdown(f"**✅ {away} advantages**")
+                        st.markdown(edge_html(away_edges, away, "#3498db"), unsafe_allow_html=True)
+
+                    # Key narrative
+                    confidence = pred["home_win_prob"] if pred["home_win_prob"] > 50 else pred["away_win_prob"]
+                    fav = winner
+                    underdog = away if fav == home else home
+
+                    if confidence >= 75:
+                        conf_label = "strong favourite"
+                    elif confidence >= 62:
+                        conf_label = "moderate favourite"
+                    else:
+                        conf_label = "slight favourite"
+
+                    top_h = home_edges[0][0] if home_edges else None
+                    top_a = away_edges[0][0] if away_edges else None
+
+                    narrative = f"**{fav}** are the {conf_label} ({confidence:.0f}%), "
+                    if fav == home and top_h:
+                        narrative += f"driven mainly by their **{top_h}** advantage. "
+                    elif fav == away and top_a:
+                        narrative += f"driven mainly by their **{top_a}** advantage. "
+                    if fav == home and top_a:
+                        narrative += f"{away}'s best case is their **{top_a}**."
+                    elif fav == away and top_h:
+                        narrative += f"{home}'s best case is their **{top_h}**."
+
+                    st.markdown("---")
+                    st.markdown(narrative)
+
+                st.markdown("")  # spacing between games
     except Exception as e:
         import traceback
         st.warning(f"Could not load upcoming games: {e}")
@@ -1134,3 +1235,153 @@ elif page == "👕 Lineup Strength":
                          use_container_width=True)
     else:
         st.info("PAV data not available.")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AI ANALYSIS
+# ═══════════════════════════════════════════════════════════════════════════════
+elif page == "🤖 AI Analysis":
+    st.markdown("# AI MODEL ANALYSIS")
+    st.markdown("*Claude analyses your model's current performance and suggests improvements*")
+
+    # ── Gather all model data to send ────────────────────────────────────────
+    fi_summary = ""
+    if fi_df is not None and not fi_df.empty:
+        top_feats = fi_df.head(10)[["feature", "group", "importance"]].copy()
+        top_feats["importance"] = top_feats["importance"].round(4)
+        fi_summary = top_feats.to_string(index=False)
+
+    yearly_acc = []
+    avail_feats = [f for f in CORE_FEATURES if f in df.columns]
+    for year in sorted(df["year"].unique()):
+        ydf = df[df["year"] == year].dropna(subset=avail_feats + ["home_win"])
+        if len(ydf) < 10: continue
+        preds = win_model.predict(ydf[avail_feats].values)
+        acc = (preds == ydf["home_win"].values).mean()
+        yearly_acc.append(f"  {year}: {acc*100:.1f}%")
+    yearly_acc_str = "\n".join(yearly_acc)
+
+    # Team travel records from df
+    travel_records = []
+    for team in sorted(teams):
+        away = df[(df["ateam"] == team) & (df["travel_away_km"] >= 1000)] if "travel_away_km" in df.columns else pd.DataFrame()
+        if len(away) >= 5:
+            margins = (away["ascore"] - away["hscore"]).dropna()
+            wr = (margins > 0).mean()
+            travel_records.append(f"  {team}: {len(away)} long trips, {wr*100:.0f}% win rate, avg margin {margins.mean():+.1f}")
+    travel_str = "\n".join(travel_records[:10])
+
+    context = f"""
+You are analysing an AFL match prediction model. Here is everything we know about it:
+
+## Model Overview
+- Algorithm: Gradient Boosting (scikit-learn) for both win probability and margin
+- Training data: {start_year} to present ({metrics['n_games']:,} games)
+- Features: {metrics['n_features']} total across Elo, form, travel, rest, streak, season stats, PAV lineup
+
+## Performance Metrics
+- Win prediction accuracy (5-fold CV): {metrics['win_accuracy']*100:.1f}%
+- Elo-only baseline accuracy: {metrics['base_accuracy']*100:.1f}%
+- Accuracy gain from all features vs Elo-only: {metrics.get('accuracy_gain',0)*100:+.1f}%
+- Margin prediction R²: {metrics['margin_r2']:.3f}
+- Margin R² std dev: {metrics['margin_r2_std']:.3f}
+
+## Accuracy by Year (in-sample)
+{yearly_acc_str}
+
+## Top 10 Feature Importances (GBM impurity-based)
+{fi_summary}
+
+## Feature Groups in Model
+- Elo rating differential (home advantage = 50 pts)
+- Rolling form: last 3/5 game avg margin, consistency (std dev)
+- Travel: raw km, Perth flag, travel×rest fatigue interaction
+- Rest days: days since last game, capped at 21 (summer break → neutral 7 days)
+- Streak: signed win/loss streak
+- Last margin: last game, last 3, last 5 averages
+- Season stats: clearances, inside 50s, contested possessions, tackles, hitouts, clangers (from AFL Tables)
+- PAV lineup: Player Approximate Value sum for selected 22 (when lineups announced)
+
+## Previous Ablation Test Results (rough)
+- Elo: -1.85% when removed (clear positive contribution)
+- Form rolling: -0.1% (neutral)
+- Travel raw: +0.39% when removed (slightly hurts accuracy — possibly redundant with Elo)
+- Rest days: -0.1% (neutral)
+- Streak: -0.29% (neutral)
+- Season stats: -0.05% (neutral)
+- PAV lineup: +0.05% (neutral — limited by season-level proxy, not per-game lineups)
+
+## Team Travel Records (long trips >1000km)
+{travel_str}
+
+## Known Limitations
+- Season stats are season averages, not rolling — they don't capture mid-season form shifts
+- PAV is season-level proxy until Thursday lineup announcements
+- No weather/conditions data
+- No head-to-head historical matchup data
+- No individual player injury data beyond PAV lineup
+- Training data mixes pre and post rule-change eras (2019 6-6-6 alignment rule)
+
+Please provide:
+1. A frank assessment of model strengths and weaknesses
+2. The 3-5 highest-impact improvements we could realistically make
+3. Any concerns about the current feature set (overfitting, redundancy, data leakage)
+4. Your take on why the season stats and travel features showed neutral ablation results
+5. Specific suggestions for new data sources or features worth pursuing
+"""
+
+    col_run, col_focus = st.columns([2, 1])
+    with col_focus:
+        focus = st.selectbox("Analysis focus", [
+            "Full overview",
+            "Feature engineering only",
+            "Travel & fatigue deep dive",
+            "How to improve accuracy beyond 67%",
+            "Data quality & leakage risks",
+        ])
+    with col_run:
+        run_analysis = st.button("🤖 Run AI Analysis", use_container_width=True)
+
+    if focus != "Full overview":
+        context += f"\n\nFocus your analysis specifically on: {focus}"
+
+    if run_analysis:
+        with st.spinner("Claude is analysing your model..."):
+            try:
+                import requests as _req
+                response = _req.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={"Content-Type": "application/json"},
+                    json={
+                        "model": "claude-sonnet-4-20250514",
+                        "max_tokens": 1500,
+                        "messages": [{"role": "user", "content": context}]
+                    },
+                    timeout=60
+                )
+                data = response.json()
+                analysis = ""
+                for block in data.get("content", []):
+                    if block.get("type") == "text":
+                        analysis += block["text"]
+
+                if analysis:
+                    st.markdown("---")
+                    st.markdown(analysis)
+                else:
+                    st.warning(f"No response received. API response: {data}")
+
+            except Exception as e:
+                st.error(f"API call failed: {e}")
+
+    else:
+        st.markdown("---")
+        st.markdown("""
+**What this does:** Sends your full model stats — feature importances, accuracy by year,
+ablation results, travel records, and known limitations — to Claude for analysis.
+
+You'll get back a frank assessment of what's working, what's not, and the highest-impact
+things to build next. Pick a focus area if you want to drill into something specific.
+""")
+        # Show the context that will be sent
+        with st.expander("📋 Preview data being sent to Claude"):
+            st.text(context)
