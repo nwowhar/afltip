@@ -118,16 +118,49 @@ def get_teams() -> list:
     return sorted([t["name"] for t in r.json().get("teams", [])])
 
 # ── Enrichment ────────────────────────────────────────────────────────────────
+
+# Perth is qualitatively different — 2,700km from Melbourne, genuine fatigue
+# and acclimatisation factor. Flag it separately from generic travel.
+PERTH_VENUES = {"Optus Stadium", "Perth Stadium", "Subiaco Oval"}
+PERTH_TRAVEL_THRESHOLD_KM = 2000   # anything this far = Perth-tier trip
+LONG_TRAVEL_KM             = 1000  # interstate but not Perth
+
 def enrich_games(df: pd.DataFrame) -> pd.DataFrame:
-    """Add travel, rest days, streak, and rolling margin features."""
+    """Add travel, rest days, streak, rolling margin, and travel record features."""
     df = df.copy()
     df["date_parsed"] = pd.to_datetime(df.get("date", pd.NaT), errors="coerce")
     df = df.sort_values(["date_parsed", "id"]).reset_index(drop=True)
 
-    # Travel
-    df["travel_home_km"] = df.apply(lambda r: travel_distance_km(r.get("hteam",""), r.get("venue","")), axis=1)
-    df["travel_away_km"] = df.apply(lambda r: travel_distance_km(r.get("ateam",""), r.get("venue","")), axis=1)
+    # ── Static travel distances ───────────────────────────────────────────────
+    df["travel_home_km"] = df.apply(
+        lambda r: travel_distance_km(r.get("hteam",""), r.get("venue","")), axis=1)
+    df["travel_away_km"] = df.apply(
+        lambda r: travel_distance_km(r.get("ateam",""), r.get("venue","")), axis=1)
     df["travel_diff"] = df["travel_home_km"] - df["travel_away_km"]
+
+    # Perth game flag: 1 if venue is Perth, useful for the model to weight
+    # interstate-to-Perth travel differently from Melbourne-to-Adelaide etc.
+    df["is_perth_game"] = df["venue"].apply(
+        lambda v: 1 if str(v) in PERTH_VENUES else 0)
+
+    # ── Rolling travel record (computed row-by-row to avoid leakage) ──────────
+    # Track each team's win rate and avg margin on long trips (>1000km) and
+    # specifically on Perth trips (>2000km), using only games seen so far.
+    travel_history = {}   # team -> list of (km, margin)
+
+    h_travel_win_rate, a_travel_win_rate = [], []
+    h_travel_avg_margin, a_travel_avg_margin = [], []
+    h_perth_win_rate, a_perth_win_rate = [], []
+
+    def _travel_stats(team, min_km):
+        """Win rate + avg margin for trips >= min_km, from history so far."""
+        hist = [x for x in travel_history.get(team, []) if x[0] >= min_km]
+        if len(hist) < 3:
+            return 0.5, 0.0   # not enough data → neutral
+        margins = [x[1] for x in hist]
+        win_rate = sum(1 for m in margins if m > 0) / len(margins)
+        avg_margin = np.mean(margins)
+        return round(win_rate, 3), round(float(avg_margin), 2)
 
     last_date, streak, margins = {}, {}, {}
     days_rest_h, days_rest_a = [], []
@@ -136,16 +169,16 @@ def enrich_games(df: pd.DataFrame) -> pd.DataFrame:
     h_last3, a_last3 = [], []
     h_last5, a_last5 = [], []
 
-    for _, row in df.iterrows():
-        h, a = row.get("hteam",""), row.get("ateam","")
-        gdate = row["date_parsed"]
+    NEUTRAL_REST = 7
+    BYE_CAP      = 21
 
-        # Days rest
-        # Gaps >21 days = summer break / pre-season / anomaly — treat as neutral
-        # baseline rather than a rest advantage. Normal week = 7, bye = ~14,
-        # both of which sit within the meaningful 0-21 range.
-        NEUTRAL_REST = 7
-        BYE_CAP      = 21
+    for _, row in df.iterrows():
+        h, a   = row.get("hteam",""), row.get("ateam","")
+        gdate  = row["date_parsed"]
+        h_km   = travel_distance_km(h, row.get("venue",""))
+        a_km   = travel_distance_km(a, row.get("venue",""))
+
+        # ── Days rest ─────────────────────────────────────────────────────────
         for team, store in [(h, days_rest_h), (a, days_rest_a)]:
             if pd.notna(gdate) and team in last_date and pd.notna(last_date[team]):
                 raw  = int((gdate - last_date[team]).days)
@@ -154,7 +187,19 @@ def enrich_games(df: pd.DataFrame) -> pd.DataFrame:
             else:
                 store.append(NEUTRAL_REST)
 
-        # Pre-game stats
+        # ── Travel record BEFORE this game ────────────────────────────────────
+        h_wr, h_am  = _travel_stats(h, LONG_TRAVEL_KM)
+        a_wr, a_am  = _travel_stats(a, LONG_TRAVEL_KM)
+        h_pwr, _    = _travel_stats(h, PERTH_TRAVEL_THRESHOLD_KM)
+        a_pwr, _    = _travel_stats(a, PERTH_TRAVEL_THRESHOLD_KM)
+        h_travel_win_rate.append(h_wr)
+        a_travel_win_rate.append(a_wr)
+        h_travel_avg_margin.append(h_am)
+        a_travel_avg_margin.append(a_am)
+        h_perth_win_rate.append(h_pwr)
+        a_perth_win_rate.append(a_pwr)
+
+        # ── Pre-game rolling stats ─────────────────────────────────────────────
         for team, ss, ls, l3s, l5s in [(h, h_streak, h_last, h_last3, h_last5),
                                         (a, a_streak, a_last, a_last3, a_last5)]:
             m = margins.get(team, [])
@@ -163,30 +208,55 @@ def enrich_games(df: pd.DataFrame) -> pd.DataFrame:
             l3s.append(round(np.mean(m[-3:]), 2) if m else 0)
             l5s.append(round(np.mean(m[-5:]), 2) if m else 0)
 
-        # Update state
+        # ── Update state AFTER recording pre-game features ────────────────────
         hm = (row.get("hscore",0) or 0) - (row.get("ascore",0) or 0)
-        for team, margin in [(h, hm), (a, -hm)]:
+        for team, margin, km in [(h, hm, h_km), (a, -hm, a_km)]:
             prev = streak.get(team, 0)
             streak[team] = (max(prev,0)+1) if margin>0 else ((min(prev,0)-1) if margin<0 else 0)
             margins.setdefault(team, []).append(margin)
+            if km >= LONG_TRAVEL_KM:
+                travel_history.setdefault(team, []).append((km, margin))
             if pd.notna(gdate):
                 last_date[team] = gdate
 
-    df["days_rest_home"] = days_rest_h
-    df["days_rest_away"] = days_rest_a
-    df["days_rest_diff"] = df["days_rest_home"] - df["days_rest_away"]
-    df["home_streak"] = h_streak
-    df["away_streak"] = a_streak
-    df["streak_diff"] = df["home_streak"] - df["away_streak"]
-    df["home_last_margin"] = h_last
-    df["away_last_margin"] = a_last
-    df["last_margin_diff"] = df["home_last_margin"] - df["away_last_margin"]
-    df["home_last3_avg"] = h_last3
-    df["away_last3_avg"] = a_last3
-    df["home_last5_avg"] = h_last5
-    df["away_last5_avg"] = a_last5
-    df["last3_diff"] = df["home_last3_avg"] - df["away_last3_avg"]
-    df["last5_diff"] = df["home_last5_avg"] - df["away_last5_avg"]
+    # ── Assign columns ────────────────────────────────────────────────────────
+    df["days_rest_home"]  = days_rest_h
+    df["days_rest_away"]  = days_rest_a
+    df["days_rest_diff"]  = df["days_rest_home"] - df["days_rest_away"]
+
+    df["home_streak"]     = h_streak
+    df["away_streak"]     = a_streak
+    df["streak_diff"]     = df["home_streak"] - df["away_streak"]
+
+    df["home_last_margin"]= h_last
+    df["away_last_margin"]= a_last
+    df["last_margin_diff"]= df["home_last_margin"] - df["away_last_margin"]
+
+    df["home_last3_avg"]  = h_last3
+    df["away_last3_avg"]  = a_last3
+    df["home_last5_avg"]  = h_last5
+    df["away_last5_avg"]  = a_last5
+    df["last3_diff"]      = df["home_last3_avg"] - df["away_last3_avg"]
+    df["last5_diff"]      = df["home_last5_avg"] - df["away_last5_avg"]
+
+    # Travel record features
+    df["home_travel_win_rate"]   = h_travel_win_rate
+    df["away_travel_win_rate"]   = a_travel_win_rate
+    df["home_travel_avg_margin"] = h_travel_avg_margin
+    df["away_travel_avg_margin"] = a_travel_avg_margin
+    df["home_perth_win_rate"]    = h_perth_win_rate
+    df["away_perth_win_rate"]    = a_perth_win_rate
+    df["travel_win_rate_diff"]   = df["home_travel_win_rate"]   - df["away_travel_win_rate"]
+    df["travel_margin_diff"]     = df["home_travel_avg_margin"] - df["away_travel_avg_margin"]
+    df["perth_win_rate_diff"]    = df["home_perth_win_rate"]    - df["away_perth_win_rate"]
+
+    # Interaction: long travel + short rest = genuine fatigue signal
+    # Only applies to the travelling team (away more often than home)
+    df["home_travel_fatigue"] = df["travel_home_km"].clip(upper=3000) / 1000 * (
+        (14 - df["days_rest_home"]).clip(lower=0))
+    df["away_travel_fatigue"] = df["travel_away_km"].clip(upper=3000) / 1000 * (
+        (14 - df["days_rest_away"]).clip(lower=0))
+    df["travel_fatigue_diff"] = df["home_travel_fatigue"] - df["away_travel_fatigue"]
 
     return df
 

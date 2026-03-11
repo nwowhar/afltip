@@ -1,0 +1,268 @@
+"""
+Backtest engine.
+
+Runs the model against every historical game and measures:
+  - Accuracy per year
+  - Accuracy per feature subset (permutation importance)
+  - Which features help vs hurt vs make no difference
+  - Calibration (are our probabilities accurate?)
+"""
+
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import (
+    accuracy_score, mean_absolute_error, brier_score_loss, log_loss
+)
+from sklearn.inspection import permutation_importance
+
+
+# ── Feature groups for ablation testing ──────────────────────────────────────
+FEATURE_GROUPS = {
+    "Elo":                  ["elo_diff"],
+    "Form (rolling)":       ["form_diff", "home_form", "away_form",
+                             "home_consistency", "away_consistency"],
+    "Travel (raw)":         ["travel_diff", "travel_home_km", "travel_away_km"],
+    "Travel × Rest":        ["travel_fatigue_diff", "home_travel_fatigue", "away_travel_fatigue"],
+    "Travel record":        ["travel_win_rate_diff", "travel_margin_diff",
+                             "perth_win_rate_diff", "is_perth_game"],
+    "Rest days":            ["days_rest_diff", "days_rest_home", "days_rest_away"],
+    "Streak":               ["streak_diff", "home_streak", "away_streak"],
+    "Last margin":          ["last_margin_diff", "last3_diff", "last5_diff"],
+    "Season stats":         ["cl_diff", "i50_diff", "cp_diff", "tk_diff",
+                             "ho_diff", "clanger_diff"],
+    "PAV lineup":           ["pav_total_diff", "pav_off_diff",
+                             "pav_def_diff", "pav_mid_diff"],
+}
+
+ALL_FEATURES = [f for feats in FEATURE_GROUPS.values() for f in feats]
+
+
+def run_walk_forward_backtest(df: pd.DataFrame,
+                               feature_cols: list,
+                               min_train_years: int = 3) -> pd.DataFrame:
+    """
+    Walk-forward backtest: train on years 1..N-1, predict year N.
+    Returns a DataFrame with one row per game with predicted prob and actual result.
+    """
+    df = df.copy()
+    years = sorted(df["year"].unique())
+    if len(years) < min_train_years + 1:
+        return pd.DataFrame()
+
+    available = [f for f in feature_cols if f in df.columns]
+    results = []
+
+    for i, test_year in enumerate(years[min_train_years:], start=min_train_years):
+        train = df[df["year"].isin(years[:i])].dropna(subset=available + ["home_win"])
+        test  = df[df["year"] == test_year].dropna(subset=available + ["home_win"])
+
+        if len(train) < 50 or len(test) < 5:
+            continue
+
+        X_train = train[available].values
+        y_train = train["home_win"].values
+        X_test  = test[available].values
+        y_test  = test["home_win"].values
+
+        model = Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", GradientBoostingClassifier(
+                n_estimators=100, max_depth=3,
+                learning_rate=0.05, random_state=42
+            ))
+        ])
+        model.fit(X_train, y_train)
+
+        probs   = model.predict_proba(X_test)[:, 1]
+        preds   = (probs >= 0.5).astype(int)
+        margins = test.get("margin", pd.Series([0]*len(test))).values
+
+        for j in range(len(test)):
+            results.append({
+                "year":         test_year,
+                "game_idx":     test.index[j],
+                "home_team":    test.iloc[j].get("hteam", ""),
+                "away_team":    test.iloc[j].get("ateam", ""),
+                "actual":       int(y_test[j]),
+                "predicted":    int(preds[j]),
+                "prob":         round(float(probs[j]), 4),
+                "correct":      int(preds[j] == y_test[j]),
+                "actual_margin": float(margins[j]) if len(margins) > j else 0,
+            })
+
+    return pd.DataFrame(results)
+
+
+def compute_yearly_accuracy(backtest_df: pd.DataFrame) -> pd.DataFrame:
+    """Compute accuracy, MAE on win/loss, and calibration per year."""
+    if backtest_df.empty:
+        return pd.DataFrame()
+
+    rows = []
+    for year, grp in backtest_df.groupby("year"):
+        acc  = grp["correct"].mean()
+        n    = len(grp)
+        brier = brier_score_loss(grp["actual"], grp["prob"])
+        # Calibration: mean predicted prob vs actual win rate
+        mean_prob   = grp["prob"].mean()
+        actual_rate = grp["actual"].mean()
+        rows.append({
+            "year":         year,
+            "n_games":      n,
+            "accuracy":     round(acc * 100, 1),
+            "brier_score":  round(brier, 4),
+            "mean_pred_prob": round(mean_prob, 3),
+            "actual_win_rate": round(actual_rate, 3),
+            "calibration_err": round(abs(mean_prob - actual_rate), 3),
+        })
+    return pd.DataFrame(rows)
+
+
+def ablation_test(df: pd.DataFrame,
+                  feature_groups: dict = None,
+                  min_train_years: int = 3) -> pd.DataFrame:
+    """
+    Test accuracy with each feature group removed (leave-one-out ablation).
+    Also tests with each group as the ONLY feature set.
+
+    Returns DataFrame showing accuracy impact of each group.
+    """
+    if feature_groups is None:
+        feature_groups = FEATURE_GROUPS
+
+    all_feats = [f for feats in feature_groups.values() for f in feats
+                 if f in df.columns]
+
+    if not all_feats:
+        return pd.DataFrame()
+
+    # Baseline: all features
+    base_bt = run_walk_forward_backtest(df, all_feats, min_train_years)
+    if base_bt.empty:
+        return pd.DataFrame()
+    base_acc = base_bt["correct"].mean() * 100
+
+    rows = [{"group": "ALL FEATURES (baseline)",
+             "accuracy": round(base_acc, 1),
+             "delta": 0.0,
+             "n_features": len(all_feats)}]
+
+    for group_name, group_feats in feature_groups.items():
+        available = [f for f in group_feats if f in df.columns]
+        if not available:
+            continue
+
+        # Remove this group
+        reduced = [f for f in all_feats if f not in available]
+        if len(reduced) < 2:
+            continue
+        bt = run_walk_forward_backtest(df, reduced, min_train_years)
+        if bt.empty:
+            continue
+        acc_without = bt["correct"].mean() * 100
+        delta = acc_without - base_acc  # negative = removing hurt accuracy
+
+        rows.append({
+            "group":       group_name,
+            "accuracy":    round(acc_without, 1),
+            "delta":       round(delta, 2),
+            "n_features":  len(available),
+            "interpretation": (
+                "✅ Helps" if delta < -0.3
+                else ("❌ Hurts" if delta > 0.3 else "➡️ Neutral")
+            )
+        })
+
+    return pd.DataFrame(rows)
+
+
+def permutation_importance_analysis(df: pd.DataFrame,
+                                     feature_cols: list,
+                                     n_repeats: int = 10) -> pd.DataFrame:
+    """
+    Train on all data, then compute permutation importance:
+    shuffle each feature and measure accuracy drop.
+    Higher drop = more important feature.
+    """
+    available = [f for f in feature_cols if f in df.columns]
+    clean = df.dropna(subset=available + ["home_win"])
+
+    if len(clean) < 100:
+        return pd.DataFrame()
+
+    X = clean[available].values
+    y = clean["home_win"].values
+
+    model = Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", GradientBoostingClassifier(
+            n_estimators=100, max_depth=3,
+            learning_rate=0.05, random_state=42
+        ))
+    ])
+    model.fit(X, y)
+
+    result = permutation_importance(
+        model, X, y,
+        n_repeats=n_repeats,
+        random_state=42,
+        scoring="accuracy"
+    )
+
+    imp_df = pd.DataFrame({
+        "feature":    available,
+        "importance": result.importances_mean,
+        "std":        result.importances_std,
+    }).sort_values("importance", ascending=False)
+
+    # Assign group labels
+    group_lookup = {}
+    for group, feats in FEATURE_GROUPS.items():
+        for f in feats:
+            group_lookup[f] = group
+
+    imp_df["group"] = imp_df["feature"].map(
+        lambda f: group_lookup.get(f, "Other")
+    )
+
+    return imp_df
+
+
+def margin_prediction_backtest(df: pd.DataFrame,
+                                feature_cols: list,
+                                min_train_years: int = 3) -> pd.DataFrame:
+    """Walk-forward backtest for margin prediction. Returns MAE per year."""
+    available = [f for f in feature_cols if f in df.columns]
+    years = sorted(df["year"].unique())
+    if len(years) < min_train_years + 1:
+        return pd.DataFrame()
+
+    rows = []
+    for i, test_year in enumerate(years[min_train_years:], start=min_train_years):
+        train = df[df["year"].isin(years[:i])].dropna(subset=available + ["margin"])
+        test  = df[df["year"] == test_year].dropna(subset=available + ["margin"])
+
+        if len(train) < 50 or len(test) < 5:
+            continue
+
+        model = Pipeline([
+            ("scaler", StandardScaler()),
+            ("reg", GradientBoostingRegressor(
+                n_estimators=100, max_depth=3,
+                learning_rate=0.05, random_state=42
+            ))
+        ])
+        model.fit(train[available], train["margin"])
+        preds = model.predict(test[available])
+        mae = mean_absolute_error(test["margin"], preds)
+
+        rows.append({
+            "year": test_year,
+            "mae_points": round(mae, 1),
+            "n_games": len(test),
+        })
+
+    return pd.DataFrame(rows)

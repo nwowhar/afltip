@@ -25,8 +25,16 @@ BASE_FEATURES = [
 ]
 
 FATIGUE_FEATURES = [
+    # Raw distance (still useful for neutral venue games)
     "travel_diff", "travel_home_km", "travel_away_km",
+    # Rest
     "days_rest_diff", "days_rest_home", "days_rest_away",
+    # Travel × rest interaction — the killer combo
+    "travel_fatigue_diff", "home_travel_fatigue", "away_travel_fatigue",
+    # Rolling travel record — does this team actually travel well?
+    "travel_win_rate_diff", "travel_margin_diff",
+    # Perth-specific — qualitatively different from other interstate trips
+    "perth_win_rate_diff", "is_perth_game",
 ]
 
 CONTEXT_FEATURES = [
@@ -305,9 +313,11 @@ def build_prediction_features(home_team: str, away_team: str,
                                team_stats: dict,
                                season_stats: pd.DataFrame = None,
                                lineup_pav: dict = None,
+                               enriched_df: pd.DataFrame = None,
                                home_advantage: float = 50.0) -> dict:
     """Build a full feature dict for an upcoming game prediction."""
-    from data.fetcher import travel_distance_km
+    from data.fetcher import (travel_distance_km, PERTH_VENUES,
+                               LONG_TRAVEL_KM, PERTH_TRAVEL_THRESHOLD_KM)
     import pandas as _pd
 
     h_elo = elo_ratings.get(home_team, 1500)
@@ -324,11 +334,9 @@ def build_prediction_features(home_team: str, away_team: str,
     h_travel = travel_distance_km(home_team, venue)
     a_travel = travel_distance_km(away_team, venue)
 
-    today  = _pd.Timestamp.now()
+    is_perth = 1 if str(venue) in PERTH_VENUES else 0
 
-    # Cap rest at 21 days — same logic as enrich_games().
-    # Gaps >21 days mean pre-season / summer break, which shouldn't
-    # look like a rest advantage. Fall back to neutral 7-day baseline.
+    today = _pd.Timestamp.now()
     NEUTRAL_REST = 7
     BYE_CAP      = 21
 
@@ -340,6 +348,41 @@ def build_prediction_features(home_team: str, away_team: str,
 
     h_rest = calc_rest(hs.get("last_date"))
     a_rest = calc_rest(as_.get("last_date"))
+
+    # Travel × rest fatigue interaction
+    h_fatigue = min(h_travel, 3000) / 1000 * max(14 - h_rest, 0)
+    a_fatigue = min(a_travel, 3000) / 1000 * max(14 - a_rest, 0)
+
+    # Rolling travel record from enriched historical df
+    def get_travel_record(team, min_km):
+        """Win rate and avg margin for trips >= min_km from enriched_df."""
+        if enriched_df is None or enriched_df.empty:
+            return 0.5, 0.0
+        # Away games where this team travelled >= min_km
+        away_trips = enriched_df[
+            (enriched_df["ateam"] == team) &
+            (enriched_df["travel_away_km"] >= min_km)
+        ]
+        # Home games where this team travelled >= min_km (neutral venues)
+        home_trips = enriched_df[
+            (enriched_df["hteam"] == team) &
+            (enriched_df["travel_home_km"] >= min_km)
+        ]
+        margins = []
+        for _, r in away_trips.iterrows():
+            margins.append((r.get("ascore",0) or 0) - (r.get("hscore",0) or 0))
+        for _, r in home_trips.iterrows():
+            margins.append((r.get("hscore",0) or 0) - (r.get("ascore",0) or 0))
+        if len(margins) < 3:
+            return 0.5, 0.0
+        win_rate   = sum(1 for m in margins if m > 0) / len(margins)
+        avg_margin = float(np.mean(margins))
+        return round(win_rate, 3), round(avg_margin, 2)
+
+    h_twr, h_tam  = get_travel_record(home_team, LONG_TRAVEL_KM)
+    a_twr, a_tam  = get_travel_record(away_team, LONG_TRAVEL_KM)
+    h_pwr, _      = get_travel_record(home_team, PERTH_TRAVEL_THRESHOLD_KM)
+    a_pwr, _      = get_travel_record(away_team, PERTH_TRAVEL_THRESHOLD_KM)
 
     # Season stats diff
     from datetime import datetime as _dt
@@ -356,36 +399,45 @@ def build_prediction_features(home_team: str, away_team: str,
 
     feats = {
         # Elo
-        "elo_diff":         h_elo - a_elo + home_advantage,
+        "elo_diff":               h_elo - a_elo + home_advantage,
         # Form
-        "form_diff":        h_form - a_form,
-        "home_form":        h_form,
-        "away_form":        a_form,
-        "home_consistency": h_std,
-        "away_consistency": a_std,
-        # Travel
-        "travel_diff":      h_travel - a_travel,
-        "travel_home_km":   h_travel,
-        "travel_away_km":   a_travel,
+        "form_diff":              h_form - a_form,
+        "home_form":              h_form,
+        "away_form":              a_form,
+        "home_consistency":       h_std,
+        "away_consistency":       a_std,
+        # Travel raw
+        "travel_diff":            h_travel - a_travel,
+        "travel_home_km":         h_travel,
+        "travel_away_km":         a_travel,
+        # Travel × rest fatigue
+        "travel_fatigue_diff":    h_fatigue - a_fatigue,
+        "home_travel_fatigue":    h_fatigue,
+        "away_travel_fatigue":    a_fatigue,
+        # Travel record
+        "travel_win_rate_diff":   h_twr - a_twr,
+        "travel_margin_diff":     h_tam - a_tam,
+        "perth_win_rate_diff":    h_pwr - a_pwr,
+        "is_perth_game":          is_perth,
         # Rest
-        "days_rest_diff":   h_rest - a_rest,
-        "days_rest_home":   h_rest,
-        "days_rest_away":   a_rest,
+        "days_rest_diff":         h_rest - a_rest,
+        "days_rest_home":         h_rest,
+        "days_rest_away":         a_rest,
         # Streak
-        "streak_diff":      hs.get("streak", 0) - as_.get("streak", 0),
-        "home_streak":      hs.get("streak", 0),
-        "away_streak":      as_.get("streak", 0),
+        "streak_diff":            hs.get("streak", 0) - as_.get("streak", 0),
+        "home_streak":            hs.get("streak", 0),
+        "away_streak":            as_.get("streak", 0),
         # Last margins
-        "last_margin_diff": hs.get("last_margin", 0) - as_.get("last_margin", 0),
-        "last3_diff":       hs.get("last3_avg", 0) - as_.get("last3_avg", 0),
-        "last5_diff":       h_form - a_form,
+        "last_margin_diff":       hs.get("last_margin", 0) - as_.get("last_margin", 0),
+        "last3_diff":             hs.get("last3_avg", 0)   - as_.get("last3_avg", 0),
+        "last5_diff":             h_form - a_form,
         # Season stats
-        "cl_diff":      ss(home_team, "avg_clearances")   - ss(away_team, "avg_clearances"),
-        "i50_diff":     ss(home_team, "avg_inside_50s")   - ss(away_team, "avg_inside_50s"),
+        "cl_diff":      ss(home_team, "avg_clearances")            - ss(away_team, "avg_clearances"),
+        "i50_diff":     ss(home_team, "avg_inside_50s")            - ss(away_team, "avg_inside_50s"),
         "cp_diff":      ss(home_team, "avg_contested_possessions") - ss(away_team, "avg_contested_possessions"),
-        "tk_diff":      ss(home_team, "avg_tackles")      - ss(away_team, "avg_tackles"),
-        "ho_diff":      ss(home_team, "avg_hitouts")      - ss(away_team, "avg_hitouts"),
-        "clanger_diff": ss(home_team, "avg_clangers")     - ss(away_team, "avg_clangers"),
+        "tk_diff":      ss(home_team, "avg_tackles")               - ss(away_team, "avg_tackles"),
+        "ho_diff":      ss(home_team, "avg_hitouts")               - ss(away_team, "avg_hitouts"),
+        "clanger_diff": ss(home_team, "avg_clangers")              - ss(away_team, "avg_clangers"),
         # PAV (0 if lineups not announced)
         "pav_total_diff": 0,
         "pav_off_diff":   0,
