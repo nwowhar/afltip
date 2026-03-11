@@ -180,12 +180,19 @@ if page == "📊 Dashboard":
                 if home not in current_elos or away not in current_elos:
                     continue
 
-                feats = build_prediction_features(
-                    home, away, venue,
-                    current_elos, team_stats,
-                    season_stats, lineup_strength,
-                    df
-                )
+                try:
+                    feats = build_prediction_features(
+                        home, away, venue,
+                        current_elos, team_stats,
+                        season_stats, lineup_strength,
+                        df
+                    )
+                except Exception as game_err:
+                    import traceback
+                    st.error(f"Error for {home} vs {away}: {game_err}")
+                    st.code(traceback.format_exc())
+                    continue
+
                 pred = predict_game(win_model, margin_model, feats)
                 winner = home if pred["home_win_prob"] > 50 else away
                 margin = abs(pred["predicted_margin"])
@@ -236,7 +243,9 @@ if page == "📊 Dashboard":
                 with c2:
                     st.markdown(mc(winner, f"by ~{margin:.0f} pts"), unsafe_allow_html=True)
     except Exception as e:
+        import traceback
         st.warning(f"Could not load upcoming games: {e}")
+        st.code(traceback.format_exc())
 
     # Accuracy by year chart
     st.markdown("---")
