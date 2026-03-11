@@ -82,10 +82,17 @@ def get_lineup(year: int, round_num: int) -> pd.DataFrame:
     try:
         r = requests.get(url, headers=HEADERS, timeout=15)
         r.raise_for_status()
+        text = r.text.strip()
+        if not text or text.startswith("<"):
+            # Squiggle returned empty or HTML — not an error, just no data yet
+            return pd.DataFrame()
         data = r.json().get("lineups", [])
         if not data:
             return pd.DataFrame()
         return pd.DataFrame(data)
+    except ValueError:
+        # JSONDecodeError — blank or HTML response
+        return pd.DataFrame()
     except Exception as e:
         print(f"Lineup fetch failed {year} R{round_num}: {e}")
         return pd.DataFrame()
@@ -94,22 +101,23 @@ def get_lineup(year: int, round_num: int) -> pd.DataFrame:
 def get_current_lineups() -> pd.DataFrame:
     """Fetch lineups for the current/upcoming round only."""
     year = datetime.now().year
-    # First get the current round from the games API — avoids hammering Squiggle
     try:
         r = requests.get(f"{BASE}?q=games;year={year}", headers=HEADERS, timeout=15)
         r.raise_for_status()
+        text = r.text.strip()
+        if not text or text.startswith("<"):
+            return pd.DataFrame()
         games = r.json().get("games", [])
         if games:
             gdf = pd.DataFrame(games)
-            # Current round = lowest round number with incomplete games
             incomplete = gdf[gdf["complete"] < 100] if "complete" in gdf.columns else gdf
             if not incomplete.empty:
                 current_round = int(incomplete["round"].min())
             else:
-                # All done — use max round
                 current_round = int(gdf["round"].max())
-            # Try current round and one either side
-            for rnd in [current_round, current_round - 1, current_round + 1]:
+            # Try current round and a few either side
+            for rnd in [current_round, current_round + 1, current_round - 1,
+                        current_round + 2, current_round - 2]:
                 if rnd < 1 or rnd > 28:
                     continue
                 df = get_lineup(year, rnd)
