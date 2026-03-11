@@ -272,12 +272,15 @@ if page == "📊 Dashboard":
         if not _incomplete.empty:
             available_rounds = sorted(_incomplete["round"].unique())
             default_round    = int(_incomplete["round"].min())
+            # If session state has a stale/None round, reset to default
+            if st.session_state.get("selected_round") not in available_rounds:
+                st.session_state["selected_round"] = default_round
             col_title, col_picker = st.columns([2, 1])
             with col_title:
                 st.markdown("## UPCOMING GAMES")
             with col_picker:
                 selected_round = st.selectbox("Round", available_rounds,
-                                              index=available_rounds.index(default_round),
+                                              index=available_rounds.index(st.session_state["selected_round"]),
                                               key="selected_round",
                                               label_visibility="collapsed")
             upcoming = _incomplete[_incomplete["round"] == selected_round].copy()
