@@ -20,6 +20,26 @@ HEADERS = {"User-Agent": "AFL-Predictor/1.0 (github.com/nwowhar/afltip)"}
 
 # ── PAV ───────────────────────────────────────────────────────────────────────
 
+def _get_squiggle_team_map() -> dict:
+    """Fetch team ID → name mapping from Squiggle. Returns {} on failure."""
+    try:
+        r = requests.get(f"{BASE}?q=teams", headers=HEADERS, timeout=15)
+        r.raise_for_status()
+        return {str(t["id"]): t["name"] for t in r.json().get("teams", [])}
+    except Exception:
+        return {}
+
+# Hardcoded fallback in case the API call fails
+_SQUIGGLE_TEAM_ID_MAP = {
+    "1":  "Adelaide",        "2":  "Brisbane Lions",  "3":  "Carlton",
+    "4":  "Collingwood",     "5":  "Essendon",        "6":  "Fremantle",
+    "7":  "Geelong",         "8":  "Gold Coast",      "9":  "GWS Giants",
+    "10": "Hawthorn",        "11": "Melbourne",       "12": "North Melbourne",
+    "13": "Port Adelaide",   "14": "Richmond",        "15": "St Kilda",
+    "16": "Sydney",          "17": "West Coast",      "18": "Western Bulldogs",
+}
+
+
 def get_pav(year: int) -> pd.DataFrame:
     """Fetch Player Approximate Value ratings for a given year."""
     url = f"{BASE}?q=pav;year={year}"
@@ -31,6 +51,11 @@ def get_pav(year: int) -> pd.DataFrame:
             return pd.DataFrame()
         df = pd.DataFrame(data)
         df["year"] = year
+        # Resolve numeric team IDs to names
+        if "team" in df.columns:
+            df["team"] = df["team"].astype(str).map(
+                lambda x: _SQUIGGLE_TEAM_ID_MAP.get(x, x)
+            )
         return df
     except Exception as e:
         print(f"PAV fetch failed {year}: {e}")
@@ -82,24 +107,55 @@ def get_lineup(year: int, round_num: int) -> pd.DataFrame:
     try:
         r = requests.get(url, headers=HEADERS, timeout=15)
         r.raise_for_status()
+        text = r.text.strip()
+        if not text or text.startswith("<"):
+            # Squiggle returned empty or HTML — not an error, just no data yet
+            return pd.DataFrame()
         data = r.json().get("lineups", [])
         if not data:
             return pd.DataFrame()
         return pd.DataFrame(data)
+    except ValueError:
+        # JSONDecodeError — blank or HTML response
+        return pd.DataFrame()
     except Exception as e:
         print(f"Lineup fetch failed {year} R{round_num}: {e}")
         return pd.DataFrame()
 
 
 def get_current_lineups() -> pd.DataFrame:
-    """Try to fetch lineups for the current/upcoming round."""
+    """Fetch lineups for the current/upcoming round only."""
     year = datetime.now().year
-    # Try rounds 1-28, find the latest with lineup data
-    for rnd in range(28, 0, -1):
-        df = get_lineup(year, rnd)
-        if not df.empty:
-            return df
+    try:
+        r = requests.get(f"{BASE}?q=games;year={year}", headers=HEADERS, timeout=15)
+        r.raise_for_status()
+        text = r.text.strip()
+        if not text or text.startswith("<"):
+            return pd.DataFrame()
+        games = r.json().get("games", [])
+        if games:
+            gdf = pd.DataFrame(games)
+            incomplete = gdf[gdf["complete"] < 100] if "complete" in gdf.columns else gdf
+            if not incomplete.empty:
+                current_round = int(incomplete["round"].min())
+            else:
+                current_round = int(gdf["round"].max())
+            # Try current round and a few either side
+            for rnd in [current_round, current_round + 1, current_round - 1,
+                        current_round + 2, current_round - 2]:
+                if rnd < 1 or rnd > 28:
+                    continue
+                df = get_lineup(year, rnd)
+                if not df.empty:
+                    return df
+    except Exception as e:
+        print(f"Could not determine current round: {e}")
     return pd.DataFrame()
+
+
+def load_lineups() -> pd.DataFrame:
+    """Load lineups with caching — wrapper used by app.py."""
+    return get_current_lineups()
 
 
 # ── Team strength from lineups + PAV ─────────────────────────────────────────
