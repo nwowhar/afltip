@@ -266,6 +266,16 @@ def get_team_current_stats(df: pd.DataFrame) -> dict:
     for _, row in df.sort_values(["date_parsed","id"]).iterrows():
         h, a = row.get("hteam",""), row.get("ateam","")
         hm = (row.get("hscore",0) or 0) - (row.get("ascore",0) or 0)
+
+        # Always store last_date as a scalar Timestamp, never a DatetimeArray
+        raw_date = row.get("date_parsed")
+        try:
+            last_date = pd.Timestamp(raw_date)
+            if pd.isna(last_date):
+                last_date = None
+        except Exception:
+            last_date = None
+
         for team, margin in [(h, hm), (a, -hm)]:
             prev = stats.get(team, {"streak":0, "margins":[], "last_date":None})
             m = prev["margins"] + [margin]
@@ -278,6 +288,6 @@ def get_team_current_stats(df: pd.DataFrame) -> dict:
                 "last5_avg": round(np.mean(m[-5:]),1),
                 "last5_std": round(np.std(m[-5:]),1) if len(m)>=2 else 20.0,
                 "margins": m,
-                "last_date": row.get("date_parsed"),
+                "last_date": last_date,
             }
     return stats
