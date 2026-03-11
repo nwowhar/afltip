@@ -197,35 +197,40 @@ if page == "📊 Dashboard":
                     a_pav = feats.get("away_pav_total", 0)
                     pav_note = f"⭐ PAV: {h_pav:.0f} vs {a_pav:.0f}"
 
+                # Build home/away detail strings cleanly (no conditionals inside HTML)
+                h_streak = hs.get("streak", 0)
+                a_streak = as_.get("streak", 0)
+                h_detail = f"✈️ {feats['travel_home_km']:.0f}km  |  💤 {feats['days_rest_home']}d rest"
+                a_detail = f"✈️ {feats['travel_away_km']:.0f}km  |  💤 {feats['days_rest_away']}d rest"
+                if h_streak > 1:
+                    h_detail += f"  |  🔥 {h_streak}W streak"
+                if a_streak > 1:
+                    a_detail += f"  |  🔥 {a_streak}W streak"
+                bar_pct  = int(pred["home_win_prob"])
+                venue_str = venue if venue else ""
+                footer    = f"{pred['home_win_prob']}%  ·  {venue_str}  ·  {pred['away_win_prob']}%"
+                if pav_note:
+                    footer += f"  ·  {pav_note}"
+
+                card_html = (
+                    '<div class="team-vs">'
+                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+                    f'<div><div style="font-size:1.2rem;font-weight:700;color:white">{home}</div>'
+                    f'<div style="color:#aaa;font-size:0.72rem">{h_detail}</div></div>'
+                    '<span style="color:#e94560;font-family:\'Bebas Neue\';font-size:1.1rem">VS</span>'
+                    f'<div style="text-align:right"><div style="font-size:1.2rem;font-weight:700;color:white">{away}</div>'
+                    f'<div style="color:#aaa;font-size:0.72rem">{a_detail}</div></div>'
+                    '</div>'
+                    '<div style="height:10px;border-radius:5px;background:#0f3460;overflow:hidden">'
+                    f'<div style="width:{bar_pct}%;height:100%;background:linear-gradient(90deg,#e94560,#ff6b6b);border-radius:5px"></div>'
+                    '</div>'
+                    f'<div style="color:#aaa;font-size:0.75rem;margin-top:6px;text-align:center">{footer}</div>'
+                    '</div>'
+                )
+
                 c1, c2 = st.columns([3, 1])
                 with c1:
-                    st.markdown(f"""<div class="team-vs">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                            <div>
-                                <div style="font-size:1.2rem;font-weight:700;color:white">{home}</div>
-                                <div style="color:#aaa;font-size:0.72rem">
-                                    ✈️ {feats['travel_home_km']:.0f}km &nbsp;|&nbsp; 💤 {feats['days_rest_home']}d rest
-                                    {'&nbsp;|&nbsp; 🔥 ' + str(abs(hs.get('streak',0))) + 'W streak' if hs.get('streak',0) > 1 else ''}
-                                </div>
-                            </div>
-                            <span style="color:#e94560;font-family:'Bebas Neue';font-size:1.1rem">VS</span>
-                            <div style="text-align:right">
-                                <div style="font-size:1.2rem;font-weight:700;color:white">{away}</div>
-                                <div style="color:#aaa;font-size:0.72rem">
-                                    ✈️ {feats['travel_away_km']:.0f}km &nbsp;|&nbsp; 💤 {feats['days_rest_away']}d rest
-                                    {'&nbsp;|&nbsp; 🔥 ' + str(abs(as_.get('streak',0))) + 'W streak' if as_.get('streak',0) > 1 else ''}
-                                </div>
-                            </div>
-                        </div>
-                        <div style="height:10px;border-radius:5px;background:#0f3460;overflow:hidden">
-                            <div style="width:{pred['home_win_prob']}%;height:100%;background:linear-gradient(90deg,#e94560,#ff6b6b);border-radius:5px"></div>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;color:#aaa;font-size:0.75rem;margin-top:5px">
-                            <span>{pred['home_win_prob']}%</span>
-                            <span style="color:#555">{venue} {pav_note}</span>
-                            <span>{pred['away_win_prob']}%</span>
-                        </div>
-                    </div>""", unsafe_allow_html=True)
+                    st.markdown(card_html, unsafe_allow_html=True)
                 with c2:
                     st.markdown(mc(winner, f"by ~{margin:.0f} pts"), unsafe_allow_html=True)
     except Exception as e:
