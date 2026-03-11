@@ -1235,16 +1235,22 @@ elif page == "👕 Lineup Strength":
             try:
                 _url = f"https://api.squiggle.com.au/?q=lineup;year={_year};round={_rnd}"
                 _lr = _req.get(_url, headers={"User-Agent":"AFL-Predictor/1.0"}, timeout=15)
-                _raw = _lr.json()
-                _keys = list(_raw.keys())
-                _items = _raw.get("lineups", _raw.get("lineup", []))
-                st.markdown(f"**Round {_rnd} — URL:** `{_url}`")
-                st.markdown(f"**Response keys:** {_keys} | **Items count:** {len(_items)}")
-                if _items:
-                    st.dataframe(pd.DataFrame(_items).head(3), use_container_width=True)
-                    break
+                _raw_text = _lr.text.strip()[:300]
+                st.markdown(f"**Round {_rnd} raw response (first 300 chars):** `{_raw_text}`")
+                if _raw_text and not _raw_text.startswith("<"):
+                    try:
+                        _raw = _lr.json()
+                        _keys = list(_raw.keys())
+                        _items = _raw.get("lineups", _raw.get("lineup", []))
+                        st.markdown(f"→ JSON keys: {_keys} | Items: {len(_items)}")
+                        if _items:
+                            st.dataframe(pd.DataFrame(_items).head(3), use_container_width=True)
+                    except Exception as _je:
+                        st.error(f"JSON parse error: {_je}")
+                else:
+                    st.warning(f"Round {_rnd}: empty or HTML response — lineups not available yet")
             except Exception as _e:
-                st.error(f"Round {_rnd} lineup fetch error: {_e}")
+                st.error(f"Round {_rnd} fetch error: {_e}")
 
         st.markdown(f"**lineup_df rows:** {len(lineup_df)}")
         if not lineup_df.empty:
