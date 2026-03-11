@@ -8,7 +8,8 @@ import sys, os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from data.fetcher import get_all_games, get_upcoming_games, enrich_games, get_team_current_stats
+from data.fetcher import (get_all_games, get_upcoming_games, enrich_games, get_team_current_stats,
+                          get_squiggle_consensus, get_odds_api, normalise_team)
 from data.afltables import get_all_team_season_stats
 from data.lineup import get_pav_multi_year, get_current_lineups, compute_lineup_strength
 from model.elo import build_elo_ratings, regress_elos_to_mean
@@ -60,6 +61,7 @@ with st.sidebar:
         "📉 Backtest",
         "👕 Lineup Strength",
         "🤖 AI Analysis",
+        "💰 Value Bets",
     ])
     st.markdown("---")
     st.markdown("<small style='color:#666'>Data: Squiggle API + AFL Tables<br>Model: Gradient Boosting + Elo + PAV</small>", unsafe_allow_html=True)
@@ -383,66 +385,133 @@ if page == "📊 Dashboard":
 
                 # ── Insight expander ───────────────────────────────────────
                 with st.expander(f"🔍 Why? — {home} vs {away}"):
-                    ic1, ic2 = st.columns(2)
 
-                    def edge_html(edges, team, colour):
+                    # Factor metadata: label, home_val, away_val, higher_is_better, unit, explanation
+                    factor_meta = [
+                        ("Elo Rating",          h_elo,   a_elo,   True,
+                         "pts", "Elo is a chess-style rating updated after every game. Each win/loss shifts ratings based on the expected result. Home team gets +50pts advantage baked in. A 100pt gap = roughly 64% win probability."),
+                        ("Form (last 5 avg)",    h_form,  a_form,  True,
+                         "pts margin", "Average winning/losing margin across the last 5 games. Positive = winning by that many points on average. More responsive to recent form than Elo."),
+                        ("Current Streak",       _safe_float(hs_.get("streak",0)), _safe_float(as__.get("streak",0)), True,
+                         "games", "Signed win/loss streak. +3 means 3 wins in a row, -2 means 2 losses in a row."),
+                        ("Last Game Margin",     _safe_float(hs_.get("last_margin",0)), _safe_float(as__.get("last_margin",0)), True,
+                         "pts", "Margin from their most recent completed game. Positive = won by that many points."),
+                        ("Travel to Venue",      h_km,    a_km,    False,
+                         "km", "Straight-line distance each team travels to reach the venue. Lower is better — home games = ~0km, interstate = 500–900km, Perth = 2,700km from east coast."),
+                        ("Days Rest",            float(h_rest), float(a_rest), True,
+                         "days", "Days since their last game. More rest = fresher legs. Capped at 21 days — anything longer (summer break, bye) resets to a neutral 7 days so it doesn't skew R1 predictions."),
+                        ("Travel Fatigue",       h_fat,   a_fat,   False,
+                         "index", "Combined travel+rest stress index: (km travelled ÷ 1000) × max(14 − rest days, 0). A team flying 2,700km to Perth with only 6 days rest scores ~8.1 vs 0 for the home side."),
+                        ("Clearances (season)",  _ss(home,"avg_clearances"),  _ss(away,"avg_clearances"),  True,
+                         "per game", "Season average clearances per game from AFL Tables. Clearances out of stoppages drive transition and scoring chains — one of the strongest team performance indicators."),
+                        ("Inside 50s (season)",  _ss(home,"avg_inside_50s"),  _ss(away,"avg_inside_50s"),  True,
+                         "per game", "Season average entries inside the forward 50 per game. More entries = more scoring chances. Strongly correlated with winning margin."),
+                        ("Contested Poss",       _ss(home,"avg_contested_possessions"), _ss(away,"avg_contested_possessions"), True,
+                         "per game", "Season average contested possessions per game. Reflects contested ball dominance — teams that win this category tend to control the game's tempo."),
+                        ("Tackles (season)",     _ss(home,"avg_tackles"),     _ss(away,"avg_tackles"),     True,
+                         "per game", "Season average tackles per game. High tackle counts indicate pressure and defensive intensity."),
+                        ("Clangers (season)",    _ss(home,"avg_clangers"),    _ss(away,"avg_clangers"),    False,
+                         "per game", "Season average clangers (turnovers by hand or foot) per game. Lower is better — clangers directly gift opposition scoring opportunities."),
+                    ]
+
+                    # Recompute edges with meta
+                    home_edges_m, away_edges_m = [], []
+                    for label, hv, av, hib, unit, explanation in factor_meta:
+                        if hv == 0 and av == 0:
+                            continue
+                        diff = hv - av if hib else av - hv
+                        pct  = abs(diff) / (abs(hv) + abs(av) + 0.001) * 100
+                        if pct < 3:
+                            continue
+                        entry = (label, hv, av, pct, hib, unit, explanation)
+                        if diff > 0:
+                            home_edges_m.append(entry)
+                        else:
+                            away_edges_m.append(entry)
+                    home_edges_m.sort(key=lambda x: -x[3])
+                    away_edges_m.sort(key=lambda x: -x[3])
+
+                    def edge_html_rich(edges, team, colour):
                         if not edges:
-                            return f'<div style="color:#666;font-size:0.8rem">No clear edges for {team}</div>'
+                            return f'<div style="color:#666;font-size:0.8rem;padding:8px">No clear edges detected — closely matched in most areas.</div>'
                         lines = []
-                        for label, hv, av, pct, hib in edges:
-                            val = hv if team == home else av
-                            opp = av if team == home else hv
-                            fmt = f"{val:.1f}" if abs(val) < 100 else f"{val:.0f}"
+                        for label, hv, av, pct, hib, unit, explanation in edges:
+                            val  = hv if team == home else av
+                            opp  = av if team == home else hv
+                            fmt  = f"{val:.1f}" if abs(val) < 100 else f"{val:.0f}"
                             ofmt = f"{opp:.1f}" if abs(opp) < 100 else f"{opp:.0f}"
                             bar_w = min(int(pct * 2), 100)
+                            # Truncate explanation for tooltip
+                            tip = explanation.replace('"', "'")
                             lines.append(
-                                f'<div style="margin-bottom:8px">'
-                                f'<div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:3px">'
-                                f'<span style="color:white">{label}</span>'
-                                f'<span style="color:{colour};font-weight:600">{fmt} <span style="color:#555">vs {ofmt}</span></span>'
+                                f'<div style="margin-bottom:10px;padding:8px;background:#0a1628;border-radius:6px;border-left:3px solid {colour}">'
+                                f'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
+                                f'<span title="{tip}" style="color:white;font-size:0.8rem;cursor:help;border-bottom:1px dotted #555">{label} ℹ</span>'
+                                f'<span style="color:{colour};font-weight:700;font-size:0.85rem">{fmt}<span style="color:#666;font-size:0.72rem;font-weight:400"> {unit}</span>'
+                                f' <span style="color:#444;font-size:0.72rem">vs {ofmt}</span></span>'
                                 f'</div>'
-                                f'<div style="height:5px;background:#0f3460;border-radius:3px">'
-                                f'<div style="width:{bar_w}%;height:100%;background:{colour};border-radius:3px"></div>'
-                                f'</div></div>'
+                                f'<div style="height:4px;background:#0f3460;border-radius:2px">'
+                                f'<div style="width:{bar_w}%;height:100%;background:{colour};border-radius:2px;opacity:0.8"></div>'
+                                f'</div>'
+                                f'<div style="color:#555;font-size:0.68rem;margin-top:4px">{explanation[:120]}{"..." if len(explanation)>120 else ""}</div>'
+                                f'</div>'
                             )
                         return "".join(lines)
 
+                    ic1, ic2 = st.columns(2)
                     with ic1:
                         st.markdown(f"**✅ {home} advantages**")
-                        st.markdown(edge_html(home_edges, home, "#2ecc71"), unsafe_allow_html=True)
+                        st.markdown(edge_html_rich(home_edges_m, home, "#2ecc71"), unsafe_allow_html=True)
                     with ic2:
                         st.markdown(f"**✅ {away} advantages**")
-                        st.markdown(edge_html(away_edges, away, "#3498db"), unsafe_allow_html=True)
+                        st.markdown(edge_html_rich(away_edges_m, away, "#3498db"), unsafe_allow_html=True)
 
-                    # Key narrative
+                    # ── Key numbers table ──────────────────────────────────
+                    st.markdown("---")
+                    st.markdown("**📊 All factors at a glance**")
+                    all_rows = []
+                    for label, hv, av, hib, unit, explanation in factor_meta:
+                        if hv == 0 and av == 0:
+                            continue
+                        diff = hv - av if hib else av - hv
+                        if diff > 0.5:   edge_tag = f"✅ {home}"
+                        elif diff < -0.5: edge_tag = f"✅ {away}"
+                        else:             edge_tag = "—  Even"
+                        all_rows.append({
+                            "Factor": label,
+                            home: f"{hv:.1f} {unit}",
+                            away: f"{av:.1f} {unit}",
+                            "Edge": edge_tag,
+                            "What it means": explanation[:80] + "..." if len(explanation) > 80 else explanation,
+                        })
+                    if all_rows:
+                        st.dataframe(pd.DataFrame(all_rows), use_container_width=True, hide_index=True)
+
+                    # ── Narrative ─────────────────────────────────────────
+                    st.markdown("---")
                     confidence = pred["home_win_prob"] if pred["home_win_prob"] > 50 else pred["away_win_prob"]
                     fav = winner
-                    underdog = away if fav == home else home
+                    if confidence >= 75:   conf_label = "strong favourite"
+                    elif confidence >= 62: conf_label = "moderate favourite"
+                    else:                  conf_label = "slight favourite"
 
-                    if confidence >= 75:
-                        conf_label = "strong favourite"
-                    elif confidence >= 62:
-                        conf_label = "moderate favourite"
-                    else:
-                        conf_label = "slight favourite"
+                    top_h = home_edges_m[0][0] if home_edges_m else None
+                    top_a = away_edges_m[0][0] if away_edges_m else None
 
-                    top_h = home_edges[0][0] if home_edges else None
-                    top_a = away_edges[0][0] if away_edges else None
-
-                    narrative = f"**{fav}** are the {conf_label} ({confidence:.0f}%), "
+                    narrative = f"**{fav}** are the {conf_label} at **{confidence:.0f}% win probability**"
+                    narrative += f" (predicted margin: ~{margin:.0f} pts). "
                     if fav == home and top_h:
-                        narrative += f"driven mainly by their **{top_h}** advantage. "
+                        narrative += f"Their biggest edge is **{top_h}**. "
                     elif fav == away and top_a:
-                        narrative += f"driven mainly by their **{top_a}** advantage. "
+                        narrative += f"Their biggest edge is **{top_a}**. "
                     if fav == home and top_a:
-                        narrative += f"{away}'s best case is their **{top_a}**."
+                        narrative += f"{away}'s best path to an upset is through their **{top_a}** advantage."
                     elif fav == away and top_h:
-                        narrative += f"{home}'s best case is their **{top_h}**."
+                        narrative += f"{home}'s best path to an upset is through their **{top_h}** advantage."
+                    if not top_h and not top_a:
+                        narrative += "Both teams are closely matched across most metrics — this is a genuine toss-up."
 
-                    st.markdown("---")
                     st.markdown(narrative)
-
-                st.markdown("")  # spacing between games
     except Exception as e:
         import traceback
         st.warning(f"Could not load upcoming games: {e}")
@@ -1348,9 +1417,20 @@ Please provide:
         with st.spinner("Claude is analysing your model..."):
             try:
                 import requests as _req
+                # Get API key from Streamlit secrets
+                try:
+                    api_key = st.secrets["ANTHROPIC_API_KEY"]
+                except Exception:
+                    st.error("No API key found. Add ANTHROPIC_API_KEY to your Streamlit secrets at share.streamlit.io → App settings → Secrets.")
+                    st.stop()
+
                 response = _req.post(
                     "https://api.anthropic.com/v1/messages",
-                    headers={"Content-Type": "application/json"},
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                    },
                     json={
                         "model": "claude-sonnet-4-20250514",
                         "max_tokens": 1500,
@@ -1385,3 +1465,247 @@ things to build next. Pick a focus area if you want to drill into something spec
         # Show the context that will be sent
         with st.expander("📋 Preview data being sent to Claude"):
             st.text(context)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VALUE BETS
+# ═══════════════════════════════════════════════════════════════════════════════
+elif page == "💰 Value Bets":
+    st.markdown("# VALUE BETS")
+    st.markdown("*Compares our model's probabilities against bookmaker odds and Squiggle consensus to find edges*")
+
+    # ── Squiggle consensus (free, no key needed) ──────────────────────────────
+    st.markdown("## 📡 Squiggle Model Consensus")
+    st.markdown("*Aggregated win probabilities from ~15 computer models*")
+
+    try:
+        consensus_df = get_squiggle_consensus()
+        if consensus_df.empty:
+            st.info("No Squiggle consensus data available for current round.")
+        else:
+            # Match consensus to our predictions
+            rows = []
+            for _, row in consensus_df.iterrows():
+                ht = normalise_team(str(row.get("hteam","")))
+                at = normalise_team(str(row.get("ateam","")))
+                if ht not in current_elos or at not in current_elos:
+                    continue
+
+                sq_prob = float(row["consensus_home_prob"])
+                n_models = int(row["n_models"])
+
+                # Get our model's probability using inline builder
+                def _sf(v, d=0.0):
+                    try:
+                        if v is None: return float(d)
+                        if hasattr(v,'iloc'): v=v.iloc[-1]
+                        if hasattr(v,'item'): v=v.item()
+                        return float(v)
+                    except: return float(d)
+
+                from data.fetcher import travel_distance_km
+                _PV = {"Optus Stadium","Perth Stadium","Subiaco Oval"}
+                h_elo = _sf(current_elos.get(ht,1500),1500)
+                a_elo = _sf(current_elos.get(at,1500),1500)
+                hs_  = team_stats.get(ht,{})
+                as__ = team_stats.get(at,{})
+                h_form = _sf(hs_.get("last5_avg",0))
+                a_form = _sf(as__.get("last5_avg",0))
+
+                our_feats = {
+                    "elo_diff": h_elo - a_elo + 50.0,
+                    "form_diff": h_form - a_form,
+                    "home_form": h_form, "away_form": a_form,
+                    "home_consistency": _sf(hs_.get("last5_std",20),20),
+                    "away_consistency": _sf(as__.get("last5_std",20),20),
+                    "travel_diff": 0.0, "travel_home_km": 0.0, "travel_away_km": 0.0,
+                    "travel_fatigue_diff": 0.0, "home_travel_fatigue": 0.0, "away_travel_fatigue": 0.0,
+                    "travel_win_rate_diff": 0.0, "travel_margin_diff": 0.0, "perth_win_rate_diff": 0.0,
+                    "is_perth_game": 0.0, "days_rest_diff": 0.0, "days_rest_home": 7.0, "days_rest_away": 7.0,
+                    "streak_diff": _sf(hs_.get("streak",0))-_sf(as__.get("streak",0)),
+                    "home_streak": _sf(hs_.get("streak",0)), "away_streak": _sf(as__.get("streak",0)),
+                    "last_margin_diff": _sf(hs_.get("last_margin",0))-_sf(as__.get("last_margin",0)),
+                    "last3_diff": _sf(hs_.get("last3_avg",0))-_sf(as__.get("last3_avg",0)),
+                    "last5_diff": h_form - a_form,
+                    "cl_diff":0.0,"i50_diff":0.0,"cp_diff":0.0,"tk_diff":0.0,"ho_diff":0.0,"clanger_diff":0.0,
+                    "pav_total_diff":0.0,"pav_off_diff":0.0,"pav_def_diff":0.0,"pav_mid_diff":0.0,
+                }
+                pred = predict_game(win_model, margin_model, our_feats)
+                our_prob = pred["home_win_prob"] / 100.0
+                diff = our_prob - sq_prob
+
+                rows.append({
+                    "Home": ht, "Away": at,
+                    "Our Model": f"{our_prob*100:.1f}%",
+                    "Squiggle Consensus": f"{sq_prob*100:.1f}%",
+                    "Difference": f"{diff*100:+.1f}%",
+                    "Models": n_models,
+                    "_diff": diff,
+                    "_our": our_prob,
+                    "_sq": sq_prob,
+                })
+
+            if rows:
+                sq_display = pd.DataFrame(rows)
+
+                def colour_diff(val):
+                    try:
+                        v = float(val.replace("%",""))
+                        if v > 5: return "color: #2ecc71; font-weight: bold"
+                        if v < -5: return "color: #e74c3c; font-weight: bold"
+                    except: pass
+                    return ""
+
+                st.dataframe(
+                    sq_display[["Home","Away","Our Model","Squiggle Consensus","Difference","Models"]]
+                    .style.applymap(colour_diff, subset=["Difference"]),
+                    use_container_width=True, hide_index=True
+                )
+                st.caption("🟢 Green = our model is more bullish on home team than consensus  🔴 Red = more bearish")
+    except Exception as e:
+        st.warning(f"Could not load Squiggle consensus: {e}")
+
+    st.markdown("---")
+
+    # ── Live bookmaker odds (requires API key) ────────────────────────────────
+    st.markdown("## 🎰 Bookmaker Value Bets")
+
+    odds_key = ""
+    try:
+        odds_key = st.secrets.get("ODDS_API_KEY", "")
+    except Exception:
+        pass
+
+    if not odds_key:
+        st.info("""
+**To enable live bookmaker odds:**
+1. Get a free API key at [the-odds-api.com](https://the-odds-api.com) (~500 free requests/month, plenty for weekly use)
+2. In Streamlit Cloud → your app → **Settings → Secrets**, add:
+```
+ODDS_API_KEY = "your_key_here"
+```
+3. Refresh the app
+
+Free tier covers TAB, Sportsbet, Neds, Ladbrokes and more.
+""")
+    else:
+        with st.spinner("Fetching live odds..."):
+            odds_df = get_odds_api(odds_key)
+
+        if odds_df.empty:
+            st.info("No AFL odds available right now — check back closer to game day.")
+        else:
+            # Pick best (highest) odds per game across bookmakers
+            best_odds = (
+                odds_df.groupby(["home_team","away_team"])
+                .agg(best_home_odds=("home_odds","max"), best_away_odds=("away_odds","max"),
+                     bookmakers=("bookmaker", lambda x: ", ".join(sorted(set(x)))))
+                .reset_index()
+            )
+
+            value_rows = []
+            for _, row in best_odds.iterrows():
+                ht = normalise_team(row["home_team"])
+                at = normalise_team(row["away_team"])
+                if ht not in current_elos or at not in current_elos:
+                    continue
+
+                h_odds = float(row["best_home_odds"])
+                a_odds = float(row["best_away_odds"])
+                h_implied = 1.0 / h_odds
+                a_implied = 1.0 / a_odds
+                # Remove vig to get fair implied probs
+                total_implied = h_implied + a_implied
+                h_fair = h_implied / total_implied
+                a_fair = a_implied / total_implied
+                vig = (total_implied - 1.0) * 100
+
+                # Our model probability
+                hs_ = team_stats.get(ht, {})
+                as__ = team_stats.get(at, {})
+                def _sf2(v, d=0.0):
+                    try:
+                        if v is None: return float(d)
+                        if hasattr(v,'iloc'): v=v.iloc[-1]
+                        if hasattr(v,'item'): v=v.item()
+                        return float(v)
+                    except: return float(d)
+                h_elo2 = _sf2(current_elos.get(ht,1500),1500)
+                a_elo2 = _sf2(current_elos.get(at,1500),1500)
+                h_form2 = _sf2(hs_.get("last5_avg",0))
+                a_form2 = _sf2(as__.get("last5_avg",0))
+                our_feats2 = {
+                    "elo_diff": h_elo2-a_elo2+50.0, "form_diff": h_form2-a_form2,
+                    "home_form": h_form2, "away_form": a_form2,
+                    "home_consistency": _sf2(hs_.get("last5_std",20),20),
+                    "away_consistency": _sf2(as__.get("last5_std",20),20),
+                    **{k:0.0 for k in ["travel_diff","travel_home_km","travel_away_km",
+                       "travel_fatigue_diff","home_travel_fatigue","away_travel_fatigue",
+                       "travel_win_rate_diff","travel_margin_diff","perth_win_rate_diff",
+                       "is_perth_game","days_rest_diff","cl_diff","i50_diff","cp_diff",
+                       "tk_diff","ho_diff","clanger_diff","pav_total_diff","pav_off_diff",
+                       "pav_def_diff","pav_mid_diff"]},
+                    "days_rest_home":7.0,"days_rest_away":7.0,
+                    "streak_diff":_sf2(hs_.get("streak",0))-_sf2(as__.get("streak",0)),
+                    "home_streak":_sf2(hs_.get("streak",0)),"away_streak":_sf2(as__.get("streak",0)),
+                    "last_margin_diff":_sf2(hs_.get("last_margin",0))-_sf2(as__.get("last_margin",0)),
+                    "last3_diff":_sf2(hs_.get("last3_avg",0))-_sf2(as__.get("last3_avg",0)),
+                    "last5_diff":h_form2-a_form2,
+                }
+                pred2 = predict_game(win_model, margin_model, our_feats2)
+                our_h = pred2["home_win_prob"] / 100.0
+                our_a = 1.0 - our_h
+
+                h_edge = our_h - h_fair
+                a_edge = our_a - a_fair
+                h_kelly = max(h_edge / (h_odds - 1), 0) * 100
+                a_kelly = max(a_edge / (a_odds - 1), 0) * 100
+
+                # Flag best value bet for this game
+                best_edge = h_edge if h_edge > a_edge else a_edge
+                best_team = ht if h_edge > a_edge else at
+                best_odds_val = h_odds if h_edge > a_edge else a_odds
+                best_kelly = h_kelly if h_edge > a_edge else a_kelly
+                best_our_prob = our_h if h_edge > a_edge else our_a
+                best_fair = h_fair if h_edge > a_edge else a_fair
+
+                value_rows.append({
+                    "Match": f"{ht} vs {at}",
+                    "Value Bet": best_team,
+                    "Odds": f"${best_odds_val:.2f}",
+                    "Our Prob": f"{best_our_prob*100:.1f}%",
+                    "Fair Prob": f"{best_fair*100:.1f}%",
+                    "Edge": f"{best_edge*100:+.1f}%",
+                    "Kelly %": f"{best_kelly:.1f}%",
+                    "Vig": f"{vig:.1f}%",
+                    "Bookmakers": row["bookmakers"],
+                    "_edge": best_edge,
+                })
+
+            if value_rows:
+                vdf = pd.DataFrame(value_rows).sort_values("_edge", ascending=False)
+
+                # Highlight value bets (edge > 3%)
+                value_bets = vdf[vdf["_edge"] > 0.03]
+                no_value = vdf[vdf["_edge"] <= 0.03]
+
+                if not value_bets.empty:
+                    st.markdown("### 🎯 Value Opportunities (Edge > 3%)")
+                    st.dataframe(
+                        value_bets[["Match","Value Bet","Odds","Our Prob","Fair Prob","Edge","Kelly %","Bookmakers"]],
+                        use_container_width=True, hide_index=True
+                    )
+
+                st.markdown("### All Games")
+                st.dataframe(
+                    vdf[["Match","Value Bet","Odds","Our Prob","Fair Prob","Edge","Kelly %","Vig","Bookmakers"]],
+                    use_container_width=True, hide_index=True
+                )
+
+                st.markdown("---")
+                st.markdown("""
+**How to read this:**
+- **Edge** = our model probability minus bookmaker's fair (vig-removed) probability. Positive = value.
+- **Kelly %** = suggested bet size as % of bankroll using Kelly Criterion. Use ¼ Kelly (divide by 4) for safer sizing.
+- **Vig** = bookmaker's margin built into the odds. Lower is better.
+- Only bet where edge is consistently positive over many bets — one game means nothing.
+""")
