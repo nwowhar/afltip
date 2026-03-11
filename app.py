@@ -184,7 +184,7 @@ if page == "📊 Dashboard":
                     home, away, venue,
                     current_elos, team_stats,
                     season_stats, lineup_strength,
-                    enriched_df=df
+                    df
                 )
                 pred = predict_game(win_model, margin_model, feats)
                 winner = home if pred["home_win_prob"] > 50 else away
@@ -370,7 +370,7 @@ elif page == "🔮 Predict a Game":
             home_team, away_team, venue,
             current_elos, team_stats,
             season_stats, lineup_strength,
-            enriched_df=df
+            df
         )
         pred = predict_game(win_model, margin_model, feats)
         m    = pred["predicted_margin"]
