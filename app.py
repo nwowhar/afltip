@@ -202,12 +202,90 @@ if page == "📊 Dashboard":
                     continue
 
                 try:
-                    feats = build_prediction_features(
-                        home, away, venue,
-                        current_elos, team_stats,
-                        season_stats, lineup_strength,
-                        df
-                    )
+                    # Inline feature builder — bypasses any cached module issues
+                    def _safe_float(v, default=0.0):
+                        try:
+                            if v is None: return float(default)
+                            if hasattr(v, 'iloc'): v = v.iloc[-1]
+                            if hasattr(v, 'item'): v = v.item()
+                            return float(v)
+                        except: return float(default)
+
+                    from data.fetcher import travel_distance_km, PERTH_VENUES, LONG_TRAVEL_KM, PERTH_TRAVEL_THRESHOLD_KM
+                    h_elo   = _safe_float(current_elos.get(home, 1500), 1500)
+                    a_elo   = _safe_float(current_elos.get(away, 1500), 1500)
+                    hs_     = team_stats.get(home, {})
+                    as__    = team_stats.get(away, {})
+                    h_form  = _safe_float(hs_.get("last5_avg", 0))
+                    a_form  = _safe_float(as__.get("last5_avg", 0))
+                    h_std   = _safe_float(hs_.get("last5_std", 20), 20)
+                    a_std   = _safe_float(as__.get("last5_std", 20), 20)
+                    h_km    = float(travel_distance_km(home, venue))
+                    a_km    = float(travel_distance_km(away, venue))
+
+                    # Rest days
+                    import pandas as _pd2
+                    today_ = _pd2.Timestamp.now()
+                    def _rest(ld):
+                        try:
+                            if ld is None: return 7
+                            if hasattr(ld, 'iloc'): ld = ld.iloc[-1]
+                            ld = _pd2.Timestamp(ld)
+                            if _pd2.isna(ld): return 7
+                            raw = int((today_ - ld).days)
+                            return raw if raw <= 21 else 7
+                        except: return 7
+                    h_rest = _rest(hs_.get("last_date"))
+                    a_rest = _rest(as__.get("last_date"))
+
+                    # Travel fatigue
+                    h_fat = min(h_km, 3000) / 1000 * max(14 - h_rest, 0)
+                    a_fat = min(a_km, 3000) / 1000 * max(14 - a_rest, 0)
+
+                    # Season stats helper
+                    cur_yr = datetime.now().year
+                    def _ss(team, stat):
+                        if season_stats is None or season_stats.empty: return 0.0
+                        row_ = season_stats[(season_stats["team"]==team) & (season_stats["year"]==cur_yr)]
+                        if row_.empty:
+                            row_ = season_stats[(season_stats["team"]==team) & (season_stats["year"]==cur_yr-1)]
+                        return float(row_.iloc[0].get(stat, 0)) if not row_.empty else 0.0
+
+                    feats = {
+                        "elo_diff":            h_elo - a_elo + 50.0,
+                        "form_diff":           h_form - a_form,
+                        "home_form":           h_form,
+                        "away_form":           a_form,
+                        "home_consistency":    h_std,
+                        "away_consistency":    a_std,
+                        "travel_diff":         h_km - a_km,
+                        "travel_home_km":      h_km,
+                        "travel_away_km":      a_km,
+                        "travel_fatigue_diff": h_fat - a_fat,
+                        "home_travel_fatigue": h_fat,
+                        "away_travel_fatigue": a_fat,
+                        "travel_win_rate_diff": 0.0,
+                        "travel_margin_diff":  0.0,
+                        "perth_win_rate_diff": 0.0,
+                        "is_perth_game":       1.0 if str(venue) in PERTH_VENUES else 0.0,
+                        "days_rest_diff":      float(h_rest - a_rest),
+                        "days_rest_home":      float(h_rest),
+                        "days_rest_away":      float(a_rest),
+                        "streak_diff":         _safe_float(hs_.get("streak",0)) - _safe_float(as__.get("streak",0)),
+                        "home_streak":         _safe_float(hs_.get("streak",0)),
+                        "away_streak":         _safe_float(as__.get("streak",0)),
+                        "last_margin_diff":    _safe_float(hs_.get("last_margin",0)) - _safe_float(as__.get("last_margin",0)),
+                        "last3_diff":          _safe_float(hs_.get("last3_avg",0)) - _safe_float(as__.get("last3_avg",0)),
+                        "last5_diff":          h_form - a_form,
+                        "cl_diff":    _ss(home,"avg_clearances")   - _ss(away,"avg_clearances"),
+                        "i50_diff":   _ss(home,"avg_inside_50s")   - _ss(away,"avg_inside_50s"),
+                        "cp_diff":    _ss(home,"avg_contested_possessions") - _ss(away,"avg_contested_possessions"),
+                        "tk_diff":    _ss(home,"avg_tackles")      - _ss(away,"avg_tackles"),
+                        "ho_diff":    _ss(home,"avg_hitouts")      - _ss(away,"avg_hitouts"),
+                        "clanger_diff": _ss(home,"avg_clangers")   - _ss(away,"avg_clangers"),
+                        "pav_total_diff": 0.0, "pav_off_diff": 0.0,
+                        "pav_def_diff":   0.0, "pav_mid_diff": 0.0,
+                    }
                 except Exception as game_err:
                     import traceback
                     st.error(f"Error for {home} vs {away}: {game_err}")
