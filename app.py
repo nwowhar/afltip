@@ -11,12 +11,24 @@ sys.path.insert(0, os.path.dirname(__file__))
 from data.fetcher import (get_all_games, get_upcoming_games, enrich_games, get_team_current_stats)
 from data.afltables import get_all_team_season_stats
 from data.lineup import get_pav_multi_year, get_current_lineups, compute_lineup_strength
-from data.experience import compute_experience_from_pav, analyse_data_staleness
+try:
+    from data.experience import compute_experience_from_pav, analyse_data_staleness
+    _experience_available = True
+except ImportError:
+    _experience_available = False
+    def compute_experience_from_pav(*a, **kw): return __import__('pandas').DataFrame()
+    def analyse_data_staleness(*a, **kw): return {}
 from model.elo import build_elo_ratings, regress_elos_to_mean
-from model.predictor import (build_features, add_season_stat_features,
-                              add_pav_features, add_experience_features,
-                              train_models, predict_game,
-                              build_prediction_features, CORE_FEATURES, ALL_FEATURES)
+try:
+    from model.predictor import (build_features, add_season_stat_features,
+                                  add_pav_features, add_experience_features,
+                                  train_models, predict_game,
+                                  build_prediction_features, CORE_FEATURES, ALL_FEATURES)
+except ImportError:
+    from model.predictor import (build_features, add_season_stat_features,
+                                  add_pav_features, train_models, predict_game,
+                                  build_prediction_features, CORE_FEATURES, ALL_FEATURES)
+    def add_experience_features(df, *a, **kw): return df
 from model.backtest import (run_walk_forward_backtest, compute_yearly_accuracy,
                              ablation_test, permutation_importance_analysis,
                              margin_prediction_backtest, FEATURE_GROUPS)
