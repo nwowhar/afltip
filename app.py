@@ -79,7 +79,7 @@ def load_pav(start_year):
 def load_lineups():
     return get_current_lineups()
 
-@st.cache_data(ttl=3600, show_spinner="🤖 Building Elo ratings & training model...")
+@st.cache_data(ttl=3601, show_spinner="🤖 Building Elo ratings & training model...")
 def build_model(start_year):
     games_df = load_games(start_year)
     if games_df is None or games_df.empty:
