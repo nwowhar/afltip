@@ -83,7 +83,7 @@ def load_lineups():
 def build_model(start_year):
     games_df = load_games(start_year)
     if games_df is None or games_df.empty:
-        return None, None, None, None, {}, {}, None, None
+        return None, None, None, None, {}, {}, None, None, None
 
     season_stats = load_season_stats(start_year)
     pav_df       = load_pav(start_year)
