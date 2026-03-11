@@ -8,8 +8,7 @@ import sys, os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from data.fetcher import (get_all_games, get_upcoming_games, enrich_games, get_team_current_stats,
-                          get_squiggle_consensus, get_odds_api, normalise_team)
+from data.fetcher import (get_all_games, get_upcoming_games, enrich_games, get_team_current_stats)
 from data.afltables import get_all_team_season_stats
 from data.lineup import get_pav_multi_year, get_current_lineups, compute_lineup_strength
 from model.elo import build_elo_ratings, regress_elos_to_mean
@@ -19,6 +18,77 @@ from model.predictor import (build_features, add_season_stat_features,
 from model.backtest import (run_walk_forward_backtest, compute_yearly_accuracy,
                              ablation_test, permutation_importance_analysis,
                              margin_prediction_backtest, FEATURE_GROUPS)
+
+# ── Inline helpers (independent of fetcher.py version) ───────────────────────
+import requests as _requests_module
+
+SQUIGGLE_BASE = "https://api.squiggle.com.au/"
+_HEADERS = {"User-Agent": "AFL-Predictor/1.0 (nick@example.com)"}
+
+TEAM_NAME_MAP = {
+    "Brisbane Lions": "Brisbane Lions", "Brisbane": "Brisbane Lions",
+    "GWS Giants": "Greater Western Sydney", "Greater Western Sydney Giants": "Greater Western Sydney",
+    "GWS": "Greater Western Sydney", "Gold Coast Suns": "Gold Coast",
+    "West Coast Eagles": "West Coast", "St Kilda Saints": "St Kilda",
+    "North Melbourne Kangaroos": "North Melbourne", "Adelaide Crows": "Adelaide",
+    "Geelong Cats": "Geelong", "Sydney Swans": "Sydney",
+    "Collingwood Magpies": "Collingwood", "Melbourne Demons": "Melbourne",
+    "Hawthorn Hawks": "Hawthorn", "Richmond Tigers": "Richmond",
+    "Carlton Blues": "Carlton", "Essendon Bombers": "Essendon",
+    "Fremantle Dockers": "Fremantle", "Port Adelaide Power": "Port Adelaide",
+    "Port Adelaide": "Port Adelaide", "Western Bulldogs": "Western Bulldogs",
+    "Gold Coast": "Gold Coast", "West Coast": "West Coast",
+}
+
+def normalise_team(name):
+    return TEAM_NAME_MAP.get(str(name), str(name))
+
+def get_squiggle_consensus(year=None, round_num=None):
+    if year is None:
+        year = datetime.now().year
+    url = f"{SQUIGGLE_BASE}?q=tips;year={year}"
+    if round_num:
+        url += f";round={round_num}"
+    try:
+        r = _requests_module.get(url, headers=_HEADERS, timeout=15)
+        r.raise_for_status()
+        tips = pd.DataFrame(r.json().get("tips", []))
+        if tips.empty or "hconfidence" not in tips.columns:
+            return pd.DataFrame()
+        tips["hconfidence"] = pd.to_numeric(tips["hconfidence"], errors="coerce")
+        if tips["hconfidence"].max() > 1.5:
+            tips["hconfidence"] /= 100.0
+        tips = tips.dropna(subset=["hconfidence", "gameid"])
+        return (tips.groupby("gameid")
+                .agg(hteam=("hteam","first"), ateam=("ateam","first"),
+                     consensus_home_prob=("hconfidence","mean"),
+                     n_models=("hconfidence","count"))
+                .reset_index())
+    except Exception:
+        return pd.DataFrame()
+
+def get_odds_api(api_key):
+    try:
+        r = _requests_module.get(
+            "https://api.the-odds-api.com/v4/sports/aussierules_afl/odds",
+            params={"apiKey": api_key, "regions": "au", "markets": "h2h", "oddsFormat": "decimal"},
+            timeout=15)
+        r.raise_for_status()
+        rows = []
+        for game in r.json():
+            ht = game.get("home_team","")
+            at = game.get("away_team","")
+            for bm in game.get("bookmakers",[]):
+                for market in bm.get("markets",[]):
+                    if market.get("key") != "h2h": continue
+                    om = {o["name"]: o["price"] for o in market.get("outcomes",[])}
+                    if om.get(ht) and om.get(at):
+                        rows.append({"home_team":ht,"away_team":at,
+                                     "bookmaker":bm.get("title",""),
+                                     "home_odds":float(om[ht]),"away_odds":float(om[at])})
+        return pd.DataFrame(rows)
+    except Exception:
+        return pd.DataFrame()
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(page_title="AFL Predictor", page_icon="🏉", layout="wide")
