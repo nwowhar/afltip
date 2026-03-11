@@ -1,5 +1,6 @@
 """
-Predictor — trains win probability and margin models using all feature groups:
+Predictor v4 — all inputs cast to float to prevent DatetimeArray errors.
+
   1. Elo differential
   2. Rolling form (last 5 games avg margin, consistency)
   3. Travel distance differential
