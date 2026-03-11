@@ -202,7 +202,7 @@ if page == "📊 Dashboard":
                     continue
 
                 try:
-                    # Inline feature builder — bypasses any cached module issues
+                    # Inline feature builder — no dependency on cached modules
                     def _safe_float(v, default=0.0):
                         try:
                             if v is None: return float(default)
@@ -211,7 +211,11 @@ if page == "📊 Dashboard":
                             return float(v)
                         except: return float(default)
 
-                    from data.fetcher import travel_distance_km, PERTH_VENUES, LONG_TRAVEL_KM, PERTH_TRAVEL_THRESHOLD_KM
+                    from data.fetcher import travel_distance_km
+                    _PERTH_VENUES = {"Optus Stadium", "Perth Stadium", "Subiaco Oval"}
+                    _LONG_KM      = 1000
+                    _PERTH_KM     = 2000
+
                     h_elo   = _safe_float(current_elos.get(home, 1500), 1500)
                     a_elo   = _safe_float(current_elos.get(away, 1500), 1500)
                     hs_     = team_stats.get(home, {})
@@ -223,7 +227,6 @@ if page == "📊 Dashboard":
                     h_km    = float(travel_distance_km(home, venue))
                     a_km    = float(travel_distance_km(away, venue))
 
-                    # Rest days
                     import pandas as _pd2
                     today_ = _pd2.Timestamp.now()
                     def _rest(ld):
@@ -238,11 +241,9 @@ if page == "📊 Dashboard":
                     h_rest = _rest(hs_.get("last_date"))
                     a_rest = _rest(as__.get("last_date"))
 
-                    # Travel fatigue
                     h_fat = min(h_km, 3000) / 1000 * max(14 - h_rest, 0)
                     a_fat = min(a_km, 3000) / 1000 * max(14 - a_rest, 0)
 
-                    # Season stats helper
                     cur_yr = datetime.now().year
                     def _ss(team, stat):
                         if season_stats is None or season_stats.empty: return 0.0
@@ -267,7 +268,7 @@ if page == "📊 Dashboard":
                         "travel_win_rate_diff": 0.0,
                         "travel_margin_diff":  0.0,
                         "perth_win_rate_diff": 0.0,
-                        "is_perth_game":       1.0 if str(venue) in PERTH_VENUES else 0.0,
+                        "is_perth_game":       1.0 if str(venue) in _PERTH_VENUES else 0.0,
                         "days_rest_diff":      float(h_rest - a_rest),
                         "days_rest_home":      float(h_rest),
                         "days_rest_away":      float(a_rest),
