@@ -197,7 +197,7 @@ def load_lineups():
 def build_model(start_year):
     games_df = load_games(start_year)
     if games_df is None or games_df.empty:
-        return None, None, None, None, {}, {}, None, None, None
+        return None, None, None, None, {}, {}, None, None, None, None
 
     season_stats = load_season_stats(start_year)
     pav_df       = load_pav(start_year)
@@ -220,7 +220,7 @@ def build_model(start_year):
     current_elos = regress_elos_to_mean(elo_history)
     team_stats   = get_team_current_stats(df)
 
-    return df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df
+    return df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df
 
 with st.spinner("Loading model..."):
     result = build_model(start_year)
@@ -229,7 +229,7 @@ if result[0] is None:
     st.error("Could not load game data. Check your internet connection.")
     st.stop()
 
-df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df = result
+df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df = result
 teams = sorted(current_elos.keys())
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -766,7 +766,7 @@ elif page == "🔮 Predict a Game":
             home_team, away_team, venue,
             current_elos, team_stats,
             season_stats, lineup_strength,
-            df
+            df, exp_df
         )
         pred = predict_game(win_model, margin_model, feats)
         m    = pred["predicted_margin"]
@@ -1492,6 +1492,17 @@ elif page == "💰 Value Bets":
         a_elo = _sf(current_elos.get(at, 1500), 1500)
         h_form = _sf(hs_.get("last5_avg", 0))
         a_form = _sf(as_.get("last5_avg", 0))
+
+        # Experience lookup from exp_df
+        def _exp(team, col):
+            if exp_df is None or exp_df.empty: return 0.0
+            from datetime import datetime as _dt
+            yr = _dt.now().year
+            row = exp_df[(exp_df["team"] == team) & (exp_df["year"] == yr)]
+            if row.empty:
+                row = exp_df[(exp_df["team"] == team) & (exp_df["year"] == yr - 1)]
+            return float(row.iloc[0][col]) if not row.empty and col in row.columns else 0.0
+
         feats = {
             "elo_diff": h_elo - a_elo + 50.0, "form_diff": h_form - a_form,
             "home_form": h_form, "away_form": a_form,
@@ -1509,6 +1520,9 @@ elif page == "💰 Value Bets":
             "last_margin_diff": _sf(hs_.get("last_margin",0)) - _sf(as_.get("last_margin",0)),
             "last3_diff": _sf(hs_.get("last3_avg",0)) - _sf(as_.get("last3_avg",0)),
             "last5_diff": h_form - a_form,
+            "exp_avg_diff":        _exp(ht, "avg_career_games")  - _exp(at, "avg_career_games"),
+            "exp_veteran_diff":    _exp(ht, "pct_veterans")      - _exp(at, "pct_veterans"),
+            "exp_developing_diff": _exp(ht, "pct_developing")    - _exp(at, "pct_developing"),
         }
         pred = predict_game(win_model, margin_model, feats)
         return pred["home_win_prob"] / 100.0, pred["predicted_margin"]
