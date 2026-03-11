@@ -341,10 +341,22 @@ def build_prediction_features(home_team: str, away_team: str,
     BYE_CAP      = 21
 
     def calc_rest(last_date):
-        if last_date and _pd.notna(last_date):
-            raw = int((today - last_date).days)
+        try:
+            if last_date is None:
+                return NEUTRAL_REST
+            # Unwrap Series, DatetimeArray, or list to a scalar
+            ld = last_date
+            if hasattr(ld, 'iloc'):
+                ld = ld.iloc[-1]
+            elif hasattr(ld, '__len__') and not isinstance(ld, str):
+                ld = ld[-1]
+            ld = _pd.Timestamp(ld)
+            if _pd.isna(ld):
+                return NEUTRAL_REST
+            raw = int((today - ld).days)
             return raw if raw <= BYE_CAP else NEUTRAL_REST
-        return NEUTRAL_REST
+        except Exception:
+            return NEUTRAL_REST
 
     h_rest = calc_rest(hs.get("last_date"))
     a_rest = calc_rest(as_.get("last_date"))
