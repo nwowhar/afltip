@@ -92,14 +92,37 @@ def get_lineup(year: int, round_num: int) -> pd.DataFrame:
 
 
 def get_current_lineups() -> pd.DataFrame:
-    """Try to fetch lineups for the current/upcoming round."""
+    """Fetch lineups for the current/upcoming round only."""
     year = datetime.now().year
-    # Try rounds 1-28, find the latest with lineup data
-    for rnd in range(28, 0, -1):
-        df = get_lineup(year, rnd)
-        if not df.empty:
-            return df
+    # First get the current round from the games API — avoids hammering Squiggle
+    try:
+        r = requests.get(f"{BASE}?q=games;year={year}", headers=HEADERS, timeout=15)
+        r.raise_for_status()
+        games = r.json().get("games", [])
+        if games:
+            gdf = pd.DataFrame(games)
+            # Current round = lowest round number with incomplete games
+            incomplete = gdf[gdf["complete"] < 100] if "complete" in gdf.columns else gdf
+            if not incomplete.empty:
+                current_round = int(incomplete["round"].min())
+            else:
+                # All done — use max round
+                current_round = int(gdf["round"].max())
+            # Try current round and one either side
+            for rnd in [current_round, current_round - 1, current_round + 1]:
+                if rnd < 1 or rnd > 28:
+                    continue
+                df = get_lineup(year, rnd)
+                if not df.empty:
+                    return df
+    except Exception as e:
+        print(f"Could not determine current round: {e}")
     return pd.DataFrame()
+
+
+def load_lineups() -> pd.DataFrame:
+    """Load lineups with caching — wrapper used by app.py."""
+    return get_current_lineups()
 
 
 # ── Team strength from lineups + PAV ─────────────────────────────────────────
