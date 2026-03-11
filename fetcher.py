@@ -296,3 +296,123 @@ def get_team_current_stats(df: pd.DataFrame) -> dict:
                 "last_date": last_date,
             }
     return stats
+
+def get_squiggle_tips(year: int = None, round_num: int = None) -> pd.DataFrame:
+    """Fetch tips/predictions from all Squiggle models for a given round."""
+    if year is None:
+        year = datetime.now().year
+    url = f"{SQUIGGLE_BASE}?q=tips;year={year}"
+    if round_num is not None:
+        url += f";round={round_num}"
+    r = requests.get(url, headers=HEADERS, timeout=15)
+    r.raise_for_status()
+    tips = r.json().get("tips", [])
+    if not tips:
+        return pd.DataFrame()
+    df = pd.DataFrame(tips)
+    return df
+
+def get_squiggle_consensus(year: int = None, round_num: int = None) -> pd.DataFrame:
+    """
+    Returns per-game consensus home win probability across all Squiggle models.
+    Columns: gameid, hteam, ateam, consensus_home_prob, n_models, tips_df
+    """
+    tips = get_squiggle_tips(year, round_num)
+    if tips.empty:
+        return pd.DataFrame()
+
+    # hconfidence is the model's confidence the HOME team wins (0-100 or 0-1)
+    # normalise to 0-1
+    if "hconfidence" in tips.columns:
+        tips["hconfidence"] = pd.to_numeric(tips["hconfidence"], errors="coerce")
+        # Some models report 0-100, some 0-1
+        if tips["hconfidence"].max() > 1.5:
+            tips["hconfidence"] = tips["hconfidence"] / 100.0
+        tips = tips.dropna(subset=["hconfidence", "gameid"])
+        consensus = (
+            tips.groupby("gameid")
+            .agg(
+                hteam=("hteam", "first"),
+                ateam=("ateam", "first"),
+                consensus_home_prob=("hconfidence", "mean"),
+                n_models=("hconfidence", "count"),
+            )
+            .reset_index()
+        )
+        return consensus
+    return pd.DataFrame()
+
+def get_odds_api(api_key: str) -> pd.DataFrame:
+    """
+    Fetch current AFL head-to-head odds from The Odds API.
+    Returns df with columns: home_team, away_team, bookmaker, home_odds, away_odds
+    Requires a free API key from the-odds-api.com
+    """
+    url = "https://api.the-odds-api.com/v4/sports/aussierules_afl/odds"
+    params = {
+        "apiKey": api_key,
+        "regions": "au",
+        "markets": "h2h",
+        "oddsFormat": "decimal",
+    }
+    try:
+        r = requests.get(url, params=params, timeout=15)
+        r.raise_for_status()
+        games = r.json()
+    except Exception as e:
+        return pd.DataFrame()
+
+    rows = []
+    for game in games:
+        ht = game.get("home_team", "")
+        at = game.get("away_team", "")
+        commence = game.get("commence_time", "")
+        for bm in game.get("bookmakers", []):
+            bm_name = bm.get("title", "")
+            for market in bm.get("markets", []):
+                if market.get("key") != "h2h":
+                    continue
+                odds_map = {o["name"]: o["price"] for o in market.get("outcomes", [])}
+                h_odds = odds_map.get(ht, None)
+                a_odds = odds_map.get(at, None)
+                if h_odds and a_odds:
+                    rows.append({
+                        "home_team": ht,
+                        "away_team": at,
+                        "commence_time": commence,
+                        "bookmaker": bm_name,
+                        "home_odds": float(h_odds),
+                        "away_odds": float(a_odds),
+                    })
+    return pd.DataFrame(rows)
+
+# AFL team name mapping — Squiggle/Odds API names don't always match our training data names
+TEAM_NAME_MAP = {
+    "Brisbane Lions": "Brisbane Lions",
+    "Brisbane": "Brisbane Lions",
+    "GWS Giants": "Greater Western Sydney",
+    "Greater Western Sydney Giants": "Greater Western Sydney",
+    "GWS": "Greater Western Sydney",
+    "Gold Coast Suns": "Gold Coast",
+    "Gold Coast": "Gold Coast",
+    "West Coast Eagles": "West Coast",
+    "West Coast": "West Coast",
+    "St Kilda Saints": "St Kilda",
+    "North Melbourne Kangaroos": "North Melbourne",
+    "Adelaide Crows": "Adelaide",
+    "Geelong Cats": "Geelong",
+    "Sydney Swans": "Sydney",
+    "Collingwood Magpies": "Collingwood",
+    "Melbourne Demons": "Melbourne",
+    "Hawthorn Hawks": "Hawthorn",
+    "Richmond Tigers": "Richmond",
+    "Carlton Blues": "Carlton",
+    "Essendon Bombers": "Essendon",
+    "Fremantle Dockers": "Fremantle",
+    "Western Bulldogs": "Western Bulldogs",
+    "Port Adelaide Power": "Port Adelaide",
+    "Port Adelaide": "Port Adelaide",
+}
+
+def normalise_team(name: str) -> str:
+    return TEAM_NAME_MAP.get(name, name)
