@@ -59,12 +59,19 @@ PAV_FEATURES = [
     "pav_mid_diff",
 ]
 
+EXPERIENCE_FEATURES = [
+    "exp_avg_diff",       # avg career games diff (home - away)
+    "exp_veteran_diff",   # % veterans diff
+    "exp_developing_diff",# % developing players diff (negative = better)
+]
+
 ALL_FEATURES = (BASE_FEATURES + FATIGUE_FEATURES +
-                CONTEXT_FEATURES + SEASON_STAT_FEATURES + PAV_FEATURES)
+                CONTEXT_FEATURES + SEASON_STAT_FEATURES +
+                PAV_FEATURES + EXPERIENCE_FEATURES)
 
 # Use these as the working set (PAV only available when lineups announced)
 CORE_FEATURES = (BASE_FEATURES + FATIGUE_FEATURES +
-                 CONTEXT_FEATURES + SEASON_STAT_FEATURES)
+                 CONTEXT_FEATURES + SEASON_STAT_FEATURES + EXPERIENCE_FEATURES)
 
 
 def build_features(df: pd.DataFrame, window: int = 5) -> pd.DataFrame:
@@ -200,6 +207,49 @@ def add_pav_features(df: pd.DataFrame, pav_df: pd.DataFrame) -> pd.DataFrame:
             h_vals.append(float(hv or 0))
             a_vals.append(float(av or 0))
         df[diff_col] = np.array(h_vals) - np.array(a_vals)
+
+    return df
+
+
+def add_experience_features(df: pd.DataFrame, exp_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add team experience differential features to game rows.
+    exp_df should have columns: team, year, avg_career_games, pct_veterans, pct_developing
+    from experience.compute_experience_from_pav().
+    """
+    for col in EXPERIENCE_FEATURES:
+        df[col] = 0.0
+
+    if exp_df is None or exp_df.empty:
+        return df
+
+    df = df.copy()
+
+    # Build lookup: (team, year) -> experience stats
+    lookup = {}
+    for _, row in exp_df.iterrows():
+        lookup[(str(row["team"]), int(row["year"]))] = row.to_dict()
+
+    h_avg, a_avg = [], []
+    h_vet, a_vet = [], []
+    h_dev, a_dev = [], []
+
+    for _, row in df.iterrows():
+        year = int(row.get("year", 0))
+        h = str(row.get("hteam", ""))
+        a = str(row.get("ateam", ""))
+        hd = lookup.get((h, year)) or lookup.get((h, year - 1)) or {}
+        ad = lookup.get((a, year)) or lookup.get((a, year - 1)) or {}
+        h_avg.append(float(hd.get("avg_career_games", 0) or 0))
+        a_avg.append(float(ad.get("avg_career_games", 0) or 0))
+        h_vet.append(float(hd.get("pct_veterans",    0) or 0))
+        a_vet.append(float(ad.get("pct_veterans",    0) or 0))
+        h_dev.append(float(hd.get("pct_developing",  0) or 0))
+        a_dev.append(float(ad.get("pct_developing",  0) or 0))
+
+    df["exp_avg_diff"]        = np.array(h_avg) - np.array(a_avg)
+    df["exp_veteran_diff"]    = np.array(h_vet) - np.array(a_vet)
+    df["exp_developing_diff"] = np.array(h_dev) - np.array(a_dev)
 
     return df
 
