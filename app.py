@@ -11,9 +11,11 @@ sys.path.insert(0, os.path.dirname(__file__))
 from data.fetcher import (get_all_games, get_upcoming_games, enrich_games, get_team_current_stats)
 from data.afltables import get_all_team_season_stats
 from data.lineup import get_pav_multi_year, get_current_lineups, compute_lineup_strength
+from data.experience import compute_experience_from_pav, analyse_data_staleness
 from model.elo import build_elo_ratings, regress_elos_to_mean
 from model.predictor import (build_features, add_season_stat_features,
-                              add_pav_features, train_models, predict_game,
+                              add_pav_features, add_experience_features,
+                              train_models, predict_game,
                               build_prediction_features, CORE_FEATURES, ALL_FEATURES)
 from model.backtest import (run_walk_forward_backtest, compute_yearly_accuracy,
                              ablation_test, permutation_importance_analysis,
@@ -198,6 +200,9 @@ def build_model(start_year):
     df = add_season_stat_features(df, season_stats)
     # Add PAV features
     df = add_pav_features(df, pav_df)
+    # Add experience features (derived from PAV career game counts)
+    exp_df = compute_experience_from_pav(pav_df, games_df, year=datetime.now().year)
+    df = add_experience_features(df, exp_df)
 
     win_model, margin_model, metrics, fi_df = train_models(df)
     current_elos = regress_elos_to_mean(elo_history)
@@ -1209,16 +1214,41 @@ elif page == "👕 Lineup Strength":
 
     # Debug expander — always visible so we can diagnose issues
     with st.expander("🔧 Lineup debug info"):
-        st.markdown(f"**Lineup rows fetched:** {len(lineup_df)}")
+        import requests as _req
+        _year = datetime.now().year
+        # Show raw API responses for diagnosis
+        try:
+            _gr = _req.get(f"https://api.squiggle.com.au/?q=games;year={_year}",
+                           headers={"User-Agent":"AFL-Predictor/1.0"}, timeout=15)
+            _games = _gr.json().get("games", [])
+            _gdf = pd.DataFrame(_games)
+            _incomplete = _gdf[_gdf["complete"] < 100] if not _gdf.empty else pd.DataFrame()
+            _cur_round = int(_incomplete["round"].min()) if not _incomplete.empty else "none"
+            st.markdown(f"**Current round detected:** {_cur_round}")
+        except Exception as _e:
+            st.error(f"Games API error: {_e}")
+            _cur_round = 1
+
+        for _rnd in [_cur_round, _cur_round - 1 if isinstance(_cur_round, int) else 0, _cur_round + 1 if isinstance(_cur_round, int) else 2]:
+            if not isinstance(_rnd, int) or _rnd < 1:
+                continue
+            try:
+                _url = f"https://api.squiggle.com.au/?q=lineup;year={_year};round={_rnd}"
+                _lr = _req.get(_url, headers={"User-Agent":"AFL-Predictor/1.0"}, timeout=15)
+                _raw = _lr.json()
+                _keys = list(_raw.keys())
+                _items = _raw.get("lineups", _raw.get("lineup", []))
+                st.markdown(f"**Round {_rnd} — URL:** `{_url}`")
+                st.markdown(f"**Response keys:** {_keys} | **Items count:** {len(_items)}")
+                if _items:
+                    st.dataframe(pd.DataFrame(_items).head(3), use_container_width=True)
+                    break
+            except Exception as _e:
+                st.error(f"Round {_rnd} lineup fetch error: {_e}")
+
+        st.markdown(f"**lineup_df rows:** {len(lineup_df)}")
         if not lineup_df.empty:
             st.markdown(f"**Columns:** {list(lineup_df.columns)}")
-            st.markdown(f"**Rounds in data:** {sorted(lineup_df['round'].unique()) if 'round' in lineup_df.columns else 'no round column'}")
-            team_col = "teamname" if "teamname" in lineup_df.columns else "team"
-            st.markdown(f"**Teams found:** {sorted(lineup_df[team_col].unique()) if team_col in lineup_df.columns else 'no team column'}")
-            st.markdown(f"**Sample rows:**")
-            st.dataframe(lineup_df.head(5), use_container_width=True)
-        else:
-            st.warning("lineup_df is empty — either lineups aren't announced yet or the fetch failed.")
         st.markdown(f"**PAV rows:** {len(pav_df)}")
         if not pav_df.empty:
             st.markdown(f"**PAV columns:** {list(pav_df.columns)}")
@@ -2013,3 +2043,127 @@ which is a high bar.
 Edge should be assessed over **many bets**, not individual games. The model's long-run accuracy of ~66%
 is the ceiling on how often value bets should win.
 """)
+
+    # ── Data Staleness & Optimal Training Year ────────────────────────────────
+    st.markdown("---")
+    st.markdown("## 📅 Optimal Training Start Year")
+    st.markdown("""
+    One of the trickiest questions is: **how far back should we train?** 
+
+    More data = better statistics. But data from 2013 reflects a completely different player pool —
+    most of those players have retired. Training on their patterns means the model is partly learning
+    from irrelevant historical noise.
+
+    The chart below shows, for each possible training start year, what percentage of players from that 
+    era are **still active today** and how many were in their **prime career stage** (75–149 weighted games).
+    A *weighted game* counts finals appearances as **2.5× a regular game** — a Grand Final is worth 
+    more formative experience than a Round 5 trip to Hobart.
+    """)
+
+    with st.spinner("Analysing data staleness across training years..."):
+        staleness = analyse_data_staleness(pav_df, df, start_year=2013)
+
+    if staleness:
+        stal_rows = []
+        for yr, v in sorted(staleness.items()):
+            stal_rows.append({
+                "Year":             yr,
+                "Players that year": v["n_players"],
+                "Still active today": v["n_still_active"],
+                "% Still active":   v["pct_still_active"],
+                "Prime players":    v["n_prime_players"],
+                "Seasons of data":  v["seasons_available"],
+                "Relevance score":  v["relevance_score"],
+                "Recommended":      "✅" if v.get("recommended") else "",
+            })
+        stal_df = pd.DataFrame(stal_rows)
+
+        # Chart: % still active + prime players over years
+        import plotly.graph_objects as go
+        fig_s = go.Figure()
+        fig_s.add_trace(go.Bar(
+            x=stal_df["Year"], y=stal_df["% Still active"],
+            name="% Players still active today",
+            marker_color="#3498db", opacity=0.7
+        ))
+        fig_s.add_trace(go.Scatter(
+            x=stal_df["Year"], y=stal_df["Relevance score"] * 100,
+            name="Relevance score (×100)", mode="lines+markers",
+            line=dict(color="#e94560", width=2),
+            yaxis="y2"
+        ))
+        # Highlight recommended year
+        rec_years = stal_df[stal_df["Recommended"] == "✅"]["Year"].tolist()
+        for ry in rec_years:
+            fig_s.add_vline(x=ry, line_dash="dash", line_color="#2ecc71",
+                            annotation_text=f"Recommended: {ry}", annotation_position="top right")
+
+        fig_s.update_layout(
+            paper_bgcolor="#0a1628", plot_bgcolor="#0a1628",
+            font=dict(color="white"), height=380,
+            yaxis=dict(title="% Players still active", color="white"),
+            yaxis2=dict(title="Relevance score", overlaying="y", side="right", color="#e94560"),
+            xaxis=dict(color="white"),
+            legend=dict(bgcolor="#1a1a2e"),
+            title="Training Data Relevance by Start Year"
+        )
+        st.plotly_chart(fig_s, use_container_width=True)
+        st.dataframe(stal_df, use_container_width=True, hide_index=True)
+
+        if rec_years:
+            best = rec_years[0]
+            st.success(f"**Recommended training start year: {best}** — best balance of data volume, player relevance, and prime-career representation. Use the sidebar slider to try different years and compare model accuracy on the Backtest page.")
+    else:
+        st.info("PAV data needed to run staleness analysis — load a few seasons of data first.")
+
+    # ── Player Experience Feature explainer ───────────────────────────────────
+    st.markdown("---")
+    st.markdown("## 🎓 Player Experience Features")
+    st.markdown("""
+    The model now includes **team experience differential** as a feature group. The intuition: 
+    a team fielding 18 players with 150+ games each is likely to handle pressure situations 
+    better than a team averaging 60 games.
+
+    **How weighted games work:**
+
+    | Career Stage | Regular Games | Finals Multiplier | Notes |
+    |---|---|---|---|
+    | Developing | 0–24 | ×1.0 | Unproven at elite level |
+    | Emerging | 25–74 | ×1.0 | Building consistency |
+    | Prime | 75–149 | ×1.0 | Peak athleticism + experience |
+    | Veteran | 150–199 | ×1.0 | High experience, declining athleticism |
+    | Elite Veteran | 200+ | ×1.0 | Hard-won wisdom |
+
+    Finals games are counted at **×2.5** — a player who plays 10 finals has effectively 
+    experienced the equivalent of 25 regular-season pressure games. Grand Finals, Preliminary 
+    Finals, and Elimination Finals all count equally in this implementation.
+
+    **The three model features:**
+    - `exp_avg_diff`: Home team's average career games minus away team's average. Positive = home team more experienced.
+    - `exp_veteran_diff`: Difference in % of veterans (150+ weighted games). High = more battle-hardened side.
+    - `exp_developing_diff`: Difference in % of developing players (< 25 games). Negative value is better for home team.
+    """)
+
+    # Show current team experience breakdown
+    st.markdown("### Current Team Experience (from PAV data)")
+    with st.spinner("Computing team experience breakdown..."):
+        try:
+            exp_table = compute_experience_from_pav(pav_df, df, year=datetime.now().year)
+            if not exp_table.empty:
+                latest_exp = exp_table[exp_table["year"] == exp_table["year"].max()].copy()
+                latest_exp = latest_exp.sort_values("avg_career_games", ascending=False)
+                latest_exp["Career Stage Mix"] = latest_exp.apply(
+                    lambda r: f"{r['pct_veterans']*100:.0f}% vet / {r['pct_developing']*100:.0f}% dev", axis=1)
+                display_exp = latest_exp[["team", "avg_career_games", "med_career_games",
+                                          "avg_finals_games", "pct_veterans", "Career Stage Mix"]].copy()
+                display_exp.columns = ["Team", "Avg Career Games", "Median Career Games",
+                                       "Avg Finals Games", "% Veterans", "Career Mix"]
+                display_exp["Avg Career Games"] = display_exp["Avg Career Games"].round(1)
+                display_exp["Median Career Games"] = display_exp["Median Career Games"].round(1)
+                display_exp["Avg Finals Games"] = display_exp["Avg Finals Games"].round(1)
+                display_exp["% Veterans"] = (display_exp["% Veterans"] * 100).round(1)
+                st.dataframe(display_exp, use_container_width=True, hide_index=True)
+            else:
+                st.info("Experience data will populate once PAV data is loaded.")
+        except Exception as _e:
+            st.warning(f"Experience table error: {_e}")
