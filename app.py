@@ -1314,7 +1314,13 @@ elif page == "👕 Lineup Strength":
                         _items = _raw.get("lineups", _raw.get("lineup", []))
                         st.markdown(f"→ JSON keys: {_keys} | Items: {len(_items)}")
                         if _items:
-                            st.dataframe(pd.DataFrame(_items).head(3), use_container_width=True)
+                            _preview = pd.DataFrame(_items).head(3)
+                            # Resolve any numeric team IDs for display
+                            from data.fetcher import resolve_team_id
+                            for _tc in ["team", "teamid", "teamname"]:
+                                if _tc in _preview.columns:
+                                    _preview[_tc] = _preview[_tc].astype(str).map(resolve_team_id)
+                            st.dataframe(_preview, use_container_width=True)
                     except Exception as _je:
                         st.error(f"JSON parse error: {_je}")
                 else:
