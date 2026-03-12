@@ -432,7 +432,8 @@ def build_prediction_features(home_team: str, away_team: str,
                                enriched_df: pd.DataFrame = None,
                                experience_df: pd.DataFrame = None,
                                standings_df: pd.DataFrame = None,
-                               home_advantage: float = 50.0) -> dict:
+                               home_advantage: float = 50.0,
+                               current_round: int = None) -> dict:
     """Build a full feature dict for an upcoming game prediction."""
     from data.fetcher import (travel_distance_km, PERTH_VENUES,
                                LONG_TRAVEL_KM, PERTH_TRAVEL_THRESHOLD_KM)
@@ -634,5 +635,14 @@ def build_prediction_features(home_team: str, away_team: str,
         feats["ladder_rank_diff"] = _st(home_team, "rank", 9)  - _st(away_team, "rank", 9)
         feats["ladder_pct_diff"]  = _st(home_team, pct_col, 100) - _st(away_team, pct_col, 100)
         feats["ladder_wins_diff"] = _st(home_team, "wins", 0)  - _st(away_team, "wins", 0)
+
+    # Fade ladder features in gradually — full weight by Round 8
+    # Round 1 = 12.5%, Round 4 = 50%, Round 8+ = 100%
+    # When current_round is None (training / unknown), use full weight
+    if current_round is not None:
+        ladder_weight = min(current_round / 8.0, 1.0)
+        feats["ladder_rank_diff"] *= ladder_weight
+        feats["ladder_pct_diff"]  *= ladder_weight
+        feats["ladder_wins_diff"] *= ladder_weight
 
     return feats
