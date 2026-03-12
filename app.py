@@ -381,7 +381,9 @@ if page == "📊 Dashboard":
                                               key="selected_round",
                                               label_visibility="collapsed")
             upcoming = _incomplete[_incomplete["round"] == selected_round].copy()
-            st.markdown(f"*Round {selected_round} — {len(upcoming)} games*")
+            _ladder_w = min(selected_round / 8.0, 1.0)
+            _ladder_note = f"Ladder weight: {_ladder_w:.0%}" if _ladder_w < 1.0 else "Ladder: full weight"
+            st.markdown(f"*Round {selected_round} — {len(upcoming)} games · {_ladder_note}*")
         else:
             st.markdown("## UPCOMING GAMES")
             upcoming = pd.DataFrame()
@@ -407,7 +409,8 @@ if page == "📊 Dashboard":
                         home, away, venue,
                         current_elos, team_stats,
                         season_stats, lineup_strength,
-                        df, exp_df, standings_df
+                        df, exp_df, standings_df,
+                        current_round=int(selected_round) if selected_round else None
                     )
                 except Exception as game_err:
                     import traceback
@@ -786,11 +789,13 @@ elif page == "🔮 Predict a Game":
     st.markdown("---")
 
     if st.button("🔮 PREDICT", use_container_width=True):
+        _pred_round = int(df[df["year"] == datetime.now().year]["round"].max()) if not df[df["year"] == datetime.now().year].empty else None
         feats = build_prediction_features(
             home_team, away_team, venue,
             current_elos, team_stats,
             season_stats, lineup_strength,
-            df, exp_df, standings_df
+            df, exp_df, standings_df,
+            current_round=_pred_round
         )
         pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
         m    = pred["predicted_margin"]
@@ -1533,11 +1538,13 @@ elif page == "💰 Value Bets":
     # ── Helper to get our model prob for any matchup ──────────────────────────
     def get_our_prob(ht, at, venue=""):
         """Use identical feature building to the Predict page."""
+        _round = int(df[df["year"] == datetime.now().year]["round"].max()) if not df[df["year"] == datetime.now().year].empty else None
         feats = build_prediction_features(
             ht, at, venue,
             current_elos, team_stats,
             season_stats, lineup_strength if 'lineup_strength' in dir() else {},
-            df, exp_df, standings_df
+            df, exp_df, standings_df,
+            current_round=_round
         )
         pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
         return pred["home_win_prob"] / 100.0, pred["predicted_margin"]
