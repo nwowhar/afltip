@@ -423,3 +423,47 @@ TEAM_NAME_MAP = {
 
 def normalise_team(name: str) -> str:
     return TEAM_NAME_MAP.get(name, name)
+
+# ── Standings / ladder ────────────────────────────────────────────────────────
+
+def get_standings(year: int) -> pd.DataFrame:
+    """
+    Fetch AFL ladder standings from Squiggle for a given year.
+    Returns DataFrame: team, rank, wins, losses, draws, pct, points
+    """
+    try:
+        r = requests.get(f"{SQUIGGLE_BASE}?q=standings;year={year}",
+                         headers=HEADERS, timeout=15)
+        r.raise_for_status()
+        text = r.text.strip()
+        if not text or text.startswith("<"):
+            return pd.DataFrame()
+        data = r.json().get("standings", [])
+        if not data:
+            return pd.DataFrame()
+        df = pd.DataFrame(data)
+        df["year"] = year
+        # Normalise team names
+        if "name" in df.columns:
+            df["team"] = df["name"].apply(normalise_team)
+        elif "team" in df.columns:
+            df["team"] = df["team"].apply(normalise_team)
+        # Ensure numeric
+        for col in ["rank", "wins", "losses", "draws", "percentage", "pts"]:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        return df
+    except Exception as e:
+        print(f"Standings fetch failed {year}: {e}")
+        return pd.DataFrame()
+
+
+def get_standings_multi_year(start_year: int) -> pd.DataFrame:
+    """Fetch standings for all completed years from start_year to present."""
+    current_year = datetime.now().year
+    frames = []
+    for year in range(start_year, current_year + 1):
+        df = get_standings(year)
+        if not df.empty:
+            frames.append(df)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
