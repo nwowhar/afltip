@@ -67,13 +67,20 @@ EXPERIENCE_FEATURES = [
     "exp_developing_diff",# % developing players diff (negative = better)
 ]
 
+STANDINGS_FEATURES = [
+    "ladder_rank_diff",   # rank diff (negative = home team higher on ladder)
+    "ladder_pct_diff",    # percentage diff
+    "ladder_wins_diff",   # wins diff
+]
+
 ALL_FEATURES = (BASE_FEATURES + FATIGUE_FEATURES +
                 CONTEXT_FEATURES + SEASON_STAT_FEATURES +
-                PAV_FEATURES + EXPERIENCE_FEATURES)
+                PAV_FEATURES + EXPERIENCE_FEATURES + STANDINGS_FEATURES)
 
 # Use these as the working set (PAV only available when lineups announced)
 CORE_FEATURES = (BASE_FEATURES + FATIGUE_FEATURES +
-                 CONTEXT_FEATURES + SEASON_STAT_FEATURES + EXPERIENCE_FEATURES)
+                 CONTEXT_FEATURES + SEASON_STAT_FEATURES +
+                 EXPERIENCE_FEATURES + STANDINGS_FEATURES)
 
 
 def build_features(df: pd.DataFrame, window: int = 5) -> pd.DataFrame:
@@ -256,6 +263,53 @@ def add_experience_features(df: pd.DataFrame, exp_df: pd.DataFrame) -> pd.DataFr
     return df
 
 
+def add_standings_features(df: pd.DataFrame,
+                            standings_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add ladder position, percentage and wins differential as features.
+    standings_df: team | year | rank | wins | losses | percentage | pts
+    """
+    for col in STANDINGS_FEATURES:
+        df[col] = 0.0
+
+    if standings_df is None or standings_df.empty:
+        return df
+
+    df = df.copy()
+
+    # Build lookup: (team, year) -> standings row
+    lookup = {}
+    pct_col = "percentage" if "percentage" in standings_df.columns else "pct"
+    for _, row in standings_df.iterrows():
+        lookup[(str(row["team"]), int(row["year"]))] = row.to_dict()
+
+    h_rank, a_rank = [], []
+    h_pct,  a_pct  = [], []
+    h_wins, a_wins = [], []
+
+    for _, row in df.iterrows():
+        year = int(row.get("year", 0))
+        h = str(row.get("hteam", ""))
+        a = str(row.get("ateam", ""))
+        # Use previous year's final standings when current year not available yet
+        hd = lookup.get((h, year)) or lookup.get((h, year - 1)) or {}
+        ad = lookup.get((a, year)) or lookup.get((a, year - 1)) or {}
+        # Default rank to 9 (mid-table neutral) if unknown
+        h_rank.append(float(hd.get("rank", 9) or 9))
+        a_rank.append(float(ad.get("rank", 9) or 9))
+        h_pct.append(float(hd.get(pct_col, 100) or 100))
+        a_pct.append(float(ad.get(pct_col, 100) or 100))
+        h_wins.append(float(hd.get("wins", 0) or 0))
+        a_wins.append(float(ad.get("wins", 0) or 0))
+
+    # Rank diff: negative means home team is higher (better) on ladder
+    df["ladder_rank_diff"] = np.array(h_rank) - np.array(a_rank)
+    df["ladder_pct_diff"]  = np.array(h_pct)  - np.array(a_pct)
+    df["ladder_wins_diff"] = np.array(h_wins) - np.array(a_wins)
+
+    return df
+
+
 def train_models(df: pd.DataFrame,
                  feature_set: list = None) -> tuple:
     """
@@ -377,6 +431,7 @@ def build_prediction_features(home_team: str, away_team: str,
                                lineup_pav: dict = None,
                                enriched_df: pd.DataFrame = None,
                                experience_df: pd.DataFrame = None,
+                               standings_df: pd.DataFrame = None,
                                home_advantage: float = 50.0) -> dict:
     """Build a full feature dict for an upcoming game prediction."""
     from data.fetcher import (travel_distance_km, PERTH_VENUES,
@@ -560,5 +615,24 @@ def build_prediction_features(home_team: str, away_team: str,
         feats["exp_avg_diff"]        = _exp(home_team, "avg_career_games")   - _exp(away_team, "avg_career_games")
         feats["exp_veteran_diff"]    = _exp(home_team, "pct_veterans")       - _exp(away_team, "pct_veterans")
         feats["exp_developing_diff"] = _exp(home_team, "pct_developing")     - _exp(away_team, "pct_developing")
+
+    # Standings / ladder features
+    feats["ladder_rank_diff"] = 0.0
+    feats["ladder_pct_diff"]  = 0.0
+    feats["ladder_wins_diff"] = 0.0
+    if standings_df is not None and not standings_df.empty:
+        from datetime import datetime as _dt3
+        yr = _dt3.now().year
+        pct_col = "percentage" if "percentage" in standings_df.columns else "pct"
+        def _st(team, col, default):
+            row = standings_df[(standings_df["team"] == team) &
+                               (standings_df["year"] == yr)]
+            if row.empty:
+                row = standings_df[(standings_df["team"] == team) &
+                                   (standings_df["year"] == yr - 1)]
+            return float(row.iloc[0][col]) if not row.empty and col in row.columns else default
+        feats["ladder_rank_diff"] = _st(home_team, "rank", 9)  - _st(away_team, "rank", 9)
+        feats["ladder_pct_diff"]  = _st(home_team, pct_col, 100) - _st(away_team, pct_col, 100)
+        feats["ladder_wins_diff"] = _st(home_team, "wins", 0)  - _st(away_team, "wins", 0)
 
     return feats
