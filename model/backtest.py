@@ -38,6 +38,7 @@ FEATURE_GROUPS = {
     "PAV lineup":           ["pav_total_diff", "pav_off_diff",
                              "pav_def_diff", "pav_mid_diff"],
     "Experience":           ["exp_avg_diff", "exp_veteran_diff", "exp_developing_diff"],
+    "Ladder position":      ["ladder_rank_diff", "ladder_pct_diff", "ladder_wins_diff"],
 }
 
 ALL_FEATURES = [f for feats in FEATURE_GROUPS.values() for f in feats]
