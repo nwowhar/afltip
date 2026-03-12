@@ -143,20 +143,7 @@ def enrich_games(df: pd.DataFrame) -> pd.DataFrame:
         lambda r: travel_distance_km(r.get("ateam",""), r.get("venue","")), axis=1)
     df["travel_diff"] = df["travel_home_km"] - df["travel_away_km"]
 
-    # ── Rest days — binary flags more predictive than raw counts ─────────────
-    # Raw days_rest is noisy (7 days vs 9 days doesn't matter much)
-    # What matters: short turnaround (<= 6 days) and bye-length rest (>= 14 days)
-    df["short_rest_home"]   = (df["days_rest_home"] <= 6).astype(float)
-    df["short_rest_away"]   = (df["days_rest_away"] <= 6).astype(float)
-    df["short_rest_diff"]   = df["short_rest_home"] - df["short_rest_away"]
-    df["bye_rest_home"]     = (df["days_rest_home"] >= 14).astype(float)
-    df["bye_rest_away"]     = (df["days_rest_away"] >= 14).astype(float)
-    df["bye_rest_diff"]     = df["bye_rest_home"] - df["bye_rest_away"]
-    # Keep raw diff too — useful for the fatigue interaction
-    df["days_rest_diff"]    = df["days_rest_home"] - df["days_rest_away"]
-
-    # Perth game flag: 1 if venue is Perth, useful for the model to weight
-    # interstate-to-Perth travel differently from Melbourne-to-Adelaide etc.
+    # Perth game flag
     df["is_perth_game"] = df["venue"].apply(
         lambda v: 1 if str(v) in PERTH_VENUES else 0)
 
@@ -240,6 +227,14 @@ def enrich_games(df: pd.DataFrame) -> pd.DataFrame:
     df["days_rest_home"]  = days_rest_h
     df["days_rest_away"]  = days_rest_a
     df["days_rest_diff"]  = df["days_rest_home"] - df["days_rest_away"]
+
+    # Binary rest flags — more predictive than raw counts
+    df["short_rest_home"]  = (df["days_rest_home"] <= 6).astype(float)
+    df["short_rest_away"]  = (df["days_rest_away"] <= 6).astype(float)
+    df["short_rest_diff"]  = df["short_rest_home"] - df["short_rest_away"]
+    df["bye_rest_home"]    = (df["days_rest_home"] >= 14).astype(float)
+    df["bye_rest_away"]    = (df["days_rest_away"] >= 14).astype(float)
+    df["bye_rest_diff"]    = df["bye_rest_home"] - df["bye_rest_away"]
 
     df["home_streak"]     = h_streak
     df["away_streak"]     = a_streak
