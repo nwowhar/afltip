@@ -940,6 +940,13 @@ elif page == "📋 Team Stats":
     st.markdown("# TEAM STATS LEADERBOARD")
     st.markdown("*Season averages per game — all 18 teams ranked*")
 
+    with st.expander("🔧 Debug: season_stats columns"):
+        if season_stats is not None and not season_stats.empty:
+            st.write(season_stats.columns.tolist())
+            st.write(season_stats.head(3))
+        else:
+            st.write("season_stats is empty")
+
     cur_year = datetime.now().year
 
     if season_stats is None or season_stats.empty:
