@@ -337,7 +337,7 @@ def train_models(df: pd.DataFrame,
         "margin_r2_std":    margin_cv.std(),
         "n_games":          len(clean),
         "n_features":       len(available),
-        "features_used":    available,
+        "features_used":    available,  # ← exact list model was trained on
     }
 
     return win_model, margin_model, metrics, fi_df
@@ -346,11 +346,20 @@ def train_models(df: pd.DataFrame,
 def predict_game(win_model, margin_model,
                  features: dict,
                  feature_set: list = None) -> dict:
-    """Predict a single game from a feature dict."""
+    """Predict a single game from a feature dict.
+    Always uses the exact feature count the model was trained on.
+    Pass feature_set=metrics['features_used'] for guaranteed compatibility.
+    """
     if feature_set is None:
-        feature_set = CORE_FEATURES
-    available = [f for f in feature_set if f in features]
-    X = np.array([[features.get(f, 0) for f in available]])
+        # Fall back to reading n_features_in_ from the scaler
+        try:
+            n = win_model.named_steps["scaler"].n_features_in_
+            feature_set = [f for f in CORE_FEATURES if f in features][:n]
+        except Exception:
+            feature_set = [f for f in CORE_FEATURES if f in features]
+
+    # Build X using exactly the trained feature order, defaulting missing to 0
+    X = np.array([[float(features.get(f, 0.0)) for f in feature_set]])
     win_prob         = win_model.predict_proba(X)[0][1]
     predicted_margin = margin_model.predict(X)[0]
     return {
