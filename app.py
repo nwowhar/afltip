@@ -34,7 +34,7 @@ except ImportError:
     def add_standings_features(df, *a, **kw): return df
 from model.backtest import (run_walk_forward_backtest, compute_yearly_accuracy,
                              ablation_test, permutation_importance_analysis,
-                             margin_prediction_backtest, FEATURE_GROUPS)
+                             margin_prediction_backtest, optimise_start_year, FEATURE_GROUPS)
 
 # ── Inline helpers (independent of fetcher.py version) ───────────────────────
 import requests as _requests_module
@@ -1272,6 +1272,137 @@ to replace raw rest day counts, which should reduce this noise.
             st.plotly_chart(fig4, use_container_width=True)
             avg_mae = margin_bt["mae_points"].mean()
             st.info(f"📏 Average margin prediction error: **{avg_mae:.1f} points** out-of-sample")
+
+        # ── Start year optimisation ───────────────────────────────────────────
+        st.markdown("---")
+        st.markdown("### 📅 Optimal Training Start Year")
+        st.markdown(
+            "*How far back should we train? Each candidate start year is evaluated by its "
+            "out-of-sample accuracy on the most recent 3 completed seasons — the sweet spot "
+            "balances data volume against the risk of training on a different era of AFL.*"
+        )
+
+        with st.spinner("Running start year optimisation (this may take ~30s)..."):
+            all_years_avail = sorted(df["year"].unique())
+            # Only test start years that give at least 2 pre-holdout seasons
+            holdout_n = min(3, len(all_years_avail) - 3)
+            if holdout_n < 1:
+                st.info("Not enough historical seasons to optimise start year yet.")
+            else:
+                sy_df = optimise_start_year(
+                    df, avail_feats,
+                    holdout_years=holdout_n,
+                    min_train_years=2
+                )
+
+                if sy_df.empty:
+                    st.info("Not enough data to run start year optimisation.")
+                else:
+                    best_row   = sy_df.loc[sy_df["accuracy"].idxmax()]
+                    best_year  = int(best_row["start_year"])
+                    best_acc   = float(best_row["accuracy"])
+                    cur_acc    = sy_df[sy_df["start_year"] == start_year]["accuracy"]
+                    cur_acc_val = float(cur_acc.iloc[0]) if not cur_acc.empty else None
+
+                    # Colour bars: highlight best, dim others
+                    colours = [
+                        "#f39c12" if int(r["start_year"]) == best_year
+                        else ("#e94560" if int(r["start_year"]) == start_year else "#3498db")
+                        for _, r in sy_df.iterrows()
+                    ]
+
+                    fig5 = go.Figure()
+                    fig5.add_trace(go.Bar(
+                        x=sy_df["start_year"],
+                        y=sy_df["accuracy"],
+                        marker_color=colours,
+                        text=sy_df["accuracy"].apply(lambda v: f"{v:.1f}%"),
+                        textposition="outside",
+                        customdata=sy_df[["n_train_games", "n_test_games"]].values,
+                        hovertemplate=(
+                            "<b>Start: %{x}</b><br>"
+                            "Accuracy: %{y:.1f}%<br>"
+                            "Train games: %{customdata[0]}<br>"
+                            "Test games: %{customdata[1]}<extra></extra>"
+                        )
+                    ))
+                    dark_chart(fig5, 380)
+                    fig5.update_layout(
+                        yaxis=dict(
+                            title="Out-of-sample accuracy (%)",
+                            range=[
+                                max(55, sy_df["accuracy"].min() - 2),
+                                min(80, sy_df["accuracy"].max() + 3)
+                            ]
+                        ),
+                        xaxis=dict(title="Training data start year", dtick=1),
+                    )
+                    # Annotation for best year
+                    fig5.add_annotation(
+                        x=best_year, y=best_acc + 1.2,
+                        text="🏆 Best",
+                        showarrow=False,
+                        font=dict(color="#f39c12", size=12)
+                    )
+                    if start_year != best_year:
+                        cur_y = float(sy_df[sy_df["start_year"] == start_year]["accuracy"].iloc[0]) if not sy_df[sy_df["start_year"] == start_year].empty else None
+                        if cur_y:
+                            fig5.add_annotation(
+                                x=start_year, y=cur_y + 1.2,
+                                text="📍 Current",
+                                showarrow=False,
+                                font=dict(color="#e94560", size=12)
+                            )
+                    st.plotly_chart(fig5, use_container_width=True)
+
+                    # Also show n_train_games as a secondary line
+                    fig6 = go.Figure()
+                    fig6.add_trace(go.Scatter(
+                        x=sy_df["start_year"],
+                        y=sy_df["n_train_games"],
+                        mode="lines+markers",
+                        line=dict(color="#2ecc71", width=2),
+                        marker=dict(size=6),
+                        name="Training games",
+                        hovertemplate="Start: %{x}<br>Train games: %{y}<extra></extra>"
+                    ))
+                    dark_chart(fig6, 200)
+                    fig6.update_layout(
+                        yaxis=dict(title="Training games available"),
+                        xaxis=dict(title="Training data start year", dtick=1),
+                        showlegend=False,
+                    )
+                    st.plotly_chart(fig6, use_container_width=True)
+
+                    # Summary callout
+                    if cur_acc_val is not None and start_year != best_year:
+                        gap = best_acc - cur_acc_val
+                        extra_tips = int(round(gap / 100 * 207))
+                        st.warning(
+                            f"🏆 **Optimal start year: {best_year}** ({best_acc:.1f}% accuracy on holdout) — "
+                            f"your current setting ({start_year}) scores {cur_acc_val:.1f}%, "
+                            f"a gap of **{gap:+.1f}%** (~{extra_tips} extra correct tips over a season). "
+                            f"Try moving the training slider to {best_year}."
+                        )
+                    elif start_year == best_year:
+                        st.success(
+                            f"✅ **{start_year} is already the optimal start year** ({best_acc:.1f}% on holdout). "
+                            f"You're training on {int(best_row['n_train_games'])} games."
+                        )
+                    else:
+                        st.info(f"Optimal start year based on holdout accuracy: **{best_year}** ({best_acc:.1f}%)")
+
+                    with st.expander("📋 Full results table"):
+                        st.dataframe(
+                            sy_df.rename(columns={
+                                "start_year": "Start Year",
+                                "n_train_games": "Train Games",
+                                "accuracy": "Accuracy (%)",
+                                "brier_score": "Brier Score",
+                                "n_test_games": "Test Games",
+                            }).drop(columns=["holdout_seasons"], errors="ignore"),
+                            use_container_width=True, hide_index=True
+                        )
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LINEUP STRENGTH
