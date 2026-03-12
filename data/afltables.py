@@ -60,6 +60,13 @@ def _normalise_team(name: str) -> str:
 def scrape_team_season_stats(year: int) -> pd.DataFrame:
     """
     Scrape team stat totals for a given year from AFL Tables.
+
+    The page structure is one table per team, with:
+      - A caption like "Brisbane Lions Team Statistics [Players]"
+      - Rows:  Round | Opponent | KI | MK | HB | DI | GL | BH | HO | TK | RB | IF | CL | CG | ...
+      - Each stat cell is "home-away" e.g. "254-211" — we take the left (home team) value
+      - A summary row starting with "W-D-L" that we skip
+
     Returns a DataFrame with one row per team with per-game averages.
     """
     url = f"https://afltables.com/afl/stats/{year}t.html"
@@ -73,54 +80,88 @@ def scrape_team_season_stats(year: int) -> pd.DataFrame:
     soup = BeautifulSoup(resp.text, "lxml")
     tables = soup.find_all("table")
 
+    # Column indices in the per-game rows (0=round, 1=opponent, then stats)
+    # KI MK HB DI GL BH HO TK RB IF CL CG FF FA
+    COL = {
+        "kicks": 2, "marks": 3, "handballs": 4, "disposals": 5,
+        "goals": 6, "behinds": 7, "hitouts": 8, "tackles": 9,
+        "rebound_50s": 10, "inside_50s": 11, "clearances": 12,
+        "clangers": 13, "frees_for": 14, "frees_against": 15,
+    }
+
     records = []
     for table in tables:
-        rows = table.find_all("tr")
-        for row in rows:
+        # Team name is in the caption
+        caption = table.find("caption")
+        if not caption:
+            continue
+        caption_text = caption.get_text(strip=True)
+        # e.g. "Brisbane Lions Team Statistics [Players]"
+        team_raw = caption_text.split(" Team Statistics")[0].strip()
+        if team_raw not in TEAM_NAME_MAP:
+            continue
+        team = _normalise_team(team_raw)
+
+        # Accumulate stat totals across all game rows
+        totals = {k: 0.0 for k in COL}
+        games = 0
+
+        for row in table.find_all("tr"):
             cells = [td.get_text(strip=True) for td in row.find_all("td")]
             if len(cells) < 10:
                 continue
-            # First cell should be team name
-            team_raw = cells[0]
-            if team_raw not in TEAM_NAME_MAP:
+            # Skip header-like rows and the W-D-L summary row
+            if not cells[0] or cells[0].startswith("W-D-L") or cells[0].startswith("R") is False:
+                # Round cells start with "R" e.g. "R1", "R2", "EF", "SF", "PF", "GF"
+                pass
+            # Accept any row where cell[0] looks like a round label
+            round_label = cells[0]
+            if not round_label or cells[1] == "":
                 continue
-            team = _normalise_team(team_raw)
-            try:
-                # AFL Tables table 1 columns (approximate):
-                # Team | GP | KI | MK | HB | DI | GL | BH | HO | TK | RB | IF | CL | CG | FF | FA | ...
-                gp = int(cells[1]) if cells[1].isdigit() else None
-                if not gp or gp == 0:
+            # Skip W-D-L summary
+            if "-" in round_label and round_label.count("-") == 2:
+                continue
+
+            games += 1
+            for stat, idx in COL.items():
+                if idx >= len(cells):
                     continue
+                raw = cells[idx]
+                # Values are "home-away" e.g. "254-211" — take left side
+                home_val = raw.split("-")[0] if "-" in raw else raw
+                try:
+                    totals[stat] += float(home_val.replace(",", ""))
+                except ValueError:
+                    pass
 
-                def safe_avg(idx):
-                    try:
-                        val = float(cells[idx].replace(",", ""))
-                        return round(val / gp, 2)
-                    except Exception:
-                        return None
+        if games == 0:
+            continue
 
-                record = {
-                    "team": team,
-                    "year": year,
-                    "games_played": gp,
-                    "avg_kicks":                 safe_avg(2),
-                    "avg_marks":                 safe_avg(3),
-                    "avg_handballs":             safe_avg(4),
-                    "avg_disposals":             safe_avg(5),
-                    "avg_goals":                 safe_avg(6),
-                    "avg_behinds":               safe_avg(7),
-                    "avg_hitouts":               safe_avg(8),
-                    "avg_tackles":               safe_avg(9),
-                    "avg_rebound_50s":           safe_avg(10),
-                    "avg_inside_50s":            safe_avg(11),
-                    "avg_clearances":            safe_avg(12),
-                    "avg_clangers":              safe_avg(13),
-                    "avg_frees_for":             safe_avg(14),
-                    "avg_frees_against":         safe_avg(15),
-                }
-                records.append(record)
-            except Exception:
-                continue
+        record = {
+            "team": team,
+            "year": year,
+            "games_played": games,
+            "avg_kicks":          round(totals["kicks"]          / games, 2),
+            "avg_marks":          round(totals["marks"]          / games, 2),
+            "avg_handballs":      round(totals["handballs"]      / games, 2),
+            "avg_disposals":      round(totals["disposals"]      / games, 2),
+            "avg_goals":          round(totals["goals"]          / games, 2),
+            "avg_behinds":        round(totals["behinds"]        / games, 2),
+            "avg_hitouts":        round(totals["hitouts"]        / games, 2),
+            "avg_tackles":        round(totals["tackles"]        / games, 2),
+            "avg_rebound_50s":    round(totals["rebound_50s"]    / games, 2),
+            "avg_inside_50s":     round(totals["inside_50s"]     / games, 2),
+            "avg_clearances":     round(totals["clearances"]     / games, 2),
+            "avg_clangers":       round(totals["clangers"]       / games, 2),
+            "avg_frees_for":      round(totals["frees_for"]      / games, 2),
+            "avg_frees_against":  round(totals["frees_against"]  / games, 2),
+            # Derived / aliased columns used elsewhere
+            "avg_contested_possessions": None,
+            "avg_uncontested_possessions": None,
+            "avg_contested_marks": None,
+            "avg_marks_inside_50": None,
+        }
+        records.append(record)
 
     if not records:
         return pd.DataFrame()
