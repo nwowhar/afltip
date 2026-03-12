@@ -297,8 +297,13 @@ def add_style_features(df: pd.DataFrame, style_df: pd.DataFrame) -> pd.DataFrame
     Delegates to data.team_style.attach_style_features() which handles
     leakage-safe year-1 lookups for training data.
     """
-    from data.team_style import attach_style_features
-    return attach_style_features(df, style_df)
+    try:
+        from data.team_style import attach_style_features
+        return attach_style_features(df, style_df)
+    except ImportError:
+        for f in STYLE_FEATURES:
+            df[f] = 0.0
+        return df
 
 
 # ── Model training ────────────────────────────────────────────────────────────
@@ -637,12 +642,16 @@ def build_prediction_features(home_team: str, away_team: str,
     # Style matchup features
     # Use prev-season stats in Rounds 1-3 (not enough current-season data yet)
     if style_df is not None and not style_df.empty:
-        use_prev = (current_round is not None and current_round <= 3)
-        style_feats = compute_style_matchup(
-            home_team, away_team, style_df,
-            game_year=year,
-            use_prev_season=use_prev,
-        )
-        feats.update(style_feats)
+        try:
+            from data.team_style import compute_style_matchup
+            use_prev = (current_round is not None and current_round <= 3)
+            style_feats = compute_style_matchup(
+                home_team, away_team, style_df,
+                game_year=year,
+                use_prev_season=use_prev,
+            )
+            feats.update(style_feats)
+        except ImportError:
+            pass
 
     return feats
