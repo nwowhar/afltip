@@ -1,11 +1,5 @@
 """
-Backtest engine.
-
-Runs the model against every historical game and measures:
-  - Accuracy per year
-  - Accuracy per feature subset (permutation importance)
-  - Which features help vs hurt vs make no difference
-  - Calibration (are our probabilities accurate?)
+Backtest engine — walk-forward accuracy, ablation testing, calibration, margin MAE.
 """
 
 import pandas as pd
@@ -39,6 +33,8 @@ FEATURE_GROUPS = {
                              "pav_def_diff", "pav_mid_diff"],
     "Experience":           ["exp_avg_diff", "exp_veteran_diff", "exp_developing_diff"],
     "Ladder position":      ["ladder_rank_diff", "ladder_pct_diff", "ladder_wins_diff"],
+    "Playing style":        ["kick_ratio_diff", "tackle_diff", "hitout_diff",
+                             "mark_diff", "kick_vs_tackle", "ruck_advantage"],
 }
 
 ALL_FEATURES = [f for feats in FEATURE_GROUPS.values() for f in feats]
@@ -66,11 +62,6 @@ def run_walk_forward_backtest(df: pd.DataFrame,
         if len(train) < 50 or len(test) < 5:
             continue
 
-        X_train = train[available].values
-        y_train = train["home_win"].values
-        X_test  = test[available].values
-        y_test  = test["home_win"].values
-
         model = Pipeline([
             ("scaler", StandardScaler()),
             ("clf", GradientBoostingClassifier(
@@ -78,22 +69,22 @@ def run_walk_forward_backtest(df: pd.DataFrame,
                 learning_rate=0.05, random_state=42
             ))
         ])
-        model.fit(X_train, y_train)
+        model.fit(train[available], train["home_win"])
 
-        probs   = model.predict_proba(X_test)[:, 1]
+        probs   = model.predict_proba(test[available])[:, 1]
         preds   = (probs >= 0.5).astype(int)
         margins = test.get("margin", pd.Series([0]*len(test))).values
 
         for j in range(len(test)):
             results.append({
-                "year":         test_year,
-                "game_idx":     test.index[j],
-                "home_team":    test.iloc[j].get("hteam", ""),
-                "away_team":    test.iloc[j].get("ateam", ""),
-                "actual":       int(y_test[j]),
-                "predicted":    int(preds[j]),
-                "prob":         round(float(probs[j]), 4),
-                "correct":      int(preds[j] == y_test[j]),
+                "year":          test_year,
+                "game_idx":      test.index[j],
+                "home_team":     test.iloc[j].get("hteam", ""),
+                "away_team":     test.iloc[j].get("ateam", ""),
+                "actual":        int(test["home_win"].iloc[j]),
+                "predicted":     int(preds[j]),
+                "prob":          round(float(probs[j]), 4),
+                "correct":       int(preds[j] == test["home_win"].iloc[j]),
                 "actual_margin": float(margins[j]) if len(margins) > j else 0,
             })
 
@@ -101,26 +92,24 @@ def run_walk_forward_backtest(df: pd.DataFrame,
 
 
 def compute_yearly_accuracy(backtest_df: pd.DataFrame) -> pd.DataFrame:
-    """Compute accuracy, MAE on win/loss, and calibration per year."""
+    """Compute accuracy, Brier score, and calibration per year."""
     if backtest_df.empty:
         return pd.DataFrame()
 
     rows = []
     for year, grp in backtest_df.groupby("year"):
-        acc  = grp["correct"].mean()
-        n    = len(grp)
+        acc   = grp["correct"].mean()
         brier = brier_score_loss(grp["actual"], grp["prob"])
-        # Calibration: mean predicted prob vs actual win rate
         mean_prob   = grp["prob"].mean()
         actual_rate = grp["actual"].mean()
         rows.append({
-            "year":         year,
-            "n_games":      n,
-            "accuracy":     round(acc * 100, 1),
-            "brier_score":  round(brier, 4),
-            "mean_pred_prob": round(mean_prob, 3),
-            "actual_win_rate": round(actual_rate, 3),
-            "calibration_err": round(abs(mean_prob - actual_rate), 3),
+            "year":             year,
+            "n_games":          len(grp),
+            "accuracy":         round(acc * 100, 1),
+            "brier_score":      round(brier, 4),
+            "mean_pred_prob":   round(mean_prob, 3),
+            "actual_win_rate":  round(actual_rate, 3),
+            "calibration_err":  round(abs(mean_prob - actual_rate), 3),
         })
     return pd.DataFrame(rows)
 
@@ -129,10 +118,9 @@ def ablation_test(df: pd.DataFrame,
                   feature_groups: dict = None,
                   min_train_years: int = 3) -> pd.DataFrame:
     """
-    Test accuracy with each feature group removed (leave-one-out ablation).
-    Also tests with each group as the ONLY feature set.
-
-    Returns DataFrame showing accuracy impact of each group.
+    Leave-one-out ablation: remove each feature group and measure accuracy impact.
+    Negative delta = removing that group HURT accuracy (group is useful).
+    Positive delta = removing it HELPED (group is noise or harmful).
     """
     if feature_groups is None:
         feature_groups = FEATURE_GROUPS
@@ -143,39 +131,42 @@ def ablation_test(df: pd.DataFrame,
     if not all_feats:
         return pd.DataFrame()
 
-    # Baseline: all features
     base_bt = run_walk_forward_backtest(df, all_feats, min_train_years)
     if base_bt.empty:
         return pd.DataFrame()
     base_acc = base_bt["correct"].mean() * 100
 
-    rows = [{"group": "ALL FEATURES (baseline)",
-             "accuracy": round(base_acc, 1),
-             "delta": 0.0,
-             "n_features": len(all_feats)}]
+    rows = [{
+        "group":         "ALL FEATURES (baseline)",
+        "accuracy":      round(base_acc, 1),
+        "delta":         0.0,
+        "n_features":    len(all_feats),
+        "interpretation": "",
+    }]
 
     for group_name, group_feats in feature_groups.items():
         available = [f for f in group_feats if f in df.columns]
         if not available:
             continue
 
-        # Remove this group
         reduced = [f for f in all_feats if f not in available]
         if len(reduced) < 2:
             continue
+
         bt = run_walk_forward_backtest(df, reduced, min_train_years)
         if bt.empty:
             continue
+
         acc_without = bt["correct"].mean() * 100
-        delta = acc_without - base_acc  # negative = removing hurt accuracy
+        delta = acc_without - base_acc
 
         rows.append({
-            "group":       group_name,
-            "accuracy":    round(acc_without, 1),
-            "delta":       round(delta, 2),
-            "n_features":  len(available),
+            "group":          group_name,
+            "accuracy":       round(acc_without, 1),
+            "delta":          round(delta, 2),
+            "n_features":     len(available),
             "interpretation": (
-                "✅ Helps" if delta < -0.3
+                "✅ Helps"   if delta < -0.3
                 else ("❌ Hurts" if delta > 0.3 else "➡️ Neutral")
             )
         })
@@ -187,18 +178,14 @@ def permutation_importance_analysis(df: pd.DataFrame,
                                      feature_cols: list,
                                      n_repeats: int = 10) -> pd.DataFrame:
     """
-    Train on all data, then compute permutation importance:
-    shuffle each feature and measure accuracy drop.
-    Higher drop = more important feature.
+    Train on all data, then compute permutation importance.
+    Higher drop in accuracy when shuffled = more important feature.
     """
     available = [f for f in feature_cols if f in df.columns]
     clean = df.dropna(subset=available + ["home_win"])
 
     if len(clean) < 100:
         return pd.DataFrame()
-
-    X = clean[available].values
-    y = clean["home_win"].values
 
     model = Pipeline([
         ("scaler", StandardScaler()),
@@ -207,13 +194,11 @@ def permutation_importance_analysis(df: pd.DataFrame,
             learning_rate=0.05, random_state=42
         ))
     ])
-    model.fit(X, y)
+    model.fit(clean[available], clean["home_win"])
 
     result = permutation_importance(
-        model, X, y,
-        n_repeats=n_repeats,
-        random_state=42,
-        scoring="accuracy"
+        model, clean[available].values, clean["home_win"].values,
+        n_repeats=n_repeats, random_state=42, scoring="accuracy"
     )
 
     imp_df = pd.DataFrame({
@@ -222,40 +207,30 @@ def permutation_importance_analysis(df: pd.DataFrame,
         "std":        result.importances_std,
     }).sort_values("importance", ascending=False)
 
-    # Assign group labels
     group_lookup = {}
     for group, feats in FEATURE_GROUPS.items():
         for f in feats:
             group_lookup[f] = group
-
-    imp_df["group"] = imp_df["feature"].map(
-        lambda f: group_lookup.get(f, "Other")
-    )
+    imp_df["group"] = imp_df["feature"].map(lambda f: group_lookup.get(f, "Other"))
 
     return imp_df
 
 
 def optimise_start_year(df: pd.DataFrame,
-                        feature_cols: list,
-                        candidate_years: list = None,
-                        holdout_years: int = 3,
-                        min_train_years: int = 2) -> pd.DataFrame:
+                         feature_cols: list,
+                         candidate_years: list = None,
+                         holdout_years: int = 3,
+                         min_train_years: int = 2) -> pd.DataFrame:
     """
     For each candidate training start year, run a walk-forward backtest on the
-    most recent `holdout_years` seasons and record out-of-sample accuracy.
-
-    This finds the sweet spot between:
-      - Too much old data  → stale game style drags accuracy down
-      - Too little data    → model overfits to recent variance
-
-    Returns DataFrame: start_year | n_train_games | accuracy | brier | n_test_games
+    most recent holdout_years seasons and record out-of-sample accuracy.
+    Returns: start_year | n_train_games | accuracy | brier | n_test_games
     """
     all_years = sorted(df["year"].unique())
     if len(all_years) < min_train_years + holdout_years:
         return pd.DataFrame()
 
     if candidate_years is None:
-        # Test every possible start year that leaves enough training data
         max_start = all_years[-(holdout_years + min_train_years)]
         candidate_years = [y for y in all_years if y <= max_start]
 
@@ -263,7 +238,6 @@ def optimise_start_year(df: pd.DataFrame,
     if not available:
         return pd.DataFrame()
 
-    # The holdout window: last `holdout_years` completed seasons
     holdout_window = all_years[-holdout_years:]
     rows = []
 
@@ -271,7 +245,6 @@ def optimise_start_year(df: pd.DataFrame,
         subset = df[df["year"] >= start_year].copy()
         subset_years = sorted(subset["year"].unique())
 
-        # Need at least min_train_years before the holdout window
         pre_holdout = [y for y in subset_years if y < holdout_window[0]]
         if len(pre_holdout) < min_train_years:
             continue
@@ -284,7 +257,7 @@ def optimise_start_year(df: pd.DataFrame,
 
             train = subset[subset["year"].isin(train_years)].dropna(
                 subset=available + ["home_win"])
-            test = subset[subset["year"] == test_year].dropna(
+            test  = subset[subset["year"] == test_year].dropna(
                 subset=available + ["home_win"])
 
             if len(train) < 30 or len(test) < 5:
@@ -312,16 +285,16 @@ def optimise_start_year(df: pd.DataFrame,
             continue
 
         res_df = pd.DataFrame(results)
-        acc    = (res_df["predicted"] == res_df["actual"]).mean() * 100
-        brier  = brier_score_loss(res_df["actual"], res_df["prob"])
+        acc   = (res_df["predicted"] == res_df["actual"]).mean() * 100
+        brier = brier_score_loss(res_df["actual"], res_df["prob"])
         n_train = len(subset[subset["year"] < holdout_window[0]])
 
         rows.append({
-            "start_year":    start_year,
-            "n_train_games": n_train,
-            "accuracy":      round(acc, 2),
-            "brier_score":   round(brier, 4),
-            "n_test_games":  len(res_df),
+            "start_year":     start_year,
+            "n_train_games":  n_train,
+            "accuracy":       round(acc, 2),
+            "brier_score":    round(brier, 4),
+            "n_test_games":   len(res_df),
             "holdout_seasons": holdout_years,
         })
 
@@ -357,9 +330,9 @@ def margin_prediction_backtest(df: pd.DataFrame,
         mae = mean_absolute_error(test["margin"], preds)
 
         rows.append({
-            "year": test_year,
+            "year":      test_year,
             "mae_points": round(mae, 1),
-            "n_games": len(test),
+            "n_games":   len(test),
         })
 
     return pd.DataFrame(rows)
