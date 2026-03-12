@@ -235,6 +235,99 @@ def permutation_importance_analysis(df: pd.DataFrame,
     return imp_df
 
 
+def optimise_start_year(df: pd.DataFrame,
+                        feature_cols: list,
+                        candidate_years: list = None,
+                        holdout_years: int = 3,
+                        min_train_years: int = 2) -> pd.DataFrame:
+    """
+    For each candidate training start year, run a walk-forward backtest on the
+    most recent `holdout_years` seasons and record out-of-sample accuracy.
+
+    This finds the sweet spot between:
+      - Too much old data  → stale game style drags accuracy down
+      - Too little data    → model overfits to recent variance
+
+    Returns DataFrame: start_year | n_train_games | accuracy | brier | n_test_games
+    """
+    all_years = sorted(df["year"].unique())
+    if len(all_years) < min_train_years + holdout_years:
+        return pd.DataFrame()
+
+    if candidate_years is None:
+        # Test every possible start year that leaves enough training data
+        max_start = all_years[-(holdout_years + min_train_years)]
+        candidate_years = [y for y in all_years if y <= max_start]
+
+    available = [f for f in feature_cols if f in df.columns]
+    if not available:
+        return pd.DataFrame()
+
+    # The holdout window: last `holdout_years` completed seasons
+    holdout_window = all_years[-holdout_years:]
+    rows = []
+
+    for start_year in candidate_years:
+        subset = df[df["year"] >= start_year].copy()
+        subset_years = sorted(subset["year"].unique())
+
+        # Need at least min_train_years before the holdout window
+        pre_holdout = [y for y in subset_years if y < holdout_window[0]]
+        if len(pre_holdout) < min_train_years:
+            continue
+
+        results = []
+        for test_year in holdout_window:
+            train_years = [y for y in subset_years if y < test_year]
+            if len(train_years) < min_train_years:
+                continue
+
+            train = subset[subset["year"].isin(train_years)].dropna(
+                subset=available + ["home_win"])
+            test = subset[subset["year"] == test_year].dropna(
+                subset=available + ["home_win"])
+
+            if len(train) < 30 or len(test) < 5:
+                continue
+
+            model = Pipeline([
+                ("scaler", StandardScaler()),
+                ("clf", GradientBoostingClassifier(
+                    n_estimators=100, max_depth=3,
+                    learning_rate=0.05, random_state=42
+                ))
+            ])
+            model.fit(train[available], train["home_win"])
+            probs = model.predict_proba(test[available])[:, 1]
+            preds = (probs >= 0.5).astype(int)
+
+            for j in range(len(test)):
+                results.append({
+                    "actual":    int(test["home_win"].iloc[j]),
+                    "predicted": int(preds[j]),
+                    "prob":      float(probs[j]),
+                })
+
+        if not results:
+            continue
+
+        res_df = pd.DataFrame(results)
+        acc    = (res_df["predicted"] == res_df["actual"]).mean() * 100
+        brier  = brier_score_loss(res_df["actual"], res_df["prob"])
+        n_train = len(subset[subset["year"] < holdout_window[0]])
+
+        rows.append({
+            "start_year":    start_year,
+            "n_train_games": n_train,
+            "accuracy":      round(acc, 2),
+            "brier_score":   round(brier, 4),
+            "n_test_games":  len(res_df),
+            "holdout_seasons": holdout_years,
+        })
+
+    return pd.DataFrame(rows).sort_values("start_year")
+
+
 def margin_prediction_backtest(df: pd.DataFrame,
                                 feature_cols: list,
                                 min_train_years: int = 3) -> pd.DataFrame:
