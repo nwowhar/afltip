@@ -35,6 +35,15 @@ except ImportError:
 from model.backtest import (run_walk_forward_backtest, compute_yearly_accuracy,
                              ablation_test, permutation_importance_analysis,
                              margin_prediction_backtest, optimise_start_year, FEATURE_GROUPS)
+try:
+    from data.team_style import (build_style_features_from_season_stats,
+                                  compute_style_matchup, STYLE_FEATURES)
+    _style_available = True
+except ImportError:
+    _style_available = False
+    def build_style_features_from_season_stats(*a, **kw): return __import__('pandas').DataFrame()
+    def compute_style_matchup(*a, **kw): return {}
+    STYLE_FEATURES = []
 
 # ── Inline helpers (independent of fetcher.py version) ───────────────────────
 import requests as _requests_module
@@ -177,7 +186,7 @@ with st.sidebar:
         "📋 Team Stats",
         "🔬 Feature Importance",
         "📉 Backtest",
-        "👕 Lineup Strength",
+        "🎨 Style Matchup",
         "💰 Value Bets",
         "📖 How It Works",
     ], key="page")
@@ -205,37 +214,45 @@ def load_lineups():
 def load_standings(start_year):
     return get_standings_multi_year(start_year)
 
+@st.cache_data(ttl=86400, show_spinner="🎨 Building team style profiles...")
+def load_style_features(start_year):
+    """Derive style profiles from already-loaded season stats — no extra scraping."""
+    ss = load_season_stats(start_year)
+    if ss is None or ss.empty:
+        return __import__('pandas').DataFrame()
+    return build_style_features_from_season_stats(ss)
+
 @st.cache_data(ttl=3601, show_spinner="🤖 Building Elo ratings & training model...")
 def build_model(start_year):
     games_df = load_games(start_year)
     if games_df is None or games_df.empty:
-        return None, None, None, None, {}, {}, None, None, None, None, None
+        return None, None, None, None, {}, {}, None, None, None, None, None, None
 
     season_stats  = load_season_stats(start_year)
     pav_df        = load_pav(start_year)
     standings_df  = load_standings(start_year)
+    style_df      = load_style_features(start_year)
 
-    # Enrich with fatigue/context features
     df = enrich_games(games_df)
-    # Build Elo
     df, elo_history = build_elo_ratings(df)
-    # Build rolling form
     df = build_features(df)
-    # Add season stats features
     df = add_season_stat_features(df, season_stats)
-    # Add PAV features
     df = add_pav_features(df, pav_df)
-    # Add experience features
     exp_df = compute_experience_from_pav(pav_df, games_df, year=datetime.now().year)
     df = add_experience_features(df, exp_df)
-    # Add ladder standings features
     df = add_standings_features(df, standings_df)
+    # Add style features — leakage-safe (uses year-1 season stats)
+    try:
+        from model.predictor import add_style_features
+        df = add_style_features(df, style_df)
+    except Exception:
+        pass
 
     win_model, margin_model, metrics, fi_df = train_models(df)
     current_elos = regress_elos_to_mean(elo_history)
     team_stats   = get_team_current_stats(df)
 
-    return df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df, standings_df
+    return df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df, standings_df, style_df
 
 with st.spinner("Loading model..."):
     result = build_model(start_year)
@@ -244,7 +261,7 @@ if result[0] is None:
     st.error("Could not load game data. Check your internet connection.")
     st.stop()
 
-df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df, standings_df = result
+df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df, standings_df, style_df = result
 teams = sorted(current_elos.keys())
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -410,6 +427,7 @@ if page == "📊 Dashboard":
                         current_elos, team_stats,
                         season_stats, lineup_strength,
                         df, exp_df, standings_df,
+                        style_df=style_df,
                         current_round=int(selected_round) if selected_round else None
                     )
                 except Exception as game_err:
@@ -795,6 +813,7 @@ elif page == "🔮 Predict a Game":
             current_elos, team_stats,
             season_stats, lineup_strength,
             df, exp_df, standings_df,
+            style_df=style_df,
             current_round=_pred_round
         )
         pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
@@ -1407,263 +1426,188 @@ to replace raw rest day counts, which should reduce this noise.
 # ═══════════════════════════════════════════════════════════════════════════════
 # LINEUP STRENGTH
 # ═══════════════════════════════════════════════════════════════════════════════
-elif page == "👕 Lineup Strength":
-    st.markdown("# LINEUP STRENGTH (PAV)")
-    st.markdown("*Player Approximate Value — rates each player's contribution. Updates when lineups are announced (Thursday).*")
+elif page == "🎨 Style Matchup":
+    st.markdown("# 🎨 STYLE MATCHUP")
+    st.markdown("*How do teams' playing styles match up? Derived from AFL Tables season stats.*")
 
-    lineup_df = load_lineups()
-
-    # Debug expander — always visible so we can diagnose issues
-    with st.expander("🔧 Lineup debug info"):
-        import requests as _req
-        _year = datetime.now().year
-        # Show raw API responses for diagnosis
-        try:
-            _gr = _req.get(f"https://api.squiggle.com.au/?q=games;year={_year}",
-                           headers={"User-Agent":"AFL-Predictor/1.0"}, timeout=15)
-            _games = _gr.json().get("games", [])
-            _gdf = pd.DataFrame(_games)
-            _incomplete = _gdf[_gdf["complete"] < 100] if not _gdf.empty else pd.DataFrame()
-            _cur_round = int(_incomplete["round"].min()) if not _incomplete.empty else "none"
-            st.markdown(f"**Current round detected:** {_cur_round}")
-        except Exception as _e:
-            st.error(f"Games API error: {_e}")
-            _cur_round = 1
-
-        for _rnd in [_cur_round, _cur_round - 1 if isinstance(_cur_round, int) else 0, _cur_round + 1 if isinstance(_cur_round, int) else 2]:
-            if not isinstance(_rnd, int) or _rnd < 1:
-                continue
-            try:
-                _url = f"https://api.squiggle.com.au/?q=lineup;year={_year};round={_rnd}"
-                _lr = _req.get(_url, headers={"User-Agent":"AFL-Predictor/1.0"}, timeout=15)
-                _raw_text = _lr.text.strip()[:300]
-                st.markdown(f"**Round {_rnd} raw response (first 300 chars):** `{_raw_text}`")
-                if _raw_text and not _raw_text.startswith("<"):
-                    try:
-                        _raw = _lr.json()
-                        _keys = list(_raw.keys())
-                        _items = _raw.get("lineups", _raw.get("lineup", []))
-                        st.markdown(f"→ JSON keys: {_keys} | Items: {len(_items)}")
-                        if _items:
-                            _preview = pd.DataFrame(_items).head(3)
-                            # Resolve any numeric team IDs for display
-                            from data.fetcher import resolve_team_id
-                            for _tc in ["team", "teamid", "teamname"]:
-                                if _tc in _preview.columns:
-                                    _preview[_tc] = _preview[_tc].astype(str).map(resolve_team_id)
-                            st.dataframe(_preview, use_container_width=True)
-                    except Exception as _je:
-                        st.error(f"JSON parse error: {_je}")
-                else:
-                    st.warning(f"Round {_rnd}: empty or HTML response — lineups not available yet")
-            except Exception as _e:
-                st.error(f"Round {_rnd} fetch error: {_e}")
-
-        st.markdown(f"**lineup_df rows:** {len(lineup_df)}")
-        if not lineup_df.empty:
-            st.markdown(f"**Columns:** {list(lineup_df.columns)}")
-        st.markdown(f"**PAV rows:** {len(pav_df)}")
-        if not pav_df.empty:
-            st.markdown(f"**PAV columns:** {list(pav_df.columns)}")
-            st.markdown(f"**PAV years:** {sorted(pav_df['year'].unique()) if 'year' in pav_df.columns else 'no year column'}")
-
-    if lineup_df.empty:
-        st.info("No lineup data available yet — lineups are typically announced Thursday. Check back then.")
+    if style_df is None or style_df.empty:
+        st.warning("Style data not available — season stats need to load first.")
     else:
-        if pav_df.empty:
-            st.warning("PAV data unavailable.")
-        else:
-            lineup_strength = compute_lineup_strength(lineup_df, pav_df)
-
-            if not lineup_strength:
-                st.warning("Could not match lineup players to PAV ratings.")
-            else:
-                st.markdown(f"**{len(lineup_strength)} teams with lineup data**")
-
-                # Team strength bar chart
-                rows = []
-                for team, data in sorted(lineup_strength.items(),
-                                          key=lambda x: -x[1].get("PAV_total", 0)):
-                    rows.append({
-                        "Team":            team,
-                        "PAV Total":       round(data.get("PAV_total", 0), 1),
-                        "PAV Off":         round(data.get("PAV_off",   0), 1),
-                        "PAV Mid":         round(data.get("PAV_mid",   0), 1),
-                        "PAV Def":         round(data.get("PAV_def",   0), 1),
-                        "Players Matched": data.get("n_players_matched", 0),
-                    })
-                ls_df = pd.DataFrame(rows)
-
-                fig = go.Figure()
-                fig.add_trace(go.Bar(name="Offensive", x=ls_df["Team"],
-                    y=ls_df["PAV Off"], marker_color="#e94560"))
-                fig.add_trace(go.Bar(name="Midfield",  x=ls_df["Team"],
-                    y=ls_df["PAV Mid"], marker_color="#3498db"))
-                fig.add_trace(go.Bar(name="Defensive", x=ls_df["Team"],
-                    y=ls_df["PAV Def"], marker_color="#2ecc71"))
-                fig.update_layout(barmode="stack")
-                dark_chart(fig, 420)
-                fig.update_layout(
-                    title="This Week's Lineup Strength by Component",
-                    xaxis=dict(tickangle=-45),
-                    legend=dict(bgcolor="#1a1a2e")
-                )
-                st.plotly_chart(fig, use_container_width=True)
-                st.dataframe(ls_df, use_container_width=True, hide_index=True)
-
-    # ── In/Out tracker ────────────────────────────────────────────────────────
-    st.markdown("---")
-    st.markdown("### IN / OUT TRACKER")
-    st.markdown("*Who's in, out, or named as emergency vs last round — sorted by PAV rating*")
-
-    if lineup_df.empty:
-        st.info("No lineup data available yet.")
-    elif pav_df.empty:
-        st.warning("PAV data needed for in/out tracker.")
-    else:
-        # Get previous round lineup for comparison
         cur_year = datetime.now().year
-        prev_lineup_df = pd.DataFrame()
+        avail_years = sorted(style_df["year"].unique(), reverse=True)
+        sel_year_s  = avail_years[0] if avail_years else cur_year
 
-        # Find which rounds are in current lineup data
-        if "round" in lineup_df.columns:
-            rounds_avail = sorted(lineup_df["round"].dropna().unique())
-            if len(rounds_avail) >= 2:
-                cur_round  = rounds_avail[-1]
-                prev_round = rounds_avail[-2]
-                prev_lineup_df = lineup_df[lineup_df["round"] == prev_round].copy()
-                cur_lineup_df  = lineup_df[lineup_df["round"] == cur_round].copy()
-            else:
-                cur_lineup_df = lineup_df.copy()
-        else:
-            cur_lineup_df = lineup_df.copy()
+        sm_c1, sm_c2 = st.columns(2)
+        with sm_c1:
+            sm_home = st.selectbox("🏠 Home Team", teams, key="sm_home")
+        with sm_c2:
+            sm_away_opts = [t for t in teams if t != sm_home]
+            sm_away = st.selectbox("✈️ Away Team", sm_away_opts, key="sm_away")
 
-        # Build PAV lookup
-        pav_numeric = pav_df.copy()
-        for col in ["PAV_total", "PAV_off", "PAV_def", "PAV_mid"]:
-            if col in pav_numeric.columns:
-                pav_numeric[col] = pd.to_numeric(pav_numeric[col], errors="coerce").fillna(0)
+        # ── Style profile lookup ───────────────────────────────────────────────
+        def get_style(team, year):
+            row = style_df[(style_df["team"] == team) & (style_df["year"] == year)]
+            if row.empty:
+                row = style_df[(style_df["team"] == team) & (style_df["year"] == year - 1)]
+            return row.iloc[0] if not row.empty else None
 
-        pav_lookup = {}
-        if not pav_numeric.empty:
-            latest_pav_year = pav_numeric["year"].max() if "year" in pav_numeric.columns else cur_year
-            latest_pav = pav_numeric[pav_numeric["year"] == latest_pav_year]
-            fn_col = "firstname" if "firstname" in latest_pav.columns else "givenname"
-            for _, row in latest_pav.iterrows():
-                key = (str(row.get(fn_col, "")).strip().lower(),
-                       str(row.get("surname", "")).strip().lower())
-                pav_lookup[key] = {
-                    "PAV_total": float(row.get("PAV_total", 0) or 0),
-                    "team_pav":  str(row.get("team", "")),
-                }
+        h_style = get_style(sm_home, sel_year_s)
+        a_style = get_style(sm_away, sel_year_s)
 
-        def build_player_set(ldf):
-            players = {}
-            fn_col = "firstname" if "firstname" in ldf.columns else "givenname"
-            team_col = "teamname" if "teamname" in ldf.columns else "team"
-            for _, row in ldf.iterrows():
-                fn = str(row.get(fn_col, "") or "").strip()
-                sn = str(row.get("surname", "") or "").strip()
-                team = str(row.get(team_col, "") or "").strip()
-                status = str(row.get("status", "") or "").strip()
-                key = (fn.lower(), sn.lower())
-                pav = pav_lookup.get(key, {}).get("PAV_total", 0)
-                players[key] = {
-                    "name": f"{fn} {sn}",
-                    "team": team,
-                    "status": status,
-                    "pav": pav,
-                }
-            return players
+        if h_style is None or a_style is None:
+            st.info(f"Style data not yet available for {sel_year_s} — showing previous season.")
+            h_style = get_style(sm_home, sel_year_s - 1)
+            a_style = get_style(sm_away, sel_year_s - 1)
 
-        cur_players  = build_player_set(cur_lineup_df)
-        prev_players = build_player_set(prev_lineup_df) if not prev_lineup_df.empty else {}
+        if h_style is not None and a_style is not None:
+            # ── KPI cards ─────────────────────────────────────────────────────
+            STYLE_DISPLAY = [
+                ("kick_ratio",  "Kick Ratio",   "Kicks / (Kicks+HBs). Higher = kick-heavy style.",     False),
+                ("tackle_rate", "Tackle Rate",  "Tackles per game. Higher = more pressure.",            False),
+                ("hitout_rate", "Hitout Rate",  "Hitouts per game. Higher = ruck dominance.",           False),
+                ("mark_rate",   "Mark Rate",    "Marks per game. Higher = aerial/corridor game.",       False),
+            ]
+            kpi_cols = st.columns(4)
+            for i, (col, label, desc, lower_better) in enumerate(STYLE_DISPLAY):
+                hv = float(h_style.get(col, 0))
+                av = float(a_style.get(col, 0))
+                diff = hv - av if not lower_better else av - hv
+                edge_team = sm_home if diff > 0.01 else (sm_away if diff < -0.01 else None)
+                edge_col  = "#2ecc71" if edge_team == sm_home else ("#3498db" if edge_team == sm_away else "#aaa")
+                with kpi_cols[i]:
+                    st.markdown(
+                        f'<div style="background:#0a1628;border-left:4px solid {edge_col};'
+                        f'border-radius:8px;padding:12px;margin-bottom:8px">'
+                        f'<div style="font-size:0.75rem;color:#aaa;margin-bottom:4px">{label}</div>'
+                        f'<div style="display:flex;justify-content:space-between">'
+                        f'<span style="color:#e94560;font-weight:700">{hv:.3f}</span>'
+                        f'<span style="color:#666;font-size:0.7rem">vs</span>'
+                        f'<span style="color:#3498db;font-weight:700">{av:.3f}</span>'
+                        f'</div>'
+                        f'<div style="font-size:0.68rem;color:#555;margin-top:4px">{desc}</div>'
+                        + (f'<div style="font-size:0.7rem;color:{edge_col};margin-top:4px">Edge: {edge_team}</div>' if edge_team else '')
+                        + '</div>',
+                        unsafe_allow_html=True
+                    )
 
-        # Classify changes
-        all_teams = sorted(set(v["team"] for v in cur_players.values()))
-        sel_inout_team = st.selectbox("Filter by team (or All)", ["All teams"] + all_teams, key="inout_team")
+            st.markdown("---")
 
-        inout_rows = []
-        for key, data in cur_players.items():
-            if sel_inout_team != "All teams" and data["team"] != sel_inout_team:
-                continue
-            was_in = key in prev_players
-            status = data["status"].lower()
-            if "emerg" in status:
-                change = "🟡 Emergency"
-            elif not was_in and prev_players:
-                change = "🟢 IN"
-            else:
-                change = "✅ Named"
-            inout_rows.append({
-                "Team": data["team"],
-                "Player": data["name"],
-                "Status": change,
-                "PAV": round(data["pav"], 1),
-            })
+            # ── Radar chart ───────────────────────────────────────────────────
+            st.markdown("### Style Profile Radar")
+            st.markdown("*Normalised across all teams — higher = stronger in that dimension*")
 
-        # Also find players who dropped out
-        for key, data in prev_players.items():
-            if key not in cur_players:
-                if sel_inout_team != "All teams" and data["team"] != sel_inout_team:
+            radar_cats = ["Kick Ratio", "Tackle Rate", "Hitout Rate", "Mark Rate"]
+            radar_cols_map = ["kick_ratio", "tackle_rate", "hitout_rate", "mark_rate"]
+
+            # Normalise across all teams for the selected year
+            h_vals_r, a_vals_r = [], []
+            for rc in radar_cols_map:
+                col_data = pd.to_numeric(
+                    style_df[style_df["year"] == sel_year_s][rc], errors="coerce"
+                ).dropna()
+                if col_data.empty:
+                    h_vals_r.append(0.5)
+                    a_vals_r.append(0.5)
                     continue
-                inout_rows.append({
-                    "Team": data["team"],
-                    "Player": data["name"],
-                    "Status": "🔴 OUT",
-                    "PAV": round(data["pav"], 1),
-                })
+                mn, mx = col_data.min(), col_data.max()
+                rng = mx - mn if mx != mn else 1
+                h_vals_r.append((float(h_style.get(rc, mn)) - mn) / rng)
+                a_vals_r.append((float(a_style.get(rc, mn)) - mn) / rng)
 
-        if inout_rows:
-            inout_df = pd.DataFrame(inout_rows).sort_values(
-                ["Team", "PAV"], ascending=[True, False]
-            ).reset_index(drop=True)
+            cats_c = radar_cats + [radar_cats[0]]
+            h_c    = h_vals_r + [h_vals_r[0]]
+            a_c    = a_vals_r + [a_vals_r[0]]
 
-            # Show INs and OUTs first for quick scan
-            priority = inout_df[inout_df["Status"].isin(["🟢 IN", "🔴 OUT", "🟡 Emergency"])]
-            rest     = inout_df[~inout_df["Status"].isin(["🟢 IN", "🔴 OUT", "🟡 Emergency"])]
+            fig_r = go.Figure()
+            fig_r.add_trace(go.Scatterpolar(
+                r=h_c, theta=cats_c, fill="toself", name=sm_home,
+                line=dict(color="#e94560"), fillcolor="rgba(233,69,96,0.2)"
+            ))
+            fig_r.add_trace(go.Scatterpolar(
+                r=a_c, theta=cats_c, fill="toself", name=sm_away,
+                line=dict(color="#3498db"), fillcolor="rgba(52,152,219,0.2)"
+            ))
+            fig_r.update_layout(
+                paper_bgcolor="#1a1a2e", plot_bgcolor="#1a1a2e",
+                font=dict(color="white"),
+                polar=dict(
+                    bgcolor="#16213e",
+                    radialaxis=dict(visible=True, range=[0, 1],
+                                    gridcolor="#0f3460", color="#aaa"),
+                    angularaxis=dict(gridcolor="#0f3460", color="white")
+                ),
+                legend=dict(bgcolor="#1a1a2e"),
+                height=400, margin=dict(l=40, r=40, t=20, b=20)
+            )
+            st.plotly_chart(fig_r, use_container_width=True)
 
-            if not priority.empty:
-                st.markdown("#### Changes this week")
-                st.dataframe(priority, use_container_width=True, hide_index=True)
-                st.markdown("#### Full named squad")
+            # ── Matchup callouts ──────────────────────────────────────────────
+            st.markdown("---")
+            st.markdown("### Matchup Callouts")
 
-            st.dataframe(rest if not priority.empty else inout_df,
-                         use_container_width=True, hide_index=True)
-        else:
-            st.info("No player data to display.")
+            matchup = compute_style_matchup(sm_home, sm_away, style_df, sel_year_s)
 
-    # ── Top rated players ─────────────────────────────────────────────────────
-    st.markdown("---")
-    st.markdown("### TOP RATED PLAYERS (PAV)")
-    st.markdown("*Player Approximate Value — career rating for most recent season*")
+            callouts = [
+                ("kick_ratio_diff",
+                 f"**Kick-style edge:** {sm_home if matchup['kick_ratio_diff'] > 0.01 else (sm_away if matchup['kick_ratio_diff'] < -0.01 else 'Even')}",
+                 f"{sm_home} kick ratio {float(h_style['kick_ratio']):.3f} vs {sm_away} {float(a_style['kick_ratio']):.3f}. "
+                 f"{'A kick-heavy team playing a handball-heavy team can dictate tempo.' if abs(matchup['kick_ratio_diff']) > 0.02 else 'Both teams use a similar disposal mix.'}"),
+                ("tackle_diff",
+                 f"**Pressure game edge:** {sm_home if matchup['tackle_diff'] > 1 else (sm_away if matchup['tackle_diff'] < -1 else 'Even')}",
+                 f"{sm_home} tackles {float(h_style['tackle_rate']):.1f}/game vs {sm_away} {float(a_style['tackle_rate']):.1f}/game. "
+                 f"{'High-pressure team may disrupt the lower-tackling opponent.' if abs(matchup['tackle_diff']) > 2 else 'Similar pressure intensity.'}"),
+                ("hitout_diff",
+                 f"**Ruck advantage:** {sm_home if matchup['hitout_diff'] > 2 else (sm_away if matchup['hitout_diff'] < -2 else 'Even')}",
+                 f"{sm_home} hitouts {float(h_style['hitout_rate']):.1f}/game vs {sm_away} {float(a_style['hitout_rate']):.1f}/game. "
+                 f"{'Significant ruck dominance — can win clearances from stoppages.' if abs(matchup['hitout_diff']) > 4 else 'Rucks are closely matched.'}"),
+                ("mark_diff",
+                 f"**Aerial edge:** {sm_home if matchup['mark_diff'] > 1 else (sm_away if matchup['mark_diff'] < -1 else 'Even')}",
+                 f"{sm_home} marks {float(h_style['mark_rate']):.1f}/game vs {sm_away} {float(a_style['mark_rate']):.1f}/game. "
+                 f"{'Aerial game advantage — may exploit a ground-ball focused opponent.' if abs(matchup['mark_diff']) > 2 else 'Similar marking rates.'}"),
+            ]
 
-    if not pav_df.empty:
-        pav_show = pav_df.copy()
-        for col in ["PAV_total", "PAV_off", "PAV_def", "PAV_mid"]:
-            if col in pav_show.columns:
-                pav_show[col] = pd.to_numeric(pav_show[col], errors="coerce")
+            for feat_key, headline, detail in callouts:
+                val = matchup.get(feat_key, 0)
+                if abs(val) > 0.5:
+                    colour = "#2ecc71" if val > 0 else "#3498db"
+                else:
+                    colour = "#666"
+                st.markdown(
+                    f'<div style="background:#0a1628;border-left:4px solid {colour};'
+                    f'border-radius:8px;padding:12px;margin-bottom:10px">'
+                    f'<div style="color:white;font-size:0.9rem">{headline}</div>'
+                    f'<div style="color:#aaa;font-size:0.8rem;margin-top:4px">{detail}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
 
-        top_year = int(pav_show["year"].max()) if "year" in pav_show.columns else datetime.now().year
-        top = pav_show[pav_show["year"] == top_year].copy()
+            # ── Model features ────────────────────────────────────────────────
+            st.markdown("---")
+            st.markdown("### Style Feature Values (fed to model)")
+            feat_rows = [
+                {"Feature": k, "Value": round(v, 4),
+                 "Favours": sm_home if v > 0.001 else (sm_away if v < -0.001 else "—")}
+                for k, v in matchup.items()
+            ]
+            st.dataframe(pd.DataFrame(feat_rows), use_container_width=True, hide_index=True)
 
-        pav_team_filter = st.selectbox("Filter by team", ["All"] + sorted(top["team"].dropna().unique().tolist()), key="pav_team")
-        if pav_team_filter != "All":
-            top = top[top["team"] == pav_team_filter]
+        # ── All-teams style leaderboard ────────────────────────────────────────
+        st.markdown("---")
+        st.markdown("### All-Teams Style Rankings")
+        st.markdown(f"*{sel_year_s} season — {len(style_df[style_df['year'] == sel_year_s])} teams*")
 
-        if "PAV_total" in top.columns:
-            top = top.sort_values("PAV_total", ascending=False).head(40)
-            fn_col = "firstname" if "firstname" in top.columns else "givenname"
-            display_cols = [c for c in [fn_col, "surname", "team", "PAV_total",
-                                         "PAV_off", "PAV_mid", "PAV_def", "games"]
-                            if c in top.columns]
-            rename = {fn_col: "First Name", "surname": "Surname", "team": "Team",
-                      "PAV_total": "PAV Total", "PAV_off": "Offensive",
-                      "PAV_mid": "Midfield", "PAV_def": "Defensive", "games": "Games"}
-            st.dataframe(top[display_cols].rename(columns=rename).reset_index(drop=True),
-                         use_container_width=True)
-    else:
-        st.info("PAV data not available.")
+        yr_style = style_df[style_df["year"] == sel_year_s].copy()
+        if not yr_style.empty:
+            yr_style = yr_style.sort_values("kick_ratio", ascending=False).reset_index(drop=True)
+            yr_style["Kick Ratio"]  = yr_style["kick_ratio"].round(3)
+            yr_style["Tackle Rate"] = yr_style["tackle_rate"].round(1)
+            yr_style["Hitout Rate"] = yr_style["hitout_rate"].round(1)
+            yr_style["Mark Rate"]   = yr_style["mark_rate"].round(1)
+            st.dataframe(
+                yr_style[["team", "Kick Ratio", "Tackle Rate", "Hitout Rate", "Mark Rate"]]
+                .rename(columns={"team": "Team"}),
+                use_container_width=True, hide_index=True
+            )
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # VALUE BETS
@@ -1681,6 +1625,7 @@ elif page == "💰 Value Bets":
             current_elos, team_stats,
             season_stats, lineup_strength if 'lineup_strength' in dir() else {},
             df, exp_df, standings_df,
+            style_df=style_df,
             current_round=_round
         )
         pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
