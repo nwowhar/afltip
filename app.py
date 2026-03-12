@@ -8,7 +8,8 @@ import sys, os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from data.fetcher import (get_all_games, get_upcoming_games, enrich_games, get_team_current_stats)
+from data.fetcher import (get_all_games, get_upcoming_games, enrich_games, get_team_current_stats,
+                          get_standings_multi_year)
 from data.afltables import get_all_team_season_stats
 from data.lineup import get_pav_multi_year, get_current_lineups, compute_lineup_strength
 try:
@@ -22,6 +23,7 @@ from model.elo import build_elo_ratings, regress_elos_to_mean
 try:
     from model.predictor import (build_features, add_season_stat_features,
                                   add_pav_features, add_experience_features,
+                                  add_standings_features,
                                   train_models, predict_game,
                                   build_prediction_features, CORE_FEATURES, ALL_FEATURES)
 except ImportError:
@@ -29,6 +31,7 @@ except ImportError:
                                   add_pav_features, train_models, predict_game,
                                   build_prediction_features, CORE_FEATURES, ALL_FEATURES)
     def add_experience_features(df, *a, **kw): return df
+    def add_standings_features(df, *a, **kw): return df
 from model.backtest import (run_walk_forward_backtest, compute_yearly_accuracy,
                              ablation_test, permutation_importance_analysis,
                              margin_prediction_backtest, FEATURE_GROUPS)
@@ -198,14 +201,19 @@ def load_pav(start_year):
 def load_lineups():
     return get_current_lineups()
 
+@st.cache_data(ttl=3600, show_spinner="🏆 Fetching AFL ladder standings...")
+def load_standings(start_year):
+    return get_standings_multi_year(start_year)
+
 @st.cache_data(ttl=3601, show_spinner="🤖 Building Elo ratings & training model...")
 def build_model(start_year):
     games_df = load_games(start_year)
     if games_df is None or games_df.empty:
-        return None, None, None, None, {}, {}, None, None, None, None
+        return None, None, None, None, {}, {}, None, None, None, None, None
 
-    season_stats = load_season_stats(start_year)
-    pav_df       = load_pav(start_year)
+    season_stats  = load_season_stats(start_year)
+    pav_df        = load_pav(start_year)
+    standings_df  = load_standings(start_year)
 
     # Enrich with fatigue/context features
     df = enrich_games(games_df)
@@ -217,15 +225,17 @@ def build_model(start_year):
     df = add_season_stat_features(df, season_stats)
     # Add PAV features
     df = add_pav_features(df, pav_df)
-    # Add experience features (derived from PAV career game counts)
+    # Add experience features
     exp_df = compute_experience_from_pav(pav_df, games_df, year=datetime.now().year)
     df = add_experience_features(df, exp_df)
+    # Add ladder standings features
+    df = add_standings_features(df, standings_df)
 
     win_model, margin_model, metrics, fi_df = train_models(df)
     current_elos = regress_elos_to_mean(elo_history)
     team_stats   = get_team_current_stats(df)
 
-    return df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df
+    return df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df, standings_df
 
 with st.spinner("Loading model..."):
     result = build_model(start_year)
@@ -234,7 +244,7 @@ if result[0] is None:
     st.error("Could not load game data. Check your internet connection.")
     st.stop()
 
-df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df = result
+df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df, standings_df = result
 teams = sorted(current_elos.keys())
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -835,7 +845,7 @@ elif page == "🔮 Predict a Game":
             home_team, away_team, venue,
             current_elos, team_stats,
             season_stats, lineup_strength,
-            df, exp_df
+            df, exp_df, standings_df
         )
         pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
         m    = pred["predicted_margin"]
@@ -1601,6 +1611,18 @@ elif page == "💰 Value Bets":
                 row = exp_df[(exp_df["team"] == team) & (exp_df["year"] == yr - 1)]
             return float(row.iloc[0][col]) if not row.empty and col in row.columns else 0.0
 
+        # Standings lookup
+        def _st(team, col, default):
+            if standings_df is None or standings_df.empty: return default
+            from datetime import datetime as _dt2
+            yr = _dt2.now().year
+            pct_col = "percentage" if "percentage" in standings_df.columns else "pct"
+            c = pct_col if col == "pct" else col
+            row = standings_df[(standings_df["team"] == team) & (standings_df["year"] == yr)]
+            if row.empty:
+                row = standings_df[(standings_df["team"] == team) & (standings_df["year"] == yr - 1)]
+            return float(row.iloc[0][c]) if not row.empty and c in row.columns else default
+
         feats = {
             "elo_diff": h_elo - a_elo + 50.0, "form_diff": h_form - a_form,
             "home_form": h_form, "away_form": a_form,
@@ -1611,7 +1633,9 @@ elif page == "💰 Value Bets":
                "travel_win_rate_diff","travel_margin_diff","perth_win_rate_diff",
                "is_perth_game","days_rest_diff","cl_diff","i50_diff","cp_diff",
                "tk_diff","ho_diff","clanger_diff","pav_total_diff","pav_off_diff",
-               "pav_def_diff","pav_mid_diff"]},
+               "pav_def_diff","pav_mid_diff",
+               "short_rest_diff","short_rest_home","short_rest_away",
+               "bye_rest_diff","bye_rest_home","bye_rest_away"]},
             "days_rest_home": 7.0, "days_rest_away": 7.0,
             "streak_diff": _sf(hs_.get("streak",0)) - _sf(as_.get("streak",0)),
             "home_streak": _sf(hs_.get("streak",0)), "away_streak": _sf(as_.get("streak",0)),
@@ -1621,6 +1645,9 @@ elif page == "💰 Value Bets":
             "exp_avg_diff":        _exp(ht, "avg_career_games")  - _exp(at, "avg_career_games"),
             "exp_veteran_diff":    _exp(ht, "pct_veterans")      - _exp(at, "pct_veterans"),
             "exp_developing_diff": _exp(ht, "pct_developing")    - _exp(at, "pct_developing"),
+            "ladder_rank_diff": _st(ht, "rank", 9)   - _st(at, "rank", 9),
+            "ladder_pct_diff":  _st(ht, "pct", 100)  - _st(at, "pct", 100),
+            "ladder_wins_diff": _st(ht, "wins", 0)   - _st(at, "wins", 0),
         }
         pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
         return pred["home_win_prob"] / 100.0, pred["predicted_margin"]
