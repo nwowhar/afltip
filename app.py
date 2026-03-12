@@ -443,21 +443,44 @@ if page == "📊 Dashboard":
                 if pav_note:
                     footer += f"  ·  {pav_note}"
 
+                # ── Derive display values from feats dict ──────────────────
+                _sf2 = lambda v, d=0.0: float(v) if v is not None else float(d)
+                _fv  = lambda k: float(feats.get(k, 0.0))
+                hs_  = team_stats.get(home, {})
+                as__ = team_stats.get(away, {})
+                h_elo_display = _sf2(current_elos.get(home, 1500), 1500)
+                a_elo_display = _sf2(current_elos.get(away, 1500), 1500)
+                h_form_d = _fv("home_form")
+                a_form_d = _fv("away_form")
+                h_km_d   = _fv("travel_home_km")
+                a_km_d   = _fv("travel_away_km")
+                h_rest_d = _fv("days_rest_home")
+                a_rest_d = _fv("days_rest_away")
+                h_fat_d  = _fv("home_travel_fatigue")
+                a_fat_d  = _fv("away_travel_fatigue")
+                cur_yr_d = datetime.now().year
+                def _ss_d(team, stat):
+                    if season_stats is None or season_stats.empty: return 0.0
+                    row_ = season_stats[(season_stats["team"]==team) & (season_stats["year"]==cur_yr_d)]
+                    if row_.empty:
+                        row_ = season_stats[(season_stats["team"]==team) & (season_stats["year"]==cur_yr_d-1)]
+                    return float(row_.iloc[0].get(stat, 0)) if not row_.empty else 0.0
+
                 # ── Factor analysis for insight panel ─────────────────────
                 factors = [
                     # (label, home_val, away_val, home_is_better_when_higher)
-                    ("Elo Rating",          h_elo,                              a_elo,                              True),
-                    ("Form (last 5 avg)",   h_form,                             a_form,                             True),
-                    ("Current Streak",      _safe_float(hs_.get("streak",0)),   _safe_float(as__.get("streak",0)),  True),
-                    ("Last Game Margin",    _safe_float(hs_.get("last_margin",0)), _safe_float(as__.get("last_margin",0)), True),
-                    ("Travel to Venue",     h_km,                               a_km,                               False),
-                    ("Days Rest",           float(h_rest),                      float(a_rest),                      True),
-                    ("Travel Fatigue",      h_fat,                              a_fat,                              False),
-                    ("Clearances (season)", _ss(home,"avg_clearances"),         _ss(away,"avg_clearances"),         True),
-                    ("Inside 50s (season)", _ss(home,"avg_inside_50s"),         _ss(away,"avg_inside_50s"),         True),
-                    ("Contested Poss",      _ss(home,"avg_contested_possessions"), _ss(away,"avg_contested_possessions"), True),
-                    ("Tackles (season)",    _ss(home,"avg_tackles"),            _ss(away,"avg_tackles"),            True),
-                    ("Clangers (season)",   _ss(home,"avg_clangers"),           _ss(away,"avg_clangers"),           False),
+                    ("Elo Rating",          h_elo_display,  a_elo_display,  True),
+                    ("Form (last 5 avg)",   h_form_d,       a_form_d,       True),
+                    ("Current Streak",      _sf2(hs_.get("streak",0)),   _sf2(as__.get("streak",0)),  True),
+                    ("Last Game Margin",    _sf2(hs_.get("last_margin",0)), _sf2(as__.get("last_margin",0)), True),
+                    ("Travel to Venue",     h_km_d,         a_km_d,         False),
+                    ("Days Rest",           h_rest_d,       a_rest_d,       True),
+                    ("Travel Fatigue",      h_fat_d,        a_fat_d,        False),
+                    ("Clearances (season)", _ss_d(home,"avg_clearances"),   _ss_d(away,"avg_clearances"),   True),
+                    ("Inside 50s (season)", _ss_d(home,"avg_inside_50s"),   _ss_d(away,"avg_inside_50s"),   True),
+                    ("Contested Poss",      _ss_d(home,"avg_contested_possessions"), _ss_d(away,"avg_contested_possessions"), True),
+                    ("Tackles (season)",    _ss_d(home,"avg_tackles"),      _ss_d(away,"avg_tackles"),      True),
+                    ("Clangers (season)",   _ss_d(home,"avg_clangers"),     _ss_d(away,"avg_clangers"),     False),
                 ]
 
                 # Determine which factors favour each team
@@ -506,29 +529,29 @@ if page == "📊 Dashboard":
 
                     # Factor metadata: label, home_val, away_val, higher_is_better, unit, explanation
                     factor_meta = [
-                        ("Elo Rating",          h_elo,   a_elo,   True,
+                        ("Elo Rating",          h_elo_display, a_elo_display, True,
                          "pts", "Elo is a chess-style rating updated after every game. Each win/loss shifts ratings based on the expected result. Home team gets +50pts advantage baked in. A 100pt gap = roughly 64% win probability."),
-                        ("Form (last 5 avg)",    h_form,  a_form,  True,
+                        ("Form (last 5 avg)",    h_form_d, a_form_d, True,
                          "pts margin", "Average winning/losing margin across the last 5 games. Positive = winning by that many points on average. More responsive to recent form than Elo."),
-                        ("Current Streak",       _safe_float(hs_.get("streak",0)), _safe_float(as__.get("streak",0)), True,
+                        ("Current Streak",       _sf2(hs_.get("streak",0)), _sf2(as__.get("streak",0)), True,
                          "games", "Signed win/loss streak. +3 means 3 wins in a row, -2 means 2 losses in a row."),
-                        ("Last Game Margin",     _safe_float(hs_.get("last_margin",0)), _safe_float(as__.get("last_margin",0)), True,
+                        ("Last Game Margin",     _sf2(hs_.get("last_margin",0)), _sf2(as__.get("last_margin",0)), True,
                          "pts", "Margin from their most recent completed game. Positive = won by that many points."),
-                        ("Travel to Venue",      h_km,    a_km,    False,
+                        ("Travel to Venue",      h_km_d, a_km_d, False,
                          "km", "Straight-line distance each team travels to reach the venue. Lower is better — home games = ~0km, interstate = 500–900km, Perth = 2,700km from east coast."),
-                        ("Days Rest",            float(h_rest), float(a_rest), True,
+                        ("Days Rest",            h_rest_d, a_rest_d, True,
                          "days", "Days since their last game. More rest = fresher legs. Capped at 21 days — anything longer (summer break, bye) resets to a neutral 7 days so it doesn't skew R1 predictions."),
-                        ("Travel Fatigue",       h_fat,   a_fat,   False,
+                        ("Travel Fatigue",       h_fat_d, a_fat_d, False,
                          "index", "Combined travel+rest stress index: (km travelled ÷ 1000) × max(14 − rest days, 0). A team flying 2,700km to Perth with only 6 days rest scores ~8.1 vs 0 for the home side."),
-                        ("Clearances (season)",  _ss(home,"avg_clearances"),  _ss(away,"avg_clearances"),  True,
+                        ("Clearances (season)",  _ss_d(home,"avg_clearances"),  _ss_d(away,"avg_clearances"),  True,
                          "per game", "Season average clearances per game from AFL Tables. Clearances out of stoppages drive transition and scoring chains — one of the strongest team performance indicators."),
-                        ("Inside 50s (season)",  _ss(home,"avg_inside_50s"),  _ss(away,"avg_inside_50s"),  True,
+                        ("Inside 50s (season)",  _ss_d(home,"avg_inside_50s"),  _ss_d(away,"avg_inside_50s"),  True,
                          "per game", "Season average entries inside the forward 50 per game. More entries = more scoring chances. Strongly correlated with winning margin."),
-                        ("Contested Poss",       _ss(home,"avg_contested_possessions"), _ss(away,"avg_contested_possessions"), True,
+                        ("Contested Poss",       _ss_d(home,"avg_contested_possessions"), _ss_d(away,"avg_contested_possessions"), True,
                          "per game", "Season average contested possessions per game. Reflects contested ball dominance — teams that win this category tend to control the game's tempo."),
-                        ("Tackles (season)",     _ss(home,"avg_tackles"),     _ss(away,"avg_tackles"),     True,
+                        ("Tackles (season)",     _ss_d(home,"avg_tackles"),     _ss_d(away,"avg_tackles"),     True,
                          "per game", "Season average tackles per game. High tackle counts indicate pressure and defensive intensity."),
-                        ("Clangers (season)",    _ss(home,"avg_clangers"),    _ss(away,"avg_clangers"),    False,
+                        ("Clangers (season)",    _ss_d(home,"avg_clangers"),    _ss_d(away,"avg_clangers"),    False,
                          "per game", "Season average clangers (turnovers by hand or foot) per game. Lower is better — clangers directly gift opposition scoring opportunities."),
                     ]
 
