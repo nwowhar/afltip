@@ -940,12 +940,26 @@ elif page == "📋 Team Stats":
     st.markdown("# TEAM STATS LEADERBOARD")
     st.markdown("*Season averages per game — all 18 teams ranked*")
 
-    with st.expander("🔧 Debug: season_stats columns"):
-        if season_stats is not None and not season_stats.empty:
-            st.write(season_stats.columns.tolist())
-            st.write(season_stats.head(3))
-        else:
-            st.write("season_stats is empty")
+    with st.expander("🔧 Debug: AFL Tables scraper"):
+        import requests as _rq
+        from bs4 import BeautifulSoup as _BS
+        _year = datetime.now().year
+        _url  = f"https://afltables.com/afl/stats/{_year}t.html"
+        st.markdown(f"Fetching: `{_url}`")
+        try:
+            _r = _rq.get(_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+            st.markdown(f"Status: `{_r.status_code}` | Length: `{len(_r.text)}`")
+            _soup = _BS(_r.text, "lxml")
+            _tables = _soup.find_all("table")
+            st.markdown(f"Tables found: `{len(_tables)}`")
+            if _tables:
+                # Show first few rows of first table raw
+                _rows = _tables[0].find_all("tr")[:5]
+                for _row in _rows:
+                    _cells = [td.get_text(strip=True) for td in _row.find_all(["td","th"])]
+                    st.write(_cells)
+        except Exception as _e:
+            st.error(f"Fetch error: {_e}")
 
     cur_year = datetime.now().year
 
