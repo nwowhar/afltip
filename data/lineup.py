@@ -13,31 +13,13 @@ import requests
 import pandas as pd
 import numpy as np
 from datetime import datetime
+from data.fetcher import SQUIGGLE_TEAM_ID_MAP as _SQUIGGLE_TEAM_ID_MAP, resolve_team_id
 
 BASE = "https://api.squiggle.com.au/"
 HEADERS = {"User-Agent": "AFL-Predictor/1.0 (github.com/nwowhar/afltip)"}
 
 
 # ── PAV ───────────────────────────────────────────────────────────────────────
-
-def _get_squiggle_team_map() -> dict:
-    """Fetch team ID → name mapping from Squiggle. Returns {} on failure."""
-    try:
-        r = requests.get(f"{BASE}?q=teams", headers=HEADERS, timeout=15)
-        r.raise_for_status()
-        return {str(t["id"]): t["name"] for t in r.json().get("teams", [])}
-    except Exception:
-        return {}
-
-# Hardcoded fallback in case the API call fails
-_SQUIGGLE_TEAM_ID_MAP = {
-    "1":  "Adelaide",        "2":  "Brisbane Lions",  "3":  "Carlton",
-    "4":  "Collingwood",     "5":  "Essendon",        "6":  "Fremantle",
-    "7":  "Geelong",         "8":  "Gold Coast",      "9":  "GWS Giants",
-    "10": "Hawthorn",        "11": "Melbourne",       "12": "North Melbourne",
-    "13": "Port Adelaide",   "14": "Richmond",        "15": "St Kilda",
-    "16": "Sydney",          "17": "West Coast",      "18": "Western Bulldogs",
-}
 
 
 def get_pav(year: int) -> pd.DataFrame:
@@ -109,14 +91,24 @@ def get_lineup(year: int, round_num: int) -> pd.DataFrame:
         r.raise_for_status()
         text = r.text.strip()
         if not text or text.startswith("<"):
-            # Squiggle returned empty or HTML — not an error, just no data yet
             return pd.DataFrame()
         data = r.json().get("lineups", [])
         if not data:
             return pd.DataFrame()
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
+        # Resolve any numeric team IDs to names
+        for col in ["team", "teamid"]:
+            if col in df.columns:
+                df[col] = df[col].astype(str).map(
+                    lambda x: _SQUIGGLE_TEAM_ID_MAP.get(x, x)
+                )
+        # teamname is usually a proper string but normalise it too
+        if "teamname" in df.columns:
+            df["teamname"] = df["teamname"].apply(
+                lambda x: _SQUIGGLE_TEAM_ID_MAP.get(str(x), str(x)) if str(x).isdigit() else str(x)
+            )
+        return df
     except ValueError:
-        # JSONDecodeError — blank or HTML response
         return pd.DataFrame()
     except Exception as e:
         print(f"Lineup fetch failed {year} R{round_num}: {e}")
