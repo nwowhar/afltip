@@ -1,5 +1,6 @@
 """
-Predictor — trains win probability and margin models using all feature groups:
+Predictor v4 — all inputs cast to float to prevent DatetimeArray errors.
+
   1. Elo differential
   2. Rolling form (last 5 games avg margin, consistency)
   3. Travel distance differential
@@ -25,8 +26,18 @@ BASE_FEATURES = [
 ]
 
 FATIGUE_FEATURES = [
+    # Raw distance
     "travel_diff", "travel_home_km", "travel_away_km",
-    "days_rest_diff", "days_rest_home", "days_rest_away",
+    # Rest — binary flags are more predictive than raw counts
+    "short_rest_diff", "short_rest_home", "short_rest_away",   # <= 6 days turnaround
+    "bye_rest_diff",   "bye_rest_home",   "bye_rest_away",     # >= 14 days rest
+    "days_rest_diff",  "days_rest_home",  "days_rest_away",    # raw (used in fatigue interaction)
+    # Travel × rest interaction — killer combo for interstate trips on short rest
+    "travel_fatigue_diff", "home_travel_fatigue", "away_travel_fatigue",
+    # Rolling travel record
+    "travel_win_rate_diff", "travel_margin_diff",
+    # Perth-specific
+    "perth_win_rate_diff", "is_perth_game",
 ]
 
 CONTEXT_FEATURES = [
@@ -50,12 +61,19 @@ PAV_FEATURES = [
     "pav_mid_diff",
 ]
 
+EXPERIENCE_FEATURES = [
+    "exp_avg_diff",       # avg career games diff (home - away)
+    "exp_veteran_diff",   # % veterans diff
+    "exp_developing_diff",# % developing players diff (negative = better)
+]
+
 ALL_FEATURES = (BASE_FEATURES + FATIGUE_FEATURES +
-                CONTEXT_FEATURES + SEASON_STAT_FEATURES + PAV_FEATURES)
+                CONTEXT_FEATURES + SEASON_STAT_FEATURES +
+                PAV_FEATURES + EXPERIENCE_FEATURES)
 
 # Use these as the working set (PAV only available when lineups announced)
 CORE_FEATURES = (BASE_FEATURES + FATIGUE_FEATURES +
-                 CONTEXT_FEATURES + SEASON_STAT_FEATURES)
+                 CONTEXT_FEATURES + SEASON_STAT_FEATURES + EXPERIENCE_FEATURES)
 
 
 def build_features(df: pd.DataFrame, window: int = 5) -> pd.DataFrame:
@@ -195,6 +213,49 @@ def add_pav_features(df: pd.DataFrame, pav_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def add_experience_features(df: pd.DataFrame, exp_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add team experience differential features to game rows.
+    exp_df should have columns: team, year, avg_career_games, pct_veterans, pct_developing
+    from experience.compute_experience_from_pav().
+    """
+    for col in EXPERIENCE_FEATURES:
+        df[col] = 0.0
+
+    if exp_df is None or exp_df.empty:
+        return df
+
+    df = df.copy()
+
+    # Build lookup: (team, year) -> experience stats
+    lookup = {}
+    for _, row in exp_df.iterrows():
+        lookup[(str(row["team"]), int(row["year"]))] = row.to_dict()
+
+    h_avg, a_avg = [], []
+    h_vet, a_vet = [], []
+    h_dev, a_dev = [], []
+
+    for _, row in df.iterrows():
+        year = int(row.get("year", 0))
+        h = str(row.get("hteam", ""))
+        a = str(row.get("ateam", ""))
+        hd = lookup.get((h, year)) or lookup.get((h, year - 1)) or {}
+        ad = lookup.get((a, year)) or lookup.get((a, year - 1)) or {}
+        h_avg.append(float(hd.get("avg_career_games", 0) or 0))
+        a_avg.append(float(ad.get("avg_career_games", 0) or 0))
+        h_vet.append(float(hd.get("pct_veterans",    0) or 0))
+        a_vet.append(float(ad.get("pct_veterans",    0) or 0))
+        h_dev.append(float(hd.get("pct_developing",  0) or 0))
+        a_dev.append(float(ad.get("pct_developing",  0) or 0))
+
+    df["exp_avg_diff"]        = np.array(h_avg) - np.array(a_avg)
+    df["exp_veteran_diff"]    = np.array(h_vet) - np.array(a_vet)
+    df["exp_developing_diff"] = np.array(h_dev) - np.array(a_dev)
+
+    return df
+
+
 def train_models(df: pd.DataFrame,
                  feature_set: list = None) -> tuple:
     """
@@ -305,28 +366,100 @@ def build_prediction_features(home_team: str, away_team: str,
                                team_stats: dict,
                                season_stats: pd.DataFrame = None,
                                lineup_pav: dict = None,
+                               enriched_df: pd.DataFrame = None,
+                               experience_df: pd.DataFrame = None,
                                home_advantage: float = 50.0) -> dict:
     """Build a full feature dict for an upcoming game prediction."""
-    from data.fetcher import travel_distance_km
+    from data.fetcher import (travel_distance_km, PERTH_VENUES,
+                               LONG_TRAVEL_KM, PERTH_TRAVEL_THRESHOLD_KM)
     import pandas as _pd
 
-    h_elo = elo_ratings.get(home_team, 1500)
-    a_elo = elo_ratings.get(away_team, 1500)
+    # Force everything to plain Python floats — guards against pandas
+    # Series/DatetimeArray leaking in from cached DataFrames
+    def _f(v, default=0.0):
+        try:
+            val = v
+            if hasattr(val, 'iloc'):  val = val.iloc[-1]
+            elif hasattr(val, 'item'): val = val.item()
+            return float(val)
+        except Exception:
+            return float(default)
+
+    h_elo = _f(elo_ratings.get(home_team, 1500), 1500)
+    a_elo = _f(elo_ratings.get(away_team, 1500), 1500)
 
     hs  = team_stats.get(home_team, {})
     as_ = team_stats.get(away_team, {})
 
-    h_form = hs.get("last5_avg", 0)
-    a_form = as_.get("last5_avg", 0)
-    h_std  = hs.get("last5_std", 20)
-    a_std  = as_.get("last5_std", 20)
+    h_form = _f(hs.get("last5_avg", 0))
+    a_form = _f(as_.get("last5_avg", 0))
+    h_std  = _f(hs.get("last5_std", 20), 20)
+    a_std  = _f(as_.get("last5_std", 20), 20)
 
     h_travel = travel_distance_km(home_team, venue)
     a_travel = travel_distance_km(away_team, venue)
 
-    today  = _pd.Timestamp.now()
-    h_rest = min(int((today - hs["last_date"]).days), 21) if hs.get("last_date") and _pd.notna(hs.get("last_date")) else 7
-    a_rest = min(int((today - as_["last_date"]).days), 21) if as_.get("last_date") and _pd.notna(as_.get("last_date")) else 7
+    is_perth = 1 if str(venue) in PERTH_VENUES else 0
+
+    today = _pd.Timestamp.now()
+    NEUTRAL_REST = 7
+    BYE_CAP      = 21
+
+    def calc_rest(last_date):
+        try:
+            if last_date is None:
+                return NEUTRAL_REST
+            # Unwrap Series, DatetimeArray, or list to a scalar
+            ld = last_date
+            if hasattr(ld, 'iloc'):
+                ld = ld.iloc[-1]
+            elif hasattr(ld, '__len__') and not isinstance(ld, str):
+                ld = ld[-1]
+            ld = _pd.Timestamp(ld)
+            if _pd.isna(ld):
+                return NEUTRAL_REST
+            raw = int((today - ld).days)
+            return raw if raw <= BYE_CAP else NEUTRAL_REST
+        except Exception:
+            return NEUTRAL_REST
+
+    h_rest = calc_rest(hs.get("last_date"))
+    a_rest = calc_rest(as_.get("last_date"))
+
+    # Travel × rest fatigue interaction
+    h_fatigue = min(h_travel, 3000) / 1000 * max(14 - h_rest, 0)
+    a_fatigue = min(a_travel, 3000) / 1000 * max(14 - a_rest, 0)
+
+    # Rolling travel record from enriched historical df
+    def get_travel_record(team, min_km):
+        """Win rate and avg margin for trips >= min_km from enriched_df."""
+        if enriched_df is None or enriched_df.empty:
+            return 0.5, 0.0
+        # Away games where this team travelled >= min_km
+        away_trips = enriched_df[
+            (enriched_df["ateam"] == team) &
+            (enriched_df["travel_away_km"] >= min_km)
+        ]
+        # Home games where this team travelled >= min_km (neutral venues)
+        home_trips = enriched_df[
+            (enriched_df["hteam"] == team) &
+            (enriched_df["travel_home_km"] >= min_km)
+        ]
+        margins = []
+        for _, r in away_trips.iterrows():
+            margins.append((r.get("ascore",0) or 0) - (r.get("hscore",0) or 0))
+        for _, r in home_trips.iterrows():
+            margins.append((r.get("hscore",0) or 0) - (r.get("ascore",0) or 0))
+        if len(margins) < 3:
+            return 0.5, 0.0
+        win_rate   = sum(1 for m in margins if m > 0) / len(margins)
+        avg_margin = float(np.mean(margins))
+        return round(win_rate, 3), round(avg_margin, 2)
+
+    h_twr, h_tam  = get_travel_record(home_team, LONG_TRAVEL_KM)
+    a_twr, a_tam  = get_travel_record(away_team, LONG_TRAVEL_KM)
+    h_pwr, _      = get_travel_record(home_team, PERTH_TRAVEL_THRESHOLD_KM)
+    a_pwr, _      = get_travel_record(away_team, PERTH_TRAVEL_THRESHOLD_KM)
 
     # Season stats diff
     from datetime import datetime as _dt
@@ -343,36 +476,51 @@ def build_prediction_features(home_team: str, away_team: str,
 
     feats = {
         # Elo
-        "elo_diff":         h_elo - a_elo + home_advantage,
+        "elo_diff":               h_elo - a_elo + float(home_advantage),
         # Form
-        "form_diff":        h_form - a_form,
-        "home_form":        h_form,
-        "away_form":        a_form,
-        "home_consistency": h_std,
-        "away_consistency": a_std,
-        # Travel
-        "travel_diff":      h_travel - a_travel,
-        "travel_home_km":   h_travel,
-        "travel_away_km":   a_travel,
+        "form_diff":              h_form - a_form,
+        "home_form":              h_form,
+        "away_form":              a_form,
+        "home_consistency":       h_std,
+        "away_consistency":       a_std,
+        # Travel raw
+        "travel_diff":            h_travel - a_travel,
+        "travel_home_km":         h_travel,
+        "travel_away_km":         a_travel,
+        # Travel × rest fatigue
+        "travel_fatigue_diff":    h_fatigue - a_fatigue,
+        "home_travel_fatigue":    h_fatigue,
+        "away_travel_fatigue":    a_fatigue,
+        # Travel record
+        "travel_win_rate_diff":   h_twr - a_twr,
+        "travel_margin_diff":     h_tam - a_tam,
+        "perth_win_rate_diff":    h_pwr - a_pwr,
+        "is_perth_game":          is_perth,
         # Rest
-        "days_rest_diff":   h_rest - a_rest,
-        "days_rest_home":   h_rest,
-        "days_rest_away":   a_rest,
+        "days_rest_diff":         h_rest - a_rest,
+        "days_rest_home":         h_rest,
+        "days_rest_away":         a_rest,
+        "short_rest_home":        1.0 if h_rest <= 6 else 0.0,
+        "short_rest_away":        1.0 if a_rest <= 6 else 0.0,
+        "short_rest_diff":        (1.0 if h_rest <= 6 else 0.0) - (1.0 if a_rest <= 6 else 0.0),
+        "bye_rest_home":          1.0 if h_rest >= 14 else 0.0,
+        "bye_rest_away":          1.0 if a_rest >= 14 else 0.0,
+        "bye_rest_diff":          (1.0 if h_rest >= 14 else 0.0) - (1.0 if a_rest >= 14 else 0.0),
         # Streak
-        "streak_diff":      hs.get("streak", 0) - as_.get("streak", 0),
-        "home_streak":      hs.get("streak", 0),
-        "away_streak":      as_.get("streak", 0),
+        "streak_diff":            hs.get("streak", 0) - as_.get("streak", 0),
+        "home_streak":            hs.get("streak", 0),
+        "away_streak":            as_.get("streak", 0),
         # Last margins
-        "last_margin_diff": hs.get("last_margin", 0) - as_.get("last_margin", 0),
-        "last3_diff":       hs.get("last3_avg", 0) - as_.get("last3_avg", 0),
-        "last5_diff":       h_form - a_form,
+        "last_margin_diff":       hs.get("last_margin", 0) - as_.get("last_margin", 0),
+        "last3_diff":             hs.get("last3_avg", 0)   - as_.get("last3_avg", 0),
+        "last5_diff":             h_form - a_form,
         # Season stats
-        "cl_diff":      ss(home_team, "avg_clearances")   - ss(away_team, "avg_clearances"),
-        "i50_diff":     ss(home_team, "avg_inside_50s")   - ss(away_team, "avg_inside_50s"),
+        "cl_diff":      ss(home_team, "avg_clearances")            - ss(away_team, "avg_clearances"),
+        "i50_diff":     ss(home_team, "avg_inside_50s")            - ss(away_team, "avg_inside_50s"),
         "cp_diff":      ss(home_team, "avg_contested_possessions") - ss(away_team, "avg_contested_possessions"),
-        "tk_diff":      ss(home_team, "avg_tackles")      - ss(away_team, "avg_tackles"),
-        "ho_diff":      ss(home_team, "avg_hitouts")      - ss(away_team, "avg_hitouts"),
-        "clanger_diff": ss(home_team, "avg_clangers")     - ss(away_team, "avg_clangers"),
+        "tk_diff":      ss(home_team, "avg_tackles")               - ss(away_team, "avg_tackles"),
+        "ho_diff":      ss(home_team, "avg_hitouts")               - ss(away_team, "avg_hitouts"),
+        "clanger_diff": ss(home_team, "avg_clangers")              - ss(away_team, "avg_clangers"),
         # PAV (0 if lineups not announced)
         "pav_total_diff": 0,
         "pav_off_diff":   0,
@@ -385,5 +533,23 @@ def build_prediction_features(home_team: str, away_team: str,
         from data.lineup import get_lineup_pav_diff
         pav_feats = get_lineup_pav_diff(home_team, away_team, lineup_pav)
         feats.update(pav_feats)
+
+    # Experience features from PAV career data
+    feats["exp_avg_diff"]        = 0.0
+    feats["exp_veteran_diff"]    = 0.0
+    feats["exp_developing_diff"] = 0.0
+    if experience_df is not None and not experience_df.empty:
+        from datetime import datetime as _dt2
+        yr = _dt2.now().year
+        def _exp(team, col):
+            row = experience_df[(experience_df["team"] == team) &
+                                (experience_df["year"] == yr)]
+            if row.empty:
+                row = experience_df[(experience_df["team"] == team) &
+                                    (experience_df["year"] == yr - 1)]
+            return float(row.iloc[0][col]) if not row.empty and col in row.columns else 0.0
+        feats["exp_avg_diff"]        = _exp(home_team, "avg_career_games")   - _exp(away_team, "avg_career_games")
+        feats["exp_veteran_diff"]    = _exp(home_team, "pct_veterans")       - _exp(away_team, "pct_veterans")
+        feats["exp_developing_diff"] = _exp(home_team, "pct_developing")     - _exp(away_team, "pct_developing")
 
     return feats
