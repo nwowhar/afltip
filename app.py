@@ -483,7 +483,7 @@ if page == "📊 Dashboard":
                     st.code(traceback.format_exc())
                     continue
 
-                pred = predict_game(win_model, margin_model, feats)
+                pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
                 winner = home if pred["home_win_prob"] > 50 else away
                 margin = abs(pred["predicted_margin"])
                 hs = team_stats.get(home, {})
@@ -837,7 +837,7 @@ elif page == "🔮 Predict a Game":
             season_stats, lineup_strength,
             df, exp_df
         )
-        pred = predict_game(win_model, margin_model, feats)
+        pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
         m    = pred["predicted_margin"]
         winner = home_team if m > 0 else away_team
 
@@ -1622,7 +1622,7 @@ elif page == "💰 Value Bets":
             "exp_veteran_diff":    _exp(ht, "pct_veterans")      - _exp(at, "pct_veterans"),
             "exp_developing_diff": _exp(ht, "pct_developing")    - _exp(at, "pct_developing"),
         }
-        pred = predict_game(win_model, margin_model, feats)
+        pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
         return pred["home_win_prob"] / 100.0, pred["predicted_margin"]
 
     # ── Bankroll input ────────────────────────────────────────────────────────
