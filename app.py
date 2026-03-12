@@ -32,6 +32,17 @@ except ImportError:
                                   build_prediction_features, CORE_FEATURES, ALL_FEATURES)
     def add_experience_features(df, *a, **kw): return df
     def add_standings_features(df, *a, **kw): return df
+
+# Detect whether the deployed predictor accepts style_df kwarg
+import inspect as _inspect
+_bpf_params = set(_inspect.signature(build_prediction_features).parameters)
+_STYLE_DF_SUPPORTED = "style_df" in _bpf_params
+
+def _build_prediction_features(*args, style_df=None, **kwargs):
+    """Wrapper: passes style_df only if the deployed predictor supports it."""
+    if _STYLE_DF_SUPPORTED and style_df is not None:
+        return build_prediction_features(*args, style_df=style_df, **kwargs)
+    return build_prediction_features(*args, **kwargs)
 from model.backtest import (run_walk_forward_backtest, compute_yearly_accuracy,
                              ablation_test, permutation_importance_analysis,
                              margin_prediction_backtest, optimise_start_year, FEATURE_GROUPS)
@@ -148,7 +159,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; }
 
 # ── Session state defaults ────────────────────────────────────────────────────
 _DEFAULTS = {
-    "start_year":      2013,
+    "start_year":      2016,
     "page":            "📊 Dashboard",
     "selected_round":  None,
     "predict_home":    None,
@@ -175,9 +186,9 @@ for _k, _v in _DEFAULTS.items():
 with st.sidebar:
     st.markdown("# 🏉 AFL Predictor")
     st.markdown("---")
-    start_year = st.slider("Training data from", 2010, 2020,
+    start_year = st.slider("Training data from", 2012, 2020,
                            key="start_year",
-                           help="Model trains on all completed games from this year to present. Earlier = more data but older game styles. 2013–2015 is a good balance.")
+                           help="Model trains on all completed games from this year to present. Sweet spot is around 2016 — enough data without stale player pools from retired eras.")
     page = st.radio("Navigate", [
         "📊 Dashboard",
         "🔮 Predict a Game",
@@ -422,7 +433,7 @@ if page == "📊 Dashboard":
 
                 try:
                     # Use build_prediction_features for consistency with Predict page
-                    feats = build_prediction_features(
+                    feats = _build_prediction_features(
                         home, away, venue,
                         current_elos, team_stats,
                         season_stats, lineup_strength,
@@ -808,7 +819,7 @@ elif page == "🔮 Predict a Game":
 
     if st.button("🔮 PREDICT", use_container_width=True):
         _pred_round = int(df[df["year"] == datetime.now().year]["round"].max()) if not df[df["year"] == datetime.now().year].empty else None
-        feats = build_prediction_features(
+        feats = _build_prediction_features(
             home_team, away_team, venue,
             current_elos, team_stats,
             season_stats, lineup_strength,
@@ -1620,7 +1631,7 @@ elif page == "💰 Value Bets":
     def get_our_prob(ht, at, venue=""):
         """Use identical feature building to the Predict page."""
         _round = int(df[df["year"] == datetime.now().year]["round"].max()) if not df[df["year"] == datetime.now().year].empty else None
-        feats = build_prediction_features(
+        feats = _build_prediction_features(
             ht, at, venue,
             current_elos, team_stats,
             season_stats, lineup_strength if 'lineup_strength' in dir() else {},
