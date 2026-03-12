@@ -424,6 +424,23 @@ TEAM_NAME_MAP = {
 def normalise_team(name: str) -> str:
     return TEAM_NAME_MAP.get(name, name)
 
+
+# Numeric team ID → name map (Squiggle PAV/lineup endpoints return numeric IDs)
+SQUIGGLE_TEAM_ID_MAP = {
+    "1":  "Adelaide",        "2":  "Brisbane Lions",  "3":  "Carlton",
+    "4":  "Collingwood",     "5":  "Essendon",        "6":  "Fremantle",
+    "7":  "Geelong",         "8":  "Gold Coast",      "9":  "Greater Western Sydney",
+    "10": "Hawthorn",        "11": "Melbourne",       "12": "North Melbourne",
+    "13": "Port Adelaide",   "14": "Richmond",        "15": "St Kilda",
+    "16": "Sydney",          "17": "West Coast",      "18": "Western Bulldogs",
+}
+
+
+def resolve_team_id(value) -> str:
+    """Convert a numeric Squiggle team ID to a team name. Pass-through if already a name."""
+    s = str(value).strip()
+    return SQUIGGLE_TEAM_ID_MAP.get(s, s)
+
 # ── Standings / ladder ────────────────────────────────────────────────────────
 
 def get_standings(year: int) -> pd.DataFrame:
@@ -445,9 +462,9 @@ def get_standings(year: int) -> pd.DataFrame:
         df["year"] = year
         # Normalise team names
         if "name" in df.columns:
-            df["team"] = df["name"].apply(normalise_team)
+            df["team"] = df["name"].apply(lambda x: normalise_team(resolve_team_id(x)))
         elif "team" in df.columns:
-            df["team"] = df["team"].apply(normalise_team)
+            df["team"] = df["team"].apply(lambda x: normalise_team(resolve_team_id(x)))
         # Ensure numeric
         for col in ["rank", "wins", "losses", "draws", "percentage", "pts"]:
             if col in df.columns:
