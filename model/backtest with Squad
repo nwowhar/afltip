@@ -1,0 +1,138 @@
+"""
+model/backtest.py  — squad feature ablation additions
+======================================================
+Only the additions/changes are shown. Integrate into existing backtest.py.
+"""
+
+# ── Updated ABLATION_GROUPS dict ──────────────────────────────────────────
+# Replace or extend existing dict with this version:
+
+ABLATION_GROUPS = {
+    "Elo":             ["elo_diff"],
+    "Form (rolling)":  ["form_diff", "home_form", "away_form",
+                        "home_consistency", "away_consistency"],
+    "Ladder position": ["ladder_rank_diff", "ladder_pct_diff", "ladder_wins_diff"],
+    "Travel & Rest":   ["travel_diff", "short_rest_diff", "bye_rest_diff",
+                        "days_rest_diff", "travel_fatigue_diff",
+                        "travel_win_rate_diff", "perth_win_rate_diff", "is_perth_game"],
+    "Experience":      ["exp_avg_diff", "exp_veteran_diff", "exp_developing_diff"],
+    "Last margin":     ["last_margin_diff", "last3_diff", "last5_diff"],
+    "Season stats":    ["cl_diff", "i50_diff", "cp_diff", "tk_diff", "ho_diff", "clanger_diff"],
+    "Squad quality":   ["squad_disp_diff", "squad_goals_diff",        # ← NEW
+                        "squad_tackles_diff", "squad_hitouts_diff",
+                        "squad_games_diff"],
+}
+
+
+# ── Updated walk_forward_backtest() signature ─────────────────────────────
+# Add squad_lookup parameter:
+
+def walk_forward_backtest(df_games, start_year=2017, min_test_seasons=3,
+                          squad_lookup=None):
+    """
+    Walk-forward backtest with per-season train/test splits.
+
+    Parameters
+    ----------
+    squad_lookup : DataFrame from footywire.get_all_squad_features()
+                   Columns: team, game_year, squad_disp, squad_goals,
+                            squad_tackles, squad_hitouts, squad_games
+                   game_year = year those stats apply to (stat_year + 1)
+    """
+    # ... (existing code) ...
+
+    # Inside the loop where features are built for each test game,
+    # slice squad data by game year to avoid leakage:
+    # 
+    #   game_year = game["year"]
+    #   squad_slice = (squad_lookup[squad_lookup["game_year"] == game_year]
+    #                  if squad_lookup is not None else None)
+    #
+    #   features = build_prediction_features(
+    #       ...,
+    #       squad_df=squad_slice,   # prior-season stats only
+    #   )
+    pass
+
+
+# ── Updated run_ablation() ────────────────────────────────────────────────
+
+def run_ablation(df_games, start_year=2017, min_test_seasons=3,
+                 squad_lookup=None):
+    """
+    For each feature group in ABLATION_GROUPS, run walk-forward backtest
+    with that group dropped, compare to baseline.
+
+    Returns DataFrame:
+        group | accuracy_with | accuracy_without | delta | verdict
+    """
+    from model.predictor import train_models, predict_game, build_prediction_features
+
+    # 1. Baseline (all features)
+    baseline_acc = walk_forward_backtest(df_games, start_year, min_test_seasons,
+                                         squad_lookup=squad_lookup)["accuracy"]
+
+    results = []
+    for group_name, group_features in ABLATION_GROUPS.items():
+        # Check if any features from this group are actually in the model
+        acc_without = walk_forward_backtest(
+            df_games, start_year, min_test_seasons,
+            squad_lookup=squad_lookup,
+            drop_features=group_features     # existing param in walk_forward_backtest
+        )["accuracy"]
+
+        delta = acc_without - baseline_acc
+        if delta < -0.005:
+            verdict = "✅ Helps"
+        elif delta > 0.005:
+            verdict = "❌ Hurts"
+        else:
+            verdict = "➡️ Neutral"
+
+        results.append({
+            "Feature Group":  group_name,
+            "Baseline":       f"{baseline_acc:.1%}",
+            "Without":        f"{acc_without:.1%}",
+            "Delta":          f"{delta:+.2%}",
+            "Verdict":        verdict,
+        })
+
+    return pd.DataFrame(results)
+
+
+# ── App.py display snippet (Backtest page) ────────────────────────────────
+APP_ABLATION_DISPLAY = """
+# On the Backtest page, run ablation including squad features:
+
+with st.spinner("Running ablation (includes squad quality)..."):
+    ablation_df = run_ablation(
+        df_games=df,
+        start_year=start_year,
+        squad_lookup=squad_lookup,   # ← pass through from load_squad_features()
+    )
+
+st.subheader("Feature Ablation")
+st.caption("Accuracy when each feature group is dropped. Negative delta = feature helps.")
+
+# Colour code the verdict
+def colour_verdict(val):
+    if "✅" in val: return "color: green"
+    if "❌" in val: return "color: red"
+    return "color: grey"
+
+st.dataframe(
+    ablation_df.style.applymap(colour_verdict, subset=["Verdict"]),
+    use_container_width=True,
+)
+
+# Highlight squad quality row
+squad_row = ablation_df[ablation_df["Feature Group"] == "Squad quality"]
+if not squad_row.empty:
+    delta_val = float(squad_row["Delta"].values[0].replace("%","").replace("+",""))
+    if delta_val < -0.5:
+        st.success(f"✅ Squad quality features improve accuracy by {abs(delta_val):.1f}% — keeping them in the model.")
+    elif delta_val > 0.5:
+        st.warning(f"❌ Squad quality features are hurting accuracy by {delta_val:.1f}% — consider removing them.")
+    else:
+        st.info(f"➡️ Squad quality features are roughly neutral ({delta_val:+.1f}%) — may improve once more data available.")
+"""
