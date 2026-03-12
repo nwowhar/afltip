@@ -21,17 +21,23 @@ from sklearn.inspection import permutation_importance
 
 # ── Feature groups for ablation testing ──────────────────────────────────────
 FEATURE_GROUPS = {
-    "Elo":              ["elo_diff"],
-    "Form (rolling)":   ["form_diff", "home_form", "away_form",
-                         "home_consistency", "away_consistency"],
-    "Travel":           ["travel_diff", "travel_home_km", "travel_away_km"],
-    "Rest days":        ["days_rest_diff", "days_rest_home", "days_rest_away"],
-    "Streak":           ["streak_diff", "home_streak", "away_streak"],
-    "Last margin":      ["last_margin_diff", "last3_diff", "last5_diff"],
-    "Season stats":     ["cl_diff", "i50_diff", "cp_diff", "tk_diff",
-                         "ho_diff", "clanger_diff"],
-    "PAV lineup":       ["pav_total_diff", "pav_off_diff",
-                         "pav_def_diff", "pav_mid_diff"],
+    "Elo":                  ["elo_diff"],
+    "Form (rolling)":       ["form_diff", "home_form", "away_form",
+                             "home_consistency", "away_consistency"],
+    "Travel":               ["travel_diff", "travel_home_km", "travel_away_km"],
+    "Travel × Rest":        ["travel_fatigue_diff", "home_travel_fatigue", "away_travel_fatigue"],
+    "Travel record":        ["travel_win_rate_diff", "travel_margin_diff",
+                             "perth_win_rate_diff", "is_perth_game"],
+    "Rest days":            ["short_rest_diff", "short_rest_home", "short_rest_away",
+                             "bye_rest_diff", "bye_rest_home", "bye_rest_away",
+                             "days_rest_diff", "days_rest_home", "days_rest_away"],
+    "Streak":               ["streak_diff", "home_streak", "away_streak"],
+    "Last margin":          ["last_margin_diff", "last3_diff", "last5_diff"],
+    "Season stats":         ["cl_diff", "i50_diff", "cp_diff", "tk_diff",
+                             "ho_diff", "clanger_diff"],
+    "PAV lineup":           ["pav_total_diff", "pav_off_diff",
+                             "pav_def_diff", "pav_mid_diff"],
+    "Experience":           ["exp_avg_diff", "exp_veteran_diff", "exp_developing_diff"],
 }
 
 ALL_FEATURES = [f for feats in FEATURE_GROUPS.values() for f in feats]
