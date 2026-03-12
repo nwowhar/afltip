@@ -402,91 +402,13 @@ if page == "📊 Dashboard":
                     continue
 
                 try:
-                    # Inline feature builder — no dependency on cached modules
-                    def _safe_float(v, default=0.0):
-                        try:
-                            if v is None: return float(default)
-                            if hasattr(v, 'iloc'): v = v.iloc[-1]
-                            if hasattr(v, 'item'): v = v.item()
-                            return float(v)
-                        except: return float(default)
-
-                    from data.fetcher import travel_distance_km
-                    _PERTH_VENUES = {"Optus Stadium", "Perth Stadium", "Subiaco Oval"}
-                    _LONG_KM      = 1000
-                    _PERTH_KM     = 2000
-
-                    h_elo   = _safe_float(current_elos.get(home, 1500), 1500)
-                    a_elo   = _safe_float(current_elos.get(away, 1500), 1500)
-                    hs_     = team_stats.get(home, {})
-                    as__    = team_stats.get(away, {})
-                    h_form  = _safe_float(hs_.get("last5_avg", 0))
-                    a_form  = _safe_float(as__.get("last5_avg", 0))
-                    h_std   = _safe_float(hs_.get("last5_std", 20), 20)
-                    a_std   = _safe_float(as__.get("last5_std", 20), 20)
-                    h_km    = float(travel_distance_km(home, venue))
-                    a_km    = float(travel_distance_km(away, venue))
-
-                    import pandas as _pd2
-                    today_ = _pd2.Timestamp.now()
-                    def _rest(ld):
-                        try:
-                            if ld is None: return 7
-                            if hasattr(ld, 'iloc'): ld = ld.iloc[-1]
-                            ld = _pd2.Timestamp(ld)
-                            if _pd2.isna(ld): return 7
-                            raw = int((today_ - ld).days)
-                            return raw if raw <= 21 else 7
-                        except: return 7
-                    h_rest = _rest(hs_.get("last_date"))
-                    a_rest = _rest(as__.get("last_date"))
-
-                    h_fat = min(h_km, 3000) / 1000 * max(14 - h_rest, 0)
-                    a_fat = min(a_km, 3000) / 1000 * max(14 - a_rest, 0)
-
-                    cur_yr = datetime.now().year
-                    def _ss(team, stat):
-                        if season_stats is None or season_stats.empty: return 0.0
-                        row_ = season_stats[(season_stats["team"]==team) & (season_stats["year"]==cur_yr)]
-                        if row_.empty:
-                            row_ = season_stats[(season_stats["team"]==team) & (season_stats["year"]==cur_yr-1)]
-                        return float(row_.iloc[0].get(stat, 0)) if not row_.empty else 0.0
-
-                    feats = {
-                        "elo_diff":            h_elo - a_elo + 50.0,
-                        "form_diff":           h_form - a_form,
-                        "home_form":           h_form,
-                        "away_form":           a_form,
-                        "home_consistency":    h_std,
-                        "away_consistency":    a_std,
-                        "travel_diff":         h_km - a_km,
-                        "travel_home_km":      h_km,
-                        "travel_away_km":      a_km,
-                        "travel_fatigue_diff": h_fat - a_fat,
-                        "home_travel_fatigue": h_fat,
-                        "away_travel_fatigue": a_fat,
-                        "travel_win_rate_diff": 0.0,
-                        "travel_margin_diff":  0.0,
-                        "perth_win_rate_diff": 0.0,
-                        "is_perth_game":       1.0 if str(venue) in _PERTH_VENUES else 0.0,
-                        "days_rest_diff":      float(h_rest - a_rest),
-                        "days_rest_home":      float(h_rest),
-                        "days_rest_away":      float(a_rest),
-                        "streak_diff":         _safe_float(hs_.get("streak",0)) - _safe_float(as__.get("streak",0)),
-                        "home_streak":         _safe_float(hs_.get("streak",0)),
-                        "away_streak":         _safe_float(as__.get("streak",0)),
-                        "last_margin_diff":    _safe_float(hs_.get("last_margin",0)) - _safe_float(as__.get("last_margin",0)),
-                        "last3_diff":          _safe_float(hs_.get("last3_avg",0)) - _safe_float(as__.get("last3_avg",0)),
-                        "last5_diff":          h_form - a_form,
-                        "cl_diff":    _ss(home,"avg_clearances")   - _ss(away,"avg_clearances"),
-                        "i50_diff":   _ss(home,"avg_inside_50s")   - _ss(away,"avg_inside_50s"),
-                        "cp_diff":    _ss(home,"avg_contested_possessions") - _ss(away,"avg_contested_possessions"),
-                        "tk_diff":    _ss(home,"avg_tackles")      - _ss(away,"avg_tackles"),
-                        "ho_diff":    _ss(home,"avg_hitouts")      - _ss(away,"avg_hitouts"),
-                        "clanger_diff": _ss(home,"avg_clangers")   - _ss(away,"avg_clangers"),
-                        "pav_total_diff": 0.0, "pav_off_diff": 0.0,
-                        "pav_def_diff":   0.0, "pav_mid_diff": 0.0,
-                    }
+                    # Use build_prediction_features for consistency with Predict page
+                    feats = build_prediction_features(
+                        home, away, venue,
+                        current_elos, team_stats,
+                        season_stats, lineup_strength,
+                        df, exp_df, standings_df
+                    )
                 except Exception as game_err:
                     import traceback
                     st.error(f"Error for {home} vs {away}: {game_err}")
@@ -1586,69 +1508,14 @@ elif page == "💰 Value Bets":
     st.markdown("*Find edges between our model's probabilities and bookmaker odds*")
 
     # ── Helper to get our model prob for any matchup ──────────────────────────
-    def get_our_prob(ht, at):
-        def _sf(v, d=0.0):
-            try:
-                if v is None: return float(d)
-                if hasattr(v,'iloc'): v=v.iloc[-1]
-                if hasattr(v,'item'): v=v.item()
-                return float(v)
-            except: return float(d)
-        hs_ = team_stats.get(ht, {})
-        as_ = team_stats.get(at, {})
-        h_elo = _sf(current_elos.get(ht, 1500), 1500)
-        a_elo = _sf(current_elos.get(at, 1500), 1500)
-        h_form = _sf(hs_.get("last5_avg", 0))
-        a_form = _sf(as_.get("last5_avg", 0))
-
-        # Experience lookup from exp_df
-        def _exp(team, col):
-            if exp_df is None or exp_df.empty: return 0.0
-            from datetime import datetime as _dt
-            yr = _dt.now().year
-            row = exp_df[(exp_df["team"] == team) & (exp_df["year"] == yr)]
-            if row.empty:
-                row = exp_df[(exp_df["team"] == team) & (exp_df["year"] == yr - 1)]
-            return float(row.iloc[0][col]) if not row.empty and col in row.columns else 0.0
-
-        # Standings lookup
-        def _st(team, col, default):
-            if standings_df is None or standings_df.empty: return default
-            from datetime import datetime as _dt2
-            yr = _dt2.now().year
-            pct_col = "percentage" if "percentage" in standings_df.columns else "pct"
-            c = pct_col if col == "pct" else col
-            row = standings_df[(standings_df["team"] == team) & (standings_df["year"] == yr)]
-            if row.empty:
-                row = standings_df[(standings_df["team"] == team) & (standings_df["year"] == yr - 1)]
-            return float(row.iloc[0][c]) if not row.empty and c in row.columns else default
-
-        feats = {
-            "elo_diff": h_elo - a_elo + 50.0, "form_diff": h_form - a_form,
-            "home_form": h_form, "away_form": a_form,
-            "home_consistency": _sf(hs_.get("last5_std", 20), 20),
-            "away_consistency": _sf(as_.get("last5_std", 20), 20),
-            **{k: 0.0 for k in ["travel_diff","travel_home_km","travel_away_km",
-               "travel_fatigue_diff","home_travel_fatigue","away_travel_fatigue",
-               "travel_win_rate_diff","travel_margin_diff","perth_win_rate_diff",
-               "is_perth_game","days_rest_diff","cl_diff","i50_diff","cp_diff",
-               "tk_diff","ho_diff","clanger_diff","pav_total_diff","pav_off_diff",
-               "pav_def_diff","pav_mid_diff",
-               "short_rest_diff","short_rest_home","short_rest_away",
-               "bye_rest_diff","bye_rest_home","bye_rest_away"]},
-            "days_rest_home": 7.0, "days_rest_away": 7.0,
-            "streak_diff": _sf(hs_.get("streak",0)) - _sf(as_.get("streak",0)),
-            "home_streak": _sf(hs_.get("streak",0)), "away_streak": _sf(as_.get("streak",0)),
-            "last_margin_diff": _sf(hs_.get("last_margin",0)) - _sf(as_.get("last_margin",0)),
-            "last3_diff": _sf(hs_.get("last3_avg",0)) - _sf(as_.get("last3_avg",0)),
-            "last5_diff": h_form - a_form,
-            "exp_avg_diff":        _exp(ht, "avg_career_games")  - _exp(at, "avg_career_games"),
-            "exp_veteran_diff":    _exp(ht, "pct_veterans")      - _exp(at, "pct_veterans"),
-            "exp_developing_diff": _exp(ht, "pct_developing")    - _exp(at, "pct_developing"),
-            "ladder_rank_diff": _st(ht, "rank", 9)   - _st(at, "rank", 9),
-            "ladder_pct_diff":  _st(ht, "pct", 100)  - _st(at, "pct", 100),
-            "ladder_wins_diff": _st(ht, "wins", 0)   - _st(at, "wins", 0),
-        }
+    def get_our_prob(ht, at, venue=""):
+        """Use identical feature building to the Predict page."""
+        feats = build_prediction_features(
+            ht, at, venue,
+            current_elos, team_stats,
+            season_stats, lineup_strength if 'lineup_strength' in dir() else {},
+            df, exp_df, standings_df
+        )
         pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
         return pred["home_win_prob"] / 100.0, pred["predicted_margin"]
 
