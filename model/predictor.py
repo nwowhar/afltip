@@ -530,13 +530,17 @@ def build_prediction_features(home_team: str, away_team: str,
                                (season_stats["year"] == year - 1)]
         return float(row.iloc[0].get(stat, 0)) if not row.empty else 0
 
+    # Form fade-in: early season form data is noisy (only 1-2 games)
+    # Round 1=20%, Round 2=40%, Round 3=60%, Round 4=80%, Round 5+=100%
+    _form_weight = min(current_round / 5.0, 1.0) if current_round else 1.0
+
     feats = {
         # Elo
         "elo_diff":               h_elo - a_elo + float(home_advantage),
-        # Form
-        "form_diff":              h_form - a_form,
-        "home_form":              h_form,
-        "away_form":              a_form,
+        # Form — faded in early season so 1 game doesn't override large Elo gaps
+        "form_diff":              (h_form - a_form) * _form_weight,
+        "home_form":              h_form * _form_weight,
+        "away_form":              a_form * _form_weight,
         "home_consistency":       h_std,
         "away_consistency":       a_std,
         # Travel
@@ -560,14 +564,14 @@ def build_prediction_features(home_team: str, away_team: str,
         "bye_rest_home":          1.0 if h_rest >= 14 else 0.0,
         "bye_rest_away":          1.0 if a_rest >= 14 else 0.0,
         "bye_rest_diff":          (1.0 if h_rest >= 14 else 0.0) - (1.0 if a_rest >= 14 else 0.0),
-        # Streak
-        "streak_diff":            _f(hs.get("streak", 0)) - _f(as_.get("streak", 0)),
-        "home_streak":            _f(hs.get("streak", 0)),
-        "away_streak":            _f(as_.get("streak", 0)),
-        # Last margins
-        "last_margin_diff":       _f(hs.get("last_margin", 0)) - _f(as_.get("last_margin", 0)),
-        "last3_diff":             _f(hs.get("last3_avg", 0))   - _f(as_.get("last3_avg", 0)),
-        "last5_diff":             h_form - a_form,
+        # Streak — faded same as form
+        "streak_diff":            (_f(hs.get("streak", 0)) - _f(as_.get("streak", 0))) * _form_weight,
+        "home_streak":            _f(hs.get("streak", 0)) * _form_weight,
+        "away_streak":            _f(as_.get("streak", 0)) * _form_weight,
+        # Last margins — faded same as form
+        "last_margin_diff":       (_f(hs.get("last_margin", 0)) - _f(as_.get("last_margin", 0))) * _form_weight,
+        "last3_diff":             (_f(hs.get("last3_avg", 0))   - _f(as_.get("last3_avg", 0))) * _form_weight,
+        "last5_diff":             (h_form - a_form) * _form_weight,
         # Season stats
         "cl_diff":      ss(home_team, "avg_clearances")            - ss(away_team, "avg_clearances"),
         "i50_diff":     ss(home_team, "avg_inside_50s")            - ss(away_team, "avg_inside_50s"),
