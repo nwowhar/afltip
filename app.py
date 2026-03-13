@@ -449,7 +449,8 @@ if page == "📊 Dashboard":
                 _pred_prob   = None
                 _pred_margin = None
                 _correct     = None
-                if _h in current_elos and _a in current_elos:
+                _missing_elo = _h not in current_elos or _a not in current_elos
+                if not _missing_elo:
                     try:
                         _pf = _build_prediction_features(
                             _h, _a, _venue, current_elos, team_stats,
@@ -461,8 +462,8 @@ if page == "📊 Dashboard":
                         _pred_prob   = _pp["home_win_prob"] if _pred_winner == _h else _pp["away_win_prob"]
                         _pred_margin = abs(_pp["predicted_margin"])
                         _correct     = (_pred_winner == _actual_winner)
-                    except Exception:
-                        pass
+                    except Exception as _pred_err:
+                        _pred_winner = f"ERR: {_pred_err}"
 
                 _border_col = "#2ecc71" if _correct else ("#e74c3c" if _correct is False else "#444")
                 _tick       = "✅" if _correct else ("❌" if _correct is False else "")
