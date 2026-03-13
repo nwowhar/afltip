@@ -961,6 +961,15 @@ elif page == "🔮 Predict a Game":
         m    = pred["predicted_margin"]
         winner = home_team if m > 0 else away_team
 
+        # DEBUG — dump raw features fed to model
+        with st.expander("🔧 Debug: raw feature values", expanded=True):
+            _feat_rows = []
+            for k, v in sorted(feats.items()):
+                if k in metrics["features_used"]:
+                    _feat_rows.append({"feature": k, "value": round(float(v), 4)})
+            st.dataframe(pd.DataFrame(_feat_rows), hide_index=True, width="stretch")
+            st.write(f"current_round passed: {_pred_round}")
+
         c1, c2, c3 = st.columns(3)
         with c1: st.markdown(mc(f"{pred['home_win_prob']}%", f"{home_team} Win Prob"), unsafe_allow_html=True)
         with c2: st.markdown(mc(f"{abs(m):.0f} pts", f"Margin ({winner})"), unsafe_allow_html=True)
