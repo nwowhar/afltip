@@ -29,12 +29,8 @@ BASE_FEATURES = [
 
 FATIGUE_FEATURES = [
     "travel_diff", "travel_home_km", "travel_away_km",
-    "short_rest_diff", "short_rest_home", "short_rest_away",
-    "bye_rest_diff",   "bye_rest_home",   "bye_rest_away",
-    "days_rest_diff",  "days_rest_home",  "days_rest_away",
-    # Removed: travel_fatigue_diff, home/away_travel_fatigue (Travel×Rest +0.42%)
-    # Removed: travel_win_rate_diff, travel_margin_diff,
-    #          perth_win_rate_diff, is_perth_game (Travel record +0.49%)
+    # Rest days removed — consistent noise across ablations (+0.56%)
+    # Travel×Rest, Travel record already removed previously
 ]
 
 CONTEXT_FEATURES = [
@@ -52,16 +48,13 @@ SEASON_STAT_FEATURES = [
 ]
 
 PAV_FEATURES = [
-    "pav_total_diff",
-    "pav_off_diff",
-    "pav_def_diff",
-    "pav_mid_diff",
+    # PAV lineup removed — marginal noise (+0.19%) and only available late in week
+    # pav_total_diff, pav_off_diff, pav_def_diff, pav_mid_diff
 ]
 
 EXPERIENCE_FEATURES = [
-    "exp_avg_diff",
-    "exp_veteran_diff",
-    "exp_developing_diff",
+    # Experience removed — marginal noise (+0.19%)
+    # exp_avg_diff, exp_veteran_diff, exp_developing_diff
 ]
 
 STANDINGS_FEATURES = [
