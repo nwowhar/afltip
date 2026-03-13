@@ -1280,6 +1280,79 @@ elif page == "🔬 Feature Importance":
                        xaxis=dict(title="Total Group Importance"))
     st.plotly_chart(fig2, use_container_width=True)
 
+    # ── Live Ablation ─────────────────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("### 🧪 Live Ablation")
+    st.markdown(
+        "*Leave-one-out: remove each feature group and measure accuracy impact. "
+        "Run this then paste the results to Claude to tune the model.*"
+    )
+
+    abl_min_train = st.slider(
+        "Minimum training years", 2, 5, 3, key="fi_abl_min_train"
+    )
+
+    if st.button("▶ Run Ablation", type="primary", key="fi_run_ablation"):
+        with st.spinner("Running ablation — this takes ~30 seconds..."):
+            abl_df = ablation_test(df, FEATURE_GROUPS, abl_min_train)
+        st.session_state["fi_ablation_result"] = abl_df
+
+    abl_df = st.session_state.get("fi_ablation_result")
+
+    if abl_df is not None and not abl_df.empty:
+
+        # Colour-code rows
+        def _abl_row_color(row):
+            if row["group"] == "ALL FEATURES (baseline)":
+                return ["background-color:#1a1a2e; color:#aaa"] * len(row)
+            c = ("#2ecc71" if row["delta"] < -0.3
+                 else "#e74c3c" if row["delta"] > 0.3
+                 else "#f39c12")
+            return [f"color:{c}" if i in (2, 4) else "" for i in range(len(row))]
+
+        display_df = abl_df[["group", "accuracy", "delta", "n_features", "interpretation"]].copy()
+        display_df.columns = ["Feature Group", "Accuracy %", "Δ vs Baseline", "# Features", "Verdict"]
+        display_df["Δ vs Baseline"] = display_df["Δ vs Baseline"].apply(
+            lambda x: f"{x:+.2f}%" if x != 0 else "—"
+        )
+
+        st.dataframe(
+            display_df.style.apply(_abl_row_color, axis=1),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        # Copy-for-Claude button
+        baseline_row = abl_df[abl_df["group"] == "ALL FEATURES (baseline)"].iloc[0]
+        lines = [
+            f"## Ablation Results — {abl_min_train}yr min training",
+            f"Baseline: {baseline_row['accuracy']:.1f}% ({int(baseline_row['n_features'])} features)",
+            "",
+            f"{'Group':<30} {'Accuracy':>9} {'Delta':>8} {'Verdict'}",
+            "-" * 65,
+        ]
+        for _, row in abl_df.iterrows():
+            if row["group"] == "ALL FEATURES (baseline)":
+                continue
+            delta_str = f"{row['delta']:+.2f}%" if row["delta"] != 0 else "—"
+            lines.append(
+                f"{row['group']:<30} {row['accuracy']:>8.1f}% {delta_str:>8}  {row['interpretation']}"
+            )
+
+        lines += [
+            "",
+            f"Model: {metrics['win_accuracy']*100:.1f}% CV accuracy, "
+            f"{metrics['n_games']} games, "
+            f"{metrics['n_features']} features",
+            f"Start year: {df['year'].min()}, "
+            f"Years: {sorted(df['year'].unique()).tolist()}",
+        ]
+
+        copy_text = "\n".join(lines)
+
+        st.code(copy_text, language=None)
+        st.caption("☝️ Copy the block above and paste it to Claude to tune the model.")
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # BACKTEST
 # ═══════════════════════════════════════════════════════════════════════════════
