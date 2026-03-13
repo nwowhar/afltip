@@ -1354,8 +1354,8 @@ elif page == "🔬 Feature Importance":
             f"Model: {metrics['win_accuracy']*100:.1f}% CV accuracy, "
             f"{metrics['n_games']} games, "
             f"{metrics['n_features']} features",
-            f"Start year: {df['year'].min()}, "
-            f"Years: {sorted(df['year'].unique()).tolist()}",
+            f"Start year: {metrics.get('features_used', ['?'])[0] if metrics else '?'}, "
+            f"N games: {metrics.get('n_games','?')}, N features: {metrics.get('n_features','?')}",
         ]
 
         copy_text = "\n".join(lines)
