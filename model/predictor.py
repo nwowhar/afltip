@@ -539,7 +539,21 @@ def build_prediction_features(home_team: str, away_team: str,
 
     # Form fade-in: early season form data is noisy (only 1-2 games)
     # Round 1=20%, Round 2=40%, Round 3=60%, Round 4=80%, Round 5+=100%
-    _form_weight = min(current_round / 5.0, 1.0) if current_round else 1.0
+    # Form fade-in schedule:
+    # Rounds 1-2: 0%  — carry-over from last season (finals results, bye weeks) is misleading
+    # Rounds 3-5: 40% — small sample, lean on Elo
+    # Rounds 6-9: 75% — form is becoming meaningful
+    # Round 10+:  100% — full weight
+    if current_round is None:
+        _form_weight = 1.0
+    elif current_round <= 2:
+        _form_weight = 0.0
+    elif current_round <= 5:
+        _form_weight = 0.4
+    elif current_round <= 9:
+        _form_weight = 0.75
+    else:
+        _form_weight = 1.0
 
     feats = {
         # Elo
