@@ -273,11 +273,19 @@ def add_standings_features(df: pd.DataFrame,
     h_wins, a_wins = [], []
 
     for _, row in df.iterrows():
-        year = int(row.get("year", 0))
+        year  = int(row.get("year", 0))
+        rnd   = int(row.get("round", 99))
         h = str(row.get("hteam", ""))
         a = str(row.get("ateam", ""))
-        hd = lookup.get((h, year)) or lookup.get((h, year - 1)) or {}
-        ad = lookup.get((a, year)) or lookup.get((a, year - 1)) or {}
+        # Use prev-year standings to avoid leakage:
+        # current-year final standings aren't known during the season
+        # Only switch to current-year after Round 14 (season half done, standings meaningful)
+        if rnd > 14:
+            hd = lookup.get((h, year)) or lookup.get((h, year - 1)) or {}
+            ad = lookup.get((a, year)) or lookup.get((a, year - 1)) or {}
+        else:
+            hd = lookup.get((h, year - 1)) or {}
+            ad = lookup.get((a, year - 1)) or {}
         h_rank.append(float(hd.get("rank", 9) or 9))
         a_rank.append(float(ad.get("rank", 9) or 9))
         h_pct.append(float(hd.get(pct_col, 100) or 100))
