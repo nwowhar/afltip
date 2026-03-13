@@ -29,12 +29,21 @@ FEATURE_GROUPS = {
     "Last margin":          ["last_margin_diff", "last3_diff", "last5_diff"],
     "Season stats":         ["cl_diff", "i50_diff", "cp_diff", "tk_diff",
                              "ho_diff", "clanger_diff"],
+    "Stats: Clearances":    ["cl_diff", "cp_diff"],
+    "Stats: Inside 50s":    ["i50_diff"],
+    "Stats: Tackles":       ["tk_diff"],
+    "Stats: Hitouts":       ["ho_diff"],
+    "Stats: Clangers":      ["clanger_diff"],
     "PAV lineup":           ["pav_total_diff", "pav_off_diff",
                              "pav_def_diff", "pav_mid_diff"],
     "Experience":           ["exp_avg_diff", "exp_veteran_diff", "exp_developing_diff"],
     "Ladder position":      ["ladder_rank_diff", "ladder_pct_diff", "ladder_wins_diff"],
     "Playing style":        ["kick_ratio_diff", "tackle_diff", "hitout_diff",
                              "mark_diff", "kick_vs_tackle", "ruck_advantage"],
+    "Style: Kick ratio":    ["kick_ratio_diff", "kick_vs_tackle"],
+    "Style: Tackles":       ["tackle_diff"],
+    "Style: Hitouts":       ["hitout_diff", "ruck_advantage"],
+    "Style: Marks":         ["mark_diff"],
 }
 
 ALL_FEATURES = [f for feats in FEATURE_GROUPS.values() for f in feats]
