@@ -1301,20 +1301,26 @@ elif page == "🔬 Feature Importance":
 
     if abl_df is not None and not abl_df.empty:
 
-        # Colour-code rows
-        def _abl_row_color(row):
-            if row["group"] == "ALL FEATURES (baseline)":
-                return ["background-color:#1a1a2e; color:#aaa"] * len(row)
-            c = ("#2ecc71" if row["delta"] < -0.3
-                 else "#e74c3c" if row["delta"] > 0.3
-                 else "#f39c12")
-            return [f"color:{c}" if i in (2, 4) else "" for i in range(len(row))]
-
         display_df = abl_df[["group", "accuracy", "delta", "n_features", "interpretation"]].copy()
         display_df.columns = ["Feature Group", "Accuracy %", "Δ vs Baseline", "# Features", "Verdict"]
         display_df["Δ vs Baseline"] = display_df["Δ vs Baseline"].apply(
             lambda x: f"{x:+.2f}%" if x != 0 else "—"
         )
+
+        # Colour-code using iloc positions (styler passes renamed columns as index)
+        def _abl_row_color(row):
+            # row.iloc[0] = "Feature Group" column value
+            if row.iloc[0] == "ALL FEATURES (baseline)":
+                return ["background-color:#1a1a2e; color:#aaa"] * len(row)
+            delta_str = row.iloc[2]  # "Δ vs Baseline" — already formatted string
+            try:
+                delta_val = float(delta_str.replace("%", "").replace("—", "0"))
+            except (ValueError, AttributeError):
+                delta_val = 0.0
+            c = ("#2ecc71" if delta_val < -0.3
+                 else "#e74c3c" if delta_val > 0.3
+                 else "#f39c12")
+            return ["" if i not in (2, 4) else f"color:{c}" for i in range(len(row))]
 
         st.dataframe(
             display_df.style.apply(_abl_row_color, axis=1),
