@@ -522,13 +522,14 @@ def build_prediction_features(home_team: str, away_team: str,
     year = _dt.now().year
 
     # Season stats source selection:
-    #   Rounds 1-5  → use PREVIOUS year stats only (current season too small a sample)
+    #   Rounds 1-2  → zero out entirely (prev-year stats misleading, model overweights them)
+    #   Rounds 3-5  → use previous year stats (current season too small a sample)
     #   Round 6+    → use current year stats (enough games to be meaningful)
-    # This avoids one blowout game inflating a team's season averages
+    _zero_stats   = (current_round is not None and current_round <= 2)
     _use_prev_stats = (current_round is not None and current_round < 6)
 
     def ss(team, stat):
-        if season_stats is None or season_stats.empty:
+        if _zero_stats or season_stats is None or season_stats.empty:
             return 0
         if _use_prev_stats:
             row = season_stats[(season_stats["team"] == team) & (season_stats["year"] == year - 1)]
