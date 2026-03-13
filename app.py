@@ -430,6 +430,10 @@ if page == "📊 Dashboard":
             _n_up        = len(upcoming)
             _summary     = f"Round {selected_round} · {_n_done} completed · {_n_up} upcoming · {_ladder_note}"
             st.markdown(f"*{_summary}*")
+            # DEBUG — remove once confirmed working
+            _yr_games = df[df["year"] == datetime.now().year]
+            _last_completed = int(_yr_games["round"].max()) if not _yr_games.empty else 0
+            st.caption(f"🔧 Debug: selected_round={selected_round}, last completed in df={_last_completed}, form_weight={'0%' if selected_round<=2 else '40%' if selected_round<=5 else '75%' if selected_round<=9 else '100%'}, ladder_weight={_ladder_w:.0%}")
         else:
             st.markdown("## ROUND PREVIEW & RESULTS")
             upcoming   = pd.DataFrame()
@@ -778,7 +782,7 @@ if page == "📊 Dashboard":
                             "What it means": explanation[:80] + "..." if len(explanation) > 80 else explanation,
                         })
                     if all_rows:
-                        st.dataframe(pd.DataFrame(all_rows), use_container_width=True, hide_index=True)
+                        st.dataframe(pd.DataFrame(all_rows), width='stretch', hide_index=True)
 
                     # ── Narrative ─────────────────────────────────────────
                     st.markdown("---")
@@ -835,7 +839,7 @@ if page == "📊 Dashboard":
         dark_chart(fig)
         fig.update_layout(yaxis=dict(range=[40, 85], title="Accuracy %"),
                           xaxis=dict(title="Year"))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PREDICT A GAME
@@ -937,7 +941,7 @@ elif page == "🔮 Predict a Game":
 
     st.markdown("---")
 
-    if st.button("🔮 PREDICT", use_container_width=True):
+    if st.button("🔮 PREDICT", width='stretch'):
         # current_round: prefer the round picker selection from session state
         # Fall back to last completed + 1, minimum 1
         if st.session_state.get("selected_round"):
@@ -972,7 +976,7 @@ elif page == "🔮 Predict a Game":
         ))
         dark_chart(fig, height=180)
         fig.update_layout(xaxis=dict(range=[0, 100]))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         # Full breakdown table
         hs  = team_stats.get(home_team, {})
@@ -992,7 +996,7 @@ elif page == "🔮 Predict a Game":
                                   f"{feats.get('home_pav_total',0):.0f}",
                                   f"{feats.get('away_pav_total',0):.0f}"))
             bd_df = pd.DataFrame(rows_data, columns=["Factor", home_team, away_team])
-            st.dataframe(bd_df, use_container_width=True, hide_index=True)
+            st.dataframe(bd_df, width='stretch', hide_index=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TEAM FORM
@@ -1022,7 +1026,7 @@ elif page == "📈 Team Form":
         dark_chart(fig, 400)
         fig.update_layout(title=f"{selected} — Game Margins",
                           xaxis=dict(tickangle=-45))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         form["cumulative"] = form["margin"].cumsum()
         fig2 = go.Figure(go.Scatter(x=form["game_label"], y=form["cumulative"],
@@ -1031,7 +1035,7 @@ elif page == "📈 Team Form":
         dark_chart(fig2, 280)
         fig2.update_layout(title="Cumulative Margin",
                            xaxis=dict(tickangle=-45))
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ELO LADDER
@@ -1056,8 +1060,8 @@ elif page == "🏆 Elo Ladder":
     dark_chart(fig, 600)
     fig.update_layout(xaxis=dict(range=[1300, 1700]),
                       yaxis=dict(autorange="reversed"))
-    st.plotly_chart(fig, use_container_width=True)
-    st.dataframe(elo_df, use_container_width=True, hide_index=True)
+    st.plotly_chart(fig, width='stretch')
+    st.dataframe(elo_df, width='stretch', hide_index=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TEAM STATS LEADERBOARD
@@ -1146,7 +1150,7 @@ elif page == "📋 Team Stats":
                         yaxis=dict(autorange="reversed"),
                         xaxis=dict(title=f"Avg {stat_label} per game")
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
                     st.markdown("---")
                     st.markdown("### All Stats Table")
@@ -1158,7 +1162,7 @@ elif page == "📋 Team Stats":
                         full_table[c] = pd.to_numeric(full_table[c], errors="coerce").round(1)
                     full_table = full_table.sort_values(stat_col, ascending=lower_better).reset_index(drop=True)
                     full_table = full_table.rename(columns=rename_map)
-                    st.dataframe(full_table, use_container_width=True, hide_index=True)
+                    st.dataframe(full_table, width='stretch', hide_index=True)
 
                     # Radar chart for team comparison
                     st.markdown("---")
@@ -1223,7 +1227,7 @@ elif page == "📋 Team Stats":
                             legend=dict(bgcolor="#1a1a2e"),
                             height=420, margin=dict(l=40, r=40, t=40, b=40)
                         )
-                        st.plotly_chart(fig_r, use_container_width=True)
+                        st.plotly_chart(fig_r, width='stretch')
                         st.caption("*Normalised 0–1 across all 18 teams. For Clangers/Frees Against, higher = better (inverted).*")
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1269,7 +1273,7 @@ elif page == "🔬 Feature Importance":
         yaxis=dict(autorange="reversed"),
         xaxis=dict(title="Importance Score")
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # Legend
     legend_html = " &nbsp; ".join(
@@ -1292,7 +1296,7 @@ elif page == "🔬 Feature Importance":
     dark_chart(fig2, 350)
     fig2.update_layout(yaxis=dict(autorange="reversed"),
                        xaxis=dict(title="Total Group Importance"))
-    st.plotly_chart(fig2, use_container_width=True)
+    st.plotly_chart(fig2, width='stretch')
 
     # ── Live Ablation ─────────────────────────────────────────────────────────
     st.markdown("---")
@@ -1338,7 +1342,7 @@ elif page == "🔬 Feature Importance":
 
         st.dataframe(
             display_df.style.apply(_abl_row_color, axis=1),
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
         )
 
@@ -1424,7 +1428,7 @@ elif page == "📉 Backtest":
                       annotation_text=f"avg {overall_acc:.1f}%")
         dark_chart(fig, 350)
         fig.update_layout(yaxis=dict(range=[40, 85], title="Accuracy %"))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         # Calibration plot
         st.markdown("### Probability Calibration")
@@ -1447,7 +1451,7 @@ elif page == "📉 Backtest":
             yaxis=dict(title="Actual win rate", range=[0, 1]),
             legend=dict(bgcolor="#1a1a2e")
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
         # Ablation test
         st.markdown("---")
@@ -1491,10 +1495,10 @@ to replace raw rest day counts, which should reduce this noise.
                     xaxis=dict(title="Δ Accuracy %"),
                     yaxis=dict(autorange="reversed")
                 )
-                st.plotly_chart(fig3, use_container_width=True)
+                st.plotly_chart(fig3, width='stretch')
                 st.dataframe(ablation_df[["group", "accuracy", "delta",
                                           "interpretation", "n_features"]],
-                             use_container_width=True, hide_index=True)
+                             width='stretch', hide_index=True)
 
                 # Contextual interpretation
                 hurting = ablation_df[ablation_df["interpretation"].str.contains("Hurts", na=False)]
@@ -1525,7 +1529,7 @@ to replace raw rest day counts, which should reduce this noise.
             ))
             dark_chart(fig4, 300)
             fig4.update_layout(yaxis=dict(title="MAE (points)"))
-            st.plotly_chart(fig4, use_container_width=True)
+            st.plotly_chart(fig4, width='stretch')
             avg_mae = margin_bt["mae_points"].mean()
             st.info(f"📏 Average margin prediction error: **{avg_mae:.1f} points** out-of-sample")
 
@@ -1609,7 +1613,7 @@ to replace raw rest day counts, which should reduce this noise.
                                 showarrow=False,
                                 font=dict(color="#e94560", size=12)
                             )
-                    st.plotly_chart(fig5, use_container_width=True)
+                    st.plotly_chart(fig5, width='stretch')
 
                     # Also show n_train_games as a secondary line
                     fig6 = go.Figure()
@@ -1628,7 +1632,7 @@ to replace raw rest day counts, which should reduce this noise.
                         xaxis=dict(title="Training data start year", dtick=1),
                         showlegend=False,
                     )
-                    st.plotly_chart(fig6, use_container_width=True)
+                    st.plotly_chart(fig6, width='stretch')
 
                     # Summary callout
                     if cur_acc_val is not None and start_year != best_year:
@@ -1657,7 +1661,7 @@ to replace raw rest day counts, which should reduce this noise.
                                 "brier_score": "Brier Score",
                                 "n_test_games": "Test Games",
                             }).drop(columns=["holdout_seasons"], errors="ignore"),
-                            use_container_width=True, hide_index=True
+                            width='stretch', hide_index=True
                         )
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1776,7 +1780,7 @@ elif page == "🎨 Style Matchup":
                 legend=dict(bgcolor="#1a1a2e"),
                 height=400, margin=dict(l=40, r=40, t=20, b=20)
             )
-            st.plotly_chart(fig_r, use_container_width=True)
+            st.plotly_chart(fig_r, width='stretch')
 
             # ── Matchup callouts ──────────────────────────────────────────────
             st.markdown("---")
@@ -1826,7 +1830,7 @@ elif page == "🎨 Style Matchup":
                  "Favours": sm_home if v > 0.001 else (sm_away if v < -0.001 else "—")}
                 for k, v in matchup.items()
             ]
-            st.dataframe(pd.DataFrame(feat_rows), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(feat_rows), width='stretch', hide_index=True)
 
         # ── All-teams style leaderboard ────────────────────────────────────────
         st.markdown("---")
@@ -1843,7 +1847,7 @@ elif page == "🎨 Style Matchup":
             st.dataframe(
                 yr_style[["team", "Kick Ratio", "Tackle Rate", "Hitout Rate", "Mark Rate"]]
                 .rename(columns={"team": "Team"}),
-                use_container_width=True, hide_index=True
+                width='stretch', hide_index=True
             )
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2071,7 +2075,7 @@ elif page == "💰 Value Bets":
                     display_cols["A Edge%"] = display_cols["A Edge%"].round(1)
                     display_cols["Vig%"]    = display_cols["Vig%"].round(2)
                     st.dataframe(display_cols.sort_values(["Home","Away","Bookmaker"]),
-                                 use_container_width=True, hide_index=True)
+                                 width='stretch', hide_index=True)
 
                 # ── Squiggle consensus comparison ─────────────────────────────
                 st.markdown("---")
@@ -2108,7 +2112,7 @@ elif page == "💰 Value Bets":
                             st.dataframe(
                                 sqdf[["Home","Away","Our Model","Squiggle Consensus","Difference","Models Polled"]]
                                 .style.applymap(_cdiff, subset=["Difference"]),
-                                use_container_width=True, hide_index=True)
+                                width='stretch', hide_index=True)
                             st.caption("🟢 We're higher than consensus on home team  🔴 We're lower")
                     else:
                         st.info("Squiggle consensus not available for current round.")
@@ -2167,7 +2171,7 @@ elif page == "💰 Value Bets":
                             if not covers_df.empty:
                                 st.dataframe(
                                     covers_df[["Match","Team","Line","Line Odds","Our Pred Margin","Covers Line?","Bookmaker"]],
-                                    use_container_width=True, hide_index=True)
+                                    width='stretch', hide_index=True)
                                 st.caption("Shows bets where our model's predicted margin covers the handicap line")
                             else:
                                 st.info("No line bets where our model covers the spread this round.")
@@ -2481,8 +2485,8 @@ is the ceiling on how often value bets should win.
             legend=dict(bgcolor="#1a1a2e"),
             title="Training Data Relevance by Start Year"
         )
-        st.plotly_chart(fig_s, use_container_width=True)
-        st.dataframe(stal_df, use_container_width=True, hide_index=True)
+        st.plotly_chart(fig_s, width='stretch')
+        st.dataframe(stal_df, width='stretch', hide_index=True)
 
         if rec_years:
             best = rec_years[0]
@@ -2536,7 +2540,7 @@ is the ceiling on how often value bets should win.
                 display_exp["Median Career Games"] = display_exp["Median Career Games"].round(1)
                 display_exp["Avg Finals Games"] = display_exp["Avg Finals Games"].round(1)
                 display_exp["% Veterans"] = (display_exp["% Veterans"] * 100).round(1)
-                st.dataframe(display_exp, use_container_width=True, hide_index=True)
+                st.dataframe(display_exp, width='stretch', hide_index=True)
             else:
                 st.info("Experience data will populate once PAV data is loaded.")
         except Exception as _e:
