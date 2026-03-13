@@ -930,7 +930,10 @@ elif page == "🔮 Predict a Game":
     st.markdown("---")
 
     if st.button("🔮 PREDICT", use_container_width=True):
-        _pred_round = int(df[df["year"] == datetime.now().year]["round"].max()) if not df[df["year"] == datetime.now().year].empty else None
+        # current_round = next upcoming round (last completed + 1)
+        # This matches what the Round Preview uses (selected_round = upcoming round)
+        _yr_df = df[df["year"] == datetime.now().year]
+        _pred_round = int(_yr_df["round"].max()) + 1 if not _yr_df.empty else 1
         feats = _build_prediction_features(
             home_team, away_team, venue,
             current_elos, team_stats,
@@ -1842,7 +1845,8 @@ elif page == "💰 Value Bets":
     # ── Helper to get our model prob for any matchup ──────────────────────────
     def get_our_prob(ht, at, venue=""):
         """Use identical feature building to the Predict page."""
-        _round = int(df[df["year"] == datetime.now().year]["round"].max()) if not df[df["year"] == datetime.now().year].empty else None
+        _yr_df2 = df[df["year"] == datetime.now().year]
+        _round = int(_yr_df2["round"].max()) + 1 if not _yr_df2.empty else 1
         feats = _build_prediction_features(
             ht, at, venue,
             current_elos, team_stats,
