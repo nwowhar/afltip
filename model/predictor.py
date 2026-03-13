@@ -32,9 +32,9 @@ FATIGUE_FEATURES = [
     "short_rest_diff", "short_rest_home", "short_rest_away",
     "bye_rest_diff",   "bye_rest_home",   "bye_rest_away",
     "days_rest_diff",  "days_rest_home",  "days_rest_away",
-    "travel_fatigue_diff", "home_travel_fatigue", "away_travel_fatigue",
-    "travel_win_rate_diff", "travel_margin_diff",
-    "perth_win_rate_diff", "is_perth_game",
+    # Removed: travel_fatigue_diff, home/away_travel_fatigue (Travel×Rest +0.42%)
+    # Removed: travel_win_rate_diff, travel_margin_diff,
+    #          perth_win_rate_diff, is_perth_game (Travel record +0.49%)
 ]
 
 CONTEXT_FEATURES = [
@@ -43,12 +43,12 @@ CONTEXT_FEATURES = [
 ]
 
 SEASON_STAT_FEATURES = [
-    "cl_diff",       # clearances
-    "i50_diff",      # inside 50s
-    "cp_diff",       # contested possessions
-    "tk_diff",       # tackles
-    "ho_diff",       # hitouts
-    "clanger_diff",  # clangers (negative = better)
+    "cl_diff",   # clearances
+    "i50_diff",  # inside 50s
+    "cp_diff",   # contested possessions
+    "tk_diff",   # tackles
+    "ho_diff",   # hitouts
+    # clanger_diff removed — confirmed noise in ablation (+1.18% delta)
 ]
 
 PAV_FEATURES = [
@@ -71,12 +71,12 @@ STANDINGS_FEATURES = [
 ]
 
 STYLE_FEATURES = [
-    "kick_ratio_diff",   # kick-heavy vs handball-heavy style gap
-    "tackle_diff",       # pressure / contested game intensity
-    "hitout_diff",       # ruck dominance
-    "mark_diff",         # aerial vs ground game
-    "kick_vs_tackle",    # interaction: kick style vs pressure defence
-    "ruck_advantage",    # explicit ruck label (= hitout_diff)
+    "kick_ratio_diff",  # kick-heavy vs handball-heavy style gap
+    "kick_vs_tackle",   # interaction: kick style vs pressure defence
+    "hitout_diff",      # ruck dominance
+    "ruck_advantage",   # explicit ruck label (= hitout_diff)
+    # tackle_diff removed — confirmed noise (+0.63% delta)
+    # mark_diff removed  — confirmed noise (+0.83% delta)
 ]
 
 ALL_FEATURES = (BASE_FEATURES + FATIGUE_FEATURES +
