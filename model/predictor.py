@@ -520,26 +520,22 @@ def build_prediction_features(home_team: str, away_team: str,
     from datetime import datetime as _dt
     year = _dt.now().year
 
-    # Season stats fade-in: before Round 6, blend current-year stats with prev-year
-    # This prevents one big/small game from dominating the season stat features
-    # Round 1 = 0% current / 100% prev, Round 6+ = 100% current / 0% prev
-    _stats_weight = min(max(current_round - 1, 0) / 5.0, 1.0) if current_round else 1.0
+    # Season stats source selection:
+    #   Rounds 1-5  → use PREVIOUS year stats only (current season too small a sample)
+    #   Round 6+    → use current year stats (enough games to be meaningful)
+    # This avoids one blowout game inflating a team's season averages
+    _use_prev_stats = (current_round is not None and current_round < 6)
 
     def ss(team, stat):
         if season_stats is None or season_stats.empty:
             return 0
-        row_cur  = season_stats[(season_stats["team"] == team) & (season_stats["year"] == year)]
-        row_prev = season_stats[(season_stats["team"] == team) & (season_stats["year"] == year - 1)]
-        val_cur  = float(row_cur.iloc[0].get(stat, 0))  if not row_cur.empty  else None
-        val_prev = float(row_prev.iloc[0].get(stat, 0)) if not row_prev.empty else None
-        # Blend: early rounds lean on prev-year, later rounds use current-year
-        if val_cur is not None and val_prev is not None:
-            return val_prev + _stats_weight * (val_cur - val_prev)
-        elif val_cur is not None:
-            return val_cur
-        elif val_prev is not None:
-            return val_prev
-        return 0
+        if _use_prev_stats:
+            row = season_stats[(season_stats["team"] == team) & (season_stats["year"] == year - 1)]
+        else:
+            row = season_stats[(season_stats["team"] == team) & (season_stats["year"] == year)]
+            if row.empty:
+                row = season_stats[(season_stats["team"] == team) & (season_stats["year"] == year - 1)]
+        return float(row.iloc[0].get(stat, 0)) if not row.empty else 0
 
     # Form fade-in: early season form data is noisy (only 1-2 games)
     # Round 1=20%, Round 2=40%, Round 3=60%, Round 4=80%, Round 5+=100%
