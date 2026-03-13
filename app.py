@@ -387,41 +387,124 @@ if page == "📊 Dashboard":
     st.markdown("---")
 
     try:
-        # Fetch all incomplete games for the year so we can offer a round picker
+        # Fetch ALL games for the year (completed + upcoming)
         import requests as _req
         _r = _req.get(f"https://api.squiggle.com.au/?q=games;year={datetime.now().year}",
                       headers={"User-Agent": "AFL-Predictor/1.0"}, timeout=15)
         _all_games = pd.DataFrame(_r.json().get("games", []))
         _incomplete = _all_games[_all_games["complete"] < 100] if not _all_games.empty else pd.DataFrame()
+        _complete   = _all_games[_all_games["complete"] == 100] if not _all_games.empty else pd.DataFrame()
 
-        if not _incomplete.empty:
-            available_rounds = sorted(_incomplete["round"].unique())
-            default_round    = int(_incomplete["round"].min())
-            # If session state has a stale/None round, reset to default
-            if st.session_state.get("selected_round") not in available_rounds:
-                st.session_state["selected_round"] = default_round
+        # Round picker — all rounds that have any game (complete or upcoming)
+        if not _all_games.empty:
+            _all_rounds = sorted(_all_games["round"].unique())
+            # Default to the lowest round with incomplete games (upcoming), else latest completed
+            if not _incomplete.empty:
+                _default_round = int(_incomplete["round"].min())
+            else:
+                _default_round = int(_all_rounds[-1])
+            if st.session_state.get("selected_round") not in _all_rounds:
+                st.session_state["selected_round"] = _default_round
+
             col_title, col_picker = st.columns([2, 1])
             with col_title:
-                st.markdown("## UPCOMING GAMES")
+                st.markdown("## ROUND PREVIEW & RESULTS")
             with col_picker:
-                selected_round = st.selectbox("Round", available_rounds,
-                                              index=available_rounds.index(st.session_state["selected_round"]),
+                selected_round = st.selectbox("Round", _all_rounds,
+                                              index=_all_rounds.index(st.session_state["selected_round"]),
                                               key="selected_round",
                                               label_visibility="collapsed")
-            upcoming = _incomplete[_incomplete["round"] == selected_round].copy()
-            _ladder_w = min(selected_round / 8.0, 1.0)
+
+            _ladder_w    = min(selected_round / 8.0, 1.0)
             _ladder_note = f"Ladder weight: {_ladder_w:.0%}" if _ladder_w < 1.0 else "Ladder: full weight"
-            st.markdown(f"*Round {selected_round} — {len(upcoming)} games · {_ladder_note}*")
+            upcoming     = _incomplete[_incomplete["round"] == selected_round].copy()
+            _done_this   = _complete[_complete["round"] == selected_round].copy()
+            _n_done      = len(_done_this)
+            _n_up        = len(upcoming)
+            _summary     = f"Round {selected_round} · {_n_done} completed · {_n_up} upcoming · {_ladder_note}"
+            st.markdown(f"*{_summary}*")
         else:
-            st.markdown("## UPCOMING GAMES")
-            upcoming = pd.DataFrame()
+            st.markdown("## ROUND PREVIEW & RESULTS")
+            upcoming   = pd.DataFrame()
+            _done_this = pd.DataFrame()
+            selected_round = None
 
         lineup_df = load_lineups()
         lineup_strength = {}
         if not lineup_df.empty and not pav_df.empty:
             lineup_strength = compute_lineup_strength(lineup_df, pav_df)
 
-        if upcoming.empty:
+        # ── Completed games for this round ─────────────────────────────────
+        if not _done_this.empty:
+            for _, _cg in _done_this.iterrows():
+                _h  = str(_cg.get("hteam", "?"))
+                _a  = str(_cg.get("ateam", "?"))
+                _hs = int(_cg.get("hscore", 0) or 0)
+                _as = int(_cg.get("ascore", 0) or 0)
+                _venue = str(_cg.get("venue", ""))
+                _actual_winner = _h if _hs > _as else (_a if _as > _hs else "Draw")
+                _actual_margin = abs(_hs - _as)
+
+                _pred_winner = None
+                _pred_prob   = None
+                _pred_margin = None
+                _correct     = None
+                if _h in current_elos and _a in current_elos:
+                    try:
+                        _pf = _build_prediction_features(
+                            _h, _a, _venue, current_elos, team_stats,
+                            season_stats, {}, df, exp_df, standings_df,
+                            style_df=style_df, current_round=int(selected_round)
+                        )
+                        _pp = predict_game(win_model, margin_model, _pf, metrics["features_used"])
+                        _pred_winner = _h if _pp["home_win_prob"] > 50 else _a
+                        _pred_prob   = _pp["home_win_prob"] if _pred_winner == _h else _pp["away_win_prob"]
+                        _pred_margin = abs(_pp["predicted_margin"])
+                        _correct     = (_pred_winner == _actual_winner)
+                    except Exception:
+                        pass
+
+                _border_col = "#2ecc71" if _correct else ("#e74c3c" if _correct is False else "#444")
+                _tick       = "✅" if _correct else ("❌" if _correct is False else "")
+                _margin_err_str = ""
+                if _pred_margin is not None:
+                    _margin_err_str = f" · margin off by {abs(_pred_margin - _actual_margin):.0f} pts"
+
+                # Win probability bar (home = left, away = right)
+                _hprob = _pp["home_win_prob"] if (_pred_winner is not None) else 50
+                _aprob = 100 - _hprob
+
+                st.markdown(f"""
+<div style="background:#1a1a2e;border-radius:10px;padding:14px 18px;margin-bottom:10px;border-left:4px solid {_border_col}">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="font-size:1.1rem;font-weight:700;color:white">{_h}</div>
+    <div style="color:#e94560;font-family:'Bebas Neue';font-size:0.95rem">FINAL</div>
+    <div style="font-size:1.1rem;font-weight:700;color:white;text-align:right">{_a}</div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="font-size:1.6rem;font-weight:900;color:{'#2ecc71' if _actual_winner==_h else '#aaa'}">{_hs}</div>
+    <div style="font-size:0.8rem;color:#666">{_venue}</div>
+    <div style="font-size:1.6rem;font-weight:900;color:{'#2ecc71' if _actual_winner==_a else '#aaa'};text-align:right">{_as}</div>
+  </div>
+  <div style="height:8px;border-radius:4px;background:#0f3460;overflow:hidden;margin-bottom:6px">
+    <div style="width:{_hprob}%;height:100%;background:linear-gradient(90deg,#e94560,#ff6b6b);border-radius:4px"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#aaa">
+    <span>{_hprob}%</span>
+    <span>{_tick} Model tipped: <b style="color:{'#2ecc71' if _correct else '#e74c3c'}">{_pred_winner or '—'}</b> by {f'{_pred_margin:.0f} pts' if _pred_margin else '—'}{_margin_err_str}</span>
+    <span>{_aprob}%</span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+        if upcoming.empty and _done_this.empty:
+            st.info("No games found for this round.")
+        elif not upcoming.empty:
+            st.markdown("### UPCOMING PREDICTIONS")
+
+        if upcoming.empty and not _done_this.empty:
+            pass  # all done, no upcoming to show
+        elif upcoming.empty:
             st.info("No upcoming games right now — check back closer to game day.")
         else:
             for _, game in upcoming.iterrows():
@@ -689,93 +772,6 @@ if page == "📊 Dashboard":
         import traceback
         st.warning(f"Could not load upcoming games: {e}")
         st.code(traceback.format_exc())
-
-    # ── Round Results ──────────────────────────────────────────────────────────
-    st.markdown("---")
-    try:
-        import requests as _rq2
-        _r2 = _rq2.get(
-            f"https://api.squiggle.com.au/?q=games;year={datetime.now().year}",
-            headers={"User-Agent": "AFL-Predictor/1.0"}, timeout=15
-        )
-        _all2 = pd.DataFrame(_r2.json().get("games", []))
-        _done = _all2[_all2["complete"] == 100].copy() if not _all2.empty else pd.DataFrame()
-
-        if not _done.empty:
-            _done_rounds = sorted(_done["round"].unique(), reverse=True)
-            col_rr1, col_rr2 = st.columns([2, 1])
-            with col_rr1:
-                st.markdown("## ROUND RESULTS")
-            with col_rr2:
-                _sel_rr = st.selectbox("Results round", _done_rounds,
-                                       index=0, key="results_round",
-                                       label_visibility="collapsed")
-            _rr_games = _done[_done["round"] == _sel_rr].copy()
-            st.markdown(f"*Round {_sel_rr} — {len(_rr_games)} games completed*")
-
-            for _, _g in _rr_games.iterrows():
-                _h  = str(_g.get("hteam", "?"))
-                _a  = str(_g.get("ateam", "?"))
-                _hs = int(_g.get("hscore", 0) or 0)
-                _as = int(_g.get("ascore", 0) or 0)
-                _venue = str(_g.get("venue", ""))
-                _actual_winner = _h if _hs > _as else (_a if _as > _hs else "Draw")
-                _actual_margin = abs(_hs - _as)
-
-                # Get model prediction for this game
-                _pred_label = "—"
-                _pred_margin_label = "—"
-                _correct = None
-                if _h in current_elos and _a in current_elos:
-                    try:
-                        _pf = _build_prediction_features(
-                            _h, _a, _venue,
-                            current_elos, team_stats,
-                            season_stats, {},
-                            df, exp_df, standings_df,
-                            style_df=style_df,
-                            current_round=int(_sel_rr)
-                        )
-                        _pp = predict_game(win_model, margin_model, _pf, metrics["features_used"])
-                        _pred_winner = _h if _pp["home_win_prob"] > 50 else _a
-                        _pred_margin_val = abs(_pp["predicted_margin"])
-                        _pred_label = f"{_pred_winner} ({_pp['home_win_prob'] if _pred_winner == _h else _pp['away_win_prob']}%)"
-                        _pred_margin_label = f"{_pred_margin_val:.0f} pts"
-                        _correct = (_pred_winner == _actual_winner)
-                    except Exception:
-                        pass
-
-                _result_icon = "✅" if _correct is True else ("❌" if _correct is False else "—")
-                _margin_err  = ""
-                if _correct is not None:
-                    try:
-                        _err = abs(_pred_margin_val - _actual_margin)
-                        _margin_err = f" · margin off by {_err:.0f} pts"
-                    except Exception:
-                        pass
-
-                st.markdown(f"""
-<div style="background:#1a1a2e;border-radius:10px;padding:14px 18px;margin-bottom:10px;border-left:4px solid {'#2ecc71' if _correct else ('#e74c3c' if _correct is False else '#888')}">
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="font-size:1.05rem;font-weight:700">{_result_icon} {_h} {_hs} – {_as} {_a}</div>
-    <div style="color:#aaa;font-size:0.85rem">{_venue}</div>
-  </div>
-  <div style="margin-top:6px;font-size:0.88rem;color:#ccc">
-    <span style="color:#aaa">Predicted: </span>{_pred_label} by {_pred_margin_label}{_margin_err}
-  </div>
-  <div style="font-size:0.85rem;color:#aaa;margin-top:2px">
-    Actual: {_actual_winner} by {_actual_margin} pts
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-            # Round summary — tracked during the loop above via _correct/_results_tracker
-            pass
-        else:
-            st.markdown("## ROUND RESULTS")
-            st.info("No completed games yet this season.")
-    except Exception as _rre:
-        pass  # silently skip if results fail
 
     # Accuracy by year chart
     st.markdown("---")
