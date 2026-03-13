@@ -474,26 +474,55 @@ if page == "📊 Dashboard":
                 _hprob = _pp["home_win_prob"] if (_pred_winner is not None) else 50
                 _aprob = 100 - _hprob
 
+                # Actual result bar — home share of total score
+                _total_score  = _hs + _as if (_hs + _as) > 0 else 1
+                _actual_h_pct = int(_hs / _total_score * 100)
+                _actual_a_pct = 100 - _actual_h_pct
+                _margin_err_val = abs(_pred_margin - _actual_margin) if _pred_margin is not None else None
+
                 st.markdown(f"""
 <div style="background:#1a1a2e;border-radius:10px;padding:14px 18px;margin-bottom:10px;border-left:4px solid {_border_col}">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+
+  <!-- Teams + scoreline -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
     <div style="font-size:1.1rem;font-weight:700;color:white">{_h}</div>
-    <div style="color:#e94560;font-family:'Bebas Neue';font-size:0.95rem">FINAL</div>
-    <div style="font-size:1.1rem;font-weight:700;color:white;text-align:right">{_a}</div>
+    <div style="color:#888;font-size:0.75rem;letter-spacing:1px">FINAL</div>
+    <div style="font-size:1.1rem;font-weight:700;color:white">{_a}</div>
   </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <div style="font-size:1.6rem;font-weight:900;color:{'#2ecc71' if _actual_winner==_h else '#aaa'}">{_hs}</div>
-    <div style="font-size:0.8rem;color:#666">{_venue}</div>
-    <div style="font-size:1.6rem;font-weight:900;color:{'#2ecc71' if _actual_winner==_a else '#aaa'};text-align:right">{_as}</div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+    <div style="font-size:1.8rem;font-weight:900;color:{'#2ecc71' if _actual_winner==_h else '#aaa'}">{_hs}</div>
+    <div style="font-size:0.72rem;color:#555">{_venue}</div>
+    <div style="font-size:1.8rem;font-weight:900;color:{'#2ecc71' if _actual_winner==_a else '#aaa'}">{_as}</div>
   </div>
-  <div style="height:8px;border-radius:4px;background:#0f3460;overflow:hidden;margin-bottom:6px">
+
+  <!-- Prediction bar -->
+  <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#888;margin-bottom:2px">
+    <span>MODEL TIP</span>
+    <span>{_tick} {_pred_winner or '—'} by {f'{_pred_margin:.0f}' if _pred_margin else '—'} pts</span>
+    <span></span>
+  </div>
+  <div style="height:8px;border-radius:4px;background:#0f3460;overflow:hidden;margin-bottom:2px">
     <div style="width:{_hprob}%;height:100%;background:linear-gradient(90deg,#e94560,#ff6b6b);border-radius:4px"></div>
   </div>
-  <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#aaa">
-    <span>{_hprob}%</span>
-    <span>{_tick} Model tipped: <b style="color:{'#2ecc71' if _correct else '#e74c3c'}">{_pred_winner or '—'}</b> by {f'{_pred_margin:.0f} pts' if _pred_margin else '—'}{_margin_err_str}</span>
-    <span>{_aprob}%</span>
+  <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#666;margin-bottom:8px">
+    <span>{_hprob}%</span><span>{_aprob}%</span>
   </div>
+
+  <!-- Actual result bar -->
+  <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#888;margin-bottom:2px">
+    <span>ACTUAL</span>
+    <span style="color:{'#2ecc71' if _margin_err_val is not None and _margin_err_val <= 12 else '#f39c12' if _margin_err_val is not None and _margin_err_val <= 25 else '#e74c3c' if _margin_err_val is not None else '#888'}">
+      {f'margin off by {_margin_err_val:.0f} pts' if _margin_err_val is not None else ''}
+    </span>
+    <span></span>
+  </div>
+  <div style="height:8px;border-radius:4px;background:#0f3460;overflow:hidden">
+    <div style="width:{_actual_h_pct}%;height:100%;background:linear-gradient(90deg,#2ecc71,#27ae60);border-radius:4px"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#666;margin-top:2px">
+    <span>{_actual_h_pct}%</span><span>{_actual_a_pct}%</span>
+  </div>
+
 </div>
 """, unsafe_allow_html=True)
 
