@@ -415,7 +415,14 @@ if page == "📊 Dashboard":
                                               key="selected_round",
                                               label_visibility="collapsed")
 
-            _ladder_w    = min(selected_round / 8.0, 1.0)
+            if selected_round < 3:
+                _ladder_w = 0.0
+            elif selected_round <= 5:
+                _ladder_w = 0.15
+            elif selected_round <= 9:
+                _ladder_w = 0.25
+            else:
+                _ladder_w = 1.0
             _ladder_note = f"Ladder weight: {_ladder_w:.0%}" if _ladder_w < 1.0 else "Ladder: full weight"
             upcoming     = _incomplete[_incomplete["round"] == selected_round].copy()
             _done_this   = _complete[_complete["round"] == selected_round].copy()
@@ -931,10 +938,13 @@ elif page == "🔮 Predict a Game":
     st.markdown("---")
 
     if st.button("🔮 PREDICT", use_container_width=True):
-        # current_round = next upcoming round (last completed + 1)
-        # This matches what the Round Preview uses (selected_round = upcoming round)
-        _yr_df = df[df["year"] == datetime.now().year]
-        _pred_round = int(_yr_df["round"].max()) + 1 if not _yr_df.empty else 1
+        # current_round: prefer the round picker selection from session state
+        # Fall back to last completed + 1, minimum 1
+        if st.session_state.get("selected_round"):
+            _pred_round = int(st.session_state["selected_round"])
+        else:
+            _yr_df = df[df["year"] == datetime.now().year]
+            _pred_round = int(_yr_df["round"].max()) + 1 if not _yr_df.empty else 1
         feats = _build_prediction_features(
             home_team, away_team, venue,
             current_elos, team_stats,
