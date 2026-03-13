@@ -647,9 +647,16 @@ def build_prediction_features(home_team: str, away_team: str,
         feats["ladder_pct_diff"]  = _st(home_team, pct_col, 100)  - _st(away_team, pct_col, 100)
         feats["ladder_wins_diff"] = _st(home_team, "wins", 0)     - _st(away_team, "wins", 0)
 
-    # Ladder fade-in: full weight by Round 8 (Round 1 = 12.5%, Round 4 = 50%)
+    # Ladder fade-in: 0% until R3, 15% R3-R5, 25% R6-R9, 100% R10+
     if current_round is not None:
-        ladder_weight = min(current_round / 8.0, 1.0)
+        if current_round < 3:
+            ladder_weight = 0.0
+        elif current_round <= 5:
+            ladder_weight = 0.15
+        elif current_round <= 9:
+            ladder_weight = 0.25
+        else:
+            ladder_weight = 1.0
         feats["ladder_rank_diff"] *= ladder_weight
         feats["ladder_pct_diff"]  *= ladder_weight
         feats["ladder_wins_diff"] *= ladder_weight
