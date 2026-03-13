@@ -19,9 +19,6 @@ FEATURE_GROUPS = {
     "Form (rolling)":    ["form_diff", "home_form", "away_form",
                           "home_consistency", "away_consistency"],
     "Travel":            ["travel_diff", "travel_home_km", "travel_away_km"],
-    "Rest days":         ["short_rest_diff", "short_rest_home", "short_rest_away",
-                          "bye_rest_diff", "bye_rest_home", "bye_rest_away",
-                          "days_rest_diff", "days_rest_home", "days_rest_away"],
     "Streak":            ["streak_diff", "home_streak", "away_streak"],
     "Last margin":       ["last_margin_diff", "last3_diff", "last5_diff"],
     "Season stats":      ["cl_diff", "i50_diff", "cp_diff", "tk_diff", "ho_diff"],
@@ -29,14 +26,11 @@ FEATURE_GROUPS = {
     "Stats: Inside 50s": ["i50_diff"],
     "Stats: Tackles":    ["tk_diff"],
     "Stats: Hitouts":    ["ho_diff"],
-    "PAV lineup":        ["pav_total_diff", "pav_off_diff",
-                          "pav_def_diff", "pav_mid_diff"],
-    "Experience":        ["exp_avg_diff", "exp_veteran_diff", "exp_developing_diff"],
     "Ladder position":   ["ladder_rank_diff", "ladder_pct_diff", "ladder_wins_diff"],
     "Style: Kick ratio": ["kick_ratio_diff", "kick_vs_tackle"],
     "Style: Hitouts":    ["hitout_diff", "ruck_advantage"],
-    # Removed: Travel×Rest, Travel record, Stats:Clangers, Style:Marks, Style:Tackles
-    # — all confirmed noise in ablation (positive delta = hurts accuracy)
+    # Removed via ablation: Rest days (+0.56%), PAV lineup (+0.19%), Experience (+0.19%)
+    # Previously removed: Travel×Rest, Travel record, Clangers, Marks, Style:Tackles
 }
 
 ALL_FEATURES = [f for feats in FEATURE_GROUPS.values() for f in feats]
