@@ -564,8 +564,8 @@ def build_prediction_features(home_team: str, away_team: str,
         "form_diff":              (h_form - a_form) * _form_weight,
         "home_form":              h_form * _form_weight,
         "away_form":              a_form * _form_weight,
-        "home_consistency":       h_std,
-        "away_consistency":       a_std,
+        "home_consistency":       h_std * _form_weight,
+        "away_consistency":       a_std * _form_weight,
         # Travel
         "travel_diff":            h_travel - a_travel,
         "travel_home_km":         h_travel,
@@ -673,9 +673,8 @@ def build_prediction_features(home_team: str, away_team: str,
         feats["ladder_pct_diff"]  *= ladder_weight
         feats["ladder_wins_diff"] *= ladder_weight
 
-    # Style matchup features
-    # Use prev-season stats in Rounds 1-3 (not enough current-season data yet)
-    if style_df is not None and not style_df.empty:
+    # Style matchup features — zeroed at R1-2, faded same as form after that
+    if style_df is not None and not style_df.empty and _form_weight > 0:
         try:
             from data.team_style import compute_style_matchup
             use_prev = (current_round is not None and current_round <= 3)
@@ -684,7 +683,7 @@ def build_prediction_features(home_team: str, away_team: str,
                 game_year=year,
                 use_prev_season=use_prev,
             )
-            feats.update(style_feats)
+            feats.update({k: v * _form_weight for k, v in style_feats.items()})
         except ImportError:
             pass
 
