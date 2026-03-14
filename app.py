@@ -1466,297 +1466,245 @@ elif page == "🔬 Feature Importance":
 # BACKTEST
 # ═══════════════════════════════════════════════════════════════════════════════
 elif page == "📉 Backtest":
-    st.markdown("# WALK-FORWARD BACKTEST")
+    st.markdown("# MODEL PERFORMANCE HISTORY")
     st.markdown(
-        "*Each year is predicted using only data from prior years — true out-of-sample. "
-        "Testing always runs from **2016 onwards** (optimal window). "
-        "The sidebar start year controls how far back **training data** goes — "
-        "earlier = more data but potentially stale.*"
+        "*How would our current model have performed on past seasons? "
+        "Each season is predicted using only data available at the time — no future information.*"
     )
 
-    min_train = st.slider(
-        "Minimum training years before first test year",
-        2, 5, 3, key="backtest_min",
-        help="E.g. 3 means the first year tested is 2019 (trained on 2016-2018). Higher = more reliable first predictions but fewer test years."
-    )
-
-    with st.spinner("Running walk-forward backtest..."):
+    with st.spinner("Replaying model on historical seasons..."):
         avail_feats = [f for f in CORE_FEATURES if f in df.columns]
-        bt_df = run_walk_forward_backtest(df, avail_feats, min_train)
+        bt_df = run_walk_forward_backtest(df, avail_feats, 3)
 
     if bt_df.empty:
-        st.warning("Not enough data for backtest with current settings.")
+        st.warning("Not enough historical data to run backtest.")
     else:
-        yearly_acc = compute_yearly_accuracy(bt_df)
+        yearly_acc   = compute_yearly_accuracy(bt_df)
         overall_acc  = bt_df["correct"].mean() * 100
         overall_games = len(bt_df)
+        upsets   = bt_df[bt_df["prob"] < 0.4]
+        big_favs = bt_df[bt_df["prob"] > 0.7]
 
+        # ── Top stats ─────────────────────────────────────────────────────────
         c1, c2, c3, c4 = st.columns(4)
-        with c1: st.markdown(mc(f"{overall_acc:.1f}%", "Out-of-Sample Accuracy",
-                                f"{overall_games} games tested"), unsafe_allow_html=True)
-        with c2: st.markdown(mc(f"{yearly_acc['brier_score'].mean():.3f}",
-                                "Avg Brier Score", "Lower = better calibrated"), unsafe_allow_html=True)
-        with c3:
-            # Upset detection: how often did we correctly call upsets?
-            upsets = bt_df[bt_df["prob"] < 0.4]
-            upset_acc = upsets["correct"].mean() * 100 if len(upsets) > 0 else 0
-            st.markdown(mc(f"{upset_acc:.1f}%", "Upset Detection Accuracy",
-                           f"{len(upsets)} games < 40% prob"), unsafe_allow_html=True)
-        with c4:
-            big_fav = bt_df[bt_df["prob"] > 0.7]
-            fav_acc = big_fav["correct"].mean() * 100 if len(big_fav) > 0 else 0
-            st.markdown(mc(f"{fav_acc:.1f}%", "Big Favourite Accuracy",
-                           f"{len(big_fav)} games > 70% prob"), unsafe_allow_html=True)
+        with c1: st.markdown(mc(
+            f"{overall_acc:.1f}%", "Overall Accuracy",
+            f"{overall_games} games across {len(yearly_acc)} seasons"
+        ), unsafe_allow_html=True)
+        with c2: st.markdown(mc(
+            f"{yearly_acc['brier_score'].mean():.3f}", "Avg Calibration Score",
+            "Lower = probabilities are more accurate"
+        ), unsafe_allow_html=True)
+        with c3: st.markdown(mc(
+            f"{upsets['correct'].mean()*100:.1f}%" if len(upsets) else "—",
+            "Upset Detection",
+            f"{len(upsets)} games where we gave <40% — did we spot them?"
+        ), unsafe_allow_html=True)
+        with c4: st.markdown(mc(
+            f"{big_favs['correct'].mean()*100:.1f}%" if len(big_favs) else "—",
+            "Big Favourite Accuracy",
+            f"{len(big_favs)} games where we gave >70%"
+        ), unsafe_allow_html=True)
 
         st.markdown("---")
 
-        # Accuracy by year
-        st.markdown("### Out-of-Sample Accuracy by Year")
+        # ── Accuracy by season ────────────────────────────────────────────────
+        st.markdown("### Accuracy by Season")
+        st.markdown("*How many games did we tip correctly each year?*")
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=yearly_acc["year"], y=yearly_acc["accuracy"],
+        fig.add_trace(go.Bar(
+            x=yearly_acc["year"], y=yearly_acc["accuracy"],
             marker_color="#e94560",
             text=yearly_acc["accuracy"].apply(lambda x: f"{x:.1f}%"),
-            textposition="outside"))
-        fig.add_hline(y=50, line_dash="dash", line_color="#555")
+            textposition="outside"
+        ))
+        fig.add_hline(y=50,         line_dash="dash", line_color="#555",
+                      annotation_text="  coin flip")
         fig.add_hline(y=overall_acc, line_dash="dot", line_color="#2ecc71",
-                      annotation_text=f"avg {overall_acc:.1f}%")
+                      annotation_text=f"  avg {overall_acc:.1f}%")
         dark_chart(fig, 350)
-        fig.update_layout(yaxis=dict(range=[40, 85], title="Accuracy %"))
+        fig.update_layout(yaxis=dict(range=[40, 85], title="Accuracy %"),
+                          xaxis=dict(title="Season"))
         st.plotly_chart(fig, width='stretch')
 
-        # Calibration plot
-        st.markdown("### Probability Calibration")
-        st.markdown("*Are our confidence levels accurate? Bars should follow the diagonal.*")
-        bins = pd.cut(bt_df["prob"], bins=10)
-        cal  = bt_df.groupby(bins, observed=True).agg(
-            mean_prob=("prob", "mean"),
-            actual_rate=("actual", "mean"),
-            n=("actual", "count")
-        ).reset_index()
-        fig2 = go.Figure()
-        fig2.add_trace(go.Bar(x=cal["mean_prob"], y=cal["actual_rate"],
-            marker_color="#e94560", name="Actual win rate",
-            text=cal["n"].apply(lambda x: f"n={x}"), textposition="outside"))
-        fig2.add_trace(go.Scatter(x=[0,1], y=[0,1], mode="lines",
-            line=dict(color="#2ecc71", dash="dash", width=2), name="Perfect calibration"))
-        dark_chart(fig2, 350)
-        fig2.update_layout(
-            xaxis=dict(title="Predicted probability", range=[0, 1]),
-            yaxis=dict(title="Actual win rate", range=[0, 1]),
-            legend=dict(bgcolor="#1a1a2e")
-        )
-        st.plotly_chart(fig2, width='stretch')
-
-        # Ablation test
-        st.markdown("---")
-        st.markdown("### Feature Group Ablation")
-        st.markdown("*Which feature groups actually earn their place? Accuracy when each group is removed — negative delta = group helps.*")
-
-        # Early-season warning
-        current_round = df[df["year"] == datetime.now().year]["round"].max() if not df[df["year"] == datetime.now().year].empty else 0
-        if isinstance(current_round, float) and np.isnan(current_round):
-            current_round = 0
-        if int(current_round) < 5:
-            st.warning(f"""
-⚠️ **Early-season caveat (Round {int(current_round)}):** Season stats and PAV features are nearly empty right now
-— they default to 0.0 for all teams until real data accumulates. This means they'll show as **Neutral** in the
-ablation even though they're genuinely useful mid-season. Re-run after Round 5+ for a meaningful result.
-
-Rest days showing ❌ Hurts can also be a pre-season artefact — binary short/bye rest flags have been added
-to replace raw rest day counts, which should reduce this noise.
-""")
-
-        if st.button("🧪 Run Ablation Test (takes ~30 seconds)"):
-            with st.spinner("Running ablation test..."):
-                ablation_df = ablation_test(df, FEATURE_GROUPS, min_train)
-            if not ablation_df.empty:
-                ablation_df["color"] = ablation_df.get("interpretation", "➡️ Neutral").apply(
-                    lambda x: "#2ecc71" if "Helps" in str(x)
-                    else ("#e94560" if "Hurts" in str(x) else "#f39c12")
-                )
-                fig3 = go.Figure(go.Bar(
-                    x=ablation_df["delta"],
-                    y=ablation_df["group"],
-                    orientation="h",
-                    marker_color=ablation_df["color"],
-                    text=ablation_df["delta"].apply(lambda x: f"{x:+.2f}%"),
-                    textposition="outside"
-                ))
-                fig3.add_vline(x=0, line_color="white", line_width=1)
-                dark_chart(fig3, 420)
-                fig3.update_layout(
-                    title="Accuracy change when feature group is REMOVED (negative = group helps)",
-                    xaxis=dict(title="Δ Accuracy %"),
-                    yaxis=dict(autorange="reversed")
-                )
-                st.plotly_chart(fig3, width='stretch')
-                st.dataframe(ablation_df[["group", "accuracy", "delta",
-                                          "interpretation", "n_features"]],
-                             width='stretch', hide_index=True)
-
-                # Contextual interpretation
-                hurting = ablation_df[ablation_df["interpretation"].str.contains("Hurts", na=False)]
-                helping = ablation_df[ablation_df["interpretation"].str.contains("Helps", na=False)]
-                neutral_sparse = ablation_df[
-                    ablation_df["group"].isin(["Season stats", "PAV lineup", "Experience"]) &
-                    ablation_df["interpretation"].str.contains("Neutral", na=False)
-                ]
-                if not hurting.empty or not neutral_sparse.empty:
-                    notes = []
-                    for _, row in hurting.iterrows():
-                        notes.append(f"• **{row['group']}** is hurting accuracy ({row['delta']:+.2f}%). Consider dropping it or re-engineering the features.")
-                    for _, row in neutral_sparse.iterrows():
-                        notes.append(f"• **{row['group']}** shows Neutral — likely because data is sparse early-season. Re-test after Round 5.")
-                    st.info("**Ablation notes:**\n" + "\n".join(notes))
-
-        # Margin backtest
-        st.markdown("---")
-        st.markdown("### Margin Prediction Error by Year")
-        st.markdown("*Mean Absolute Error in points — how far off is our margin prediction?*")
-        margin_bt = margin_prediction_backtest(df, avail_feats, min_train)
+        # ── Margin error by season ────────────────────────────────────────────
+        st.markdown("### Margin Error by Season")
+        st.markdown("*On average, how many points was our margin prediction off by each year?*")
+        margin_bt = margin_prediction_backtest(df, avail_feats, 3)
         if not margin_bt.empty:
+            avg_mae = margin_bt["mae_points"].mean()
             fig4 = go.Figure(go.Bar(
                 x=margin_bt["year"], y=margin_bt["mae_points"],
                 marker_color="#9b59b6",
                 text=margin_bt["mae_points"].apply(lambda x: f"{x:.1f} pts"),
                 textposition="outside"
             ))
+            fig4.add_hline(y=avg_mae, line_dash="dot", line_color="#2ecc71",
+                           annotation_text=f"  avg {avg_mae:.1f} pts")
             dark_chart(fig4, 300)
-            fig4.update_layout(yaxis=dict(title="MAE (points)"))
+            fig4.update_layout(yaxis=dict(title="Mean Absolute Error (pts)"),
+                               xaxis=dict(title="Season"))
             st.plotly_chart(fig4, width='stretch')
-            avg_mae = margin_bt["mae_points"].mean()
-            st.info(f"📏 Average margin prediction error: **{avg_mae:.1f} points** out-of-sample")
 
-        # ── Start year optimisation ───────────────────────────────────────────
-        st.markdown("---")
-        st.markdown("### 📅 Optimal Training Start Year")
+        # ── Probability calibration ───────────────────────────────────────────
+        st.markdown("### Probability Calibration")
         st.markdown(
-            "*How far back should we train? Each candidate start year is evaluated by its "
-            "out-of-sample accuracy on the most recent 3 completed seasons — the sweet spot "
-            "balances data volume against the risk of training on a different era of AFL.*"
+            "*When we say 70% — does the team actually win 70% of the time? "
+            "Bars should follow the green diagonal.*"
+        )
+        bins = pd.cut(bt_df["prob"], bins=10)
+        cal  = bt_df.groupby(bins, observed=True).agg(
+            mean_prob=("prob",   "mean"),
+            actual_rate=("actual", "mean"),
+            n=("actual", "count")
+        ).reset_index()
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(
+            x=cal["mean_prob"], y=cal["actual_rate"],
+            marker_color="#e94560", name="Actual win rate",
+            text=cal["n"].apply(lambda x: f"n={x}"), textposition="outside"
+        ))
+        fig2.add_trace(go.Scatter(
+            x=[0, 1], y=[0, 1], mode="lines",
+            line=dict(color="#2ecc71", dash="dash", width=2),
+            name="Perfect calibration"
+        ))
+        dark_chart(fig2, 350)
+        fig2.update_layout(
+            xaxis=dict(title="Our predicted probability", range=[0, 1]),
+            yaxis=dict(title="Actual win rate",           range=[0, 1]),
+            legend=dict(bgcolor="#1a1a2e")
+        )
+        st.plotly_chart(fig2, width='stretch')
+
+        # ── Feature ablation ─────────────────────────────────────────────────
+        st.markdown("---")
+        st.markdown("### Which Features Are Helping?")
+        st.markdown(
+            "*Remove each feature group and see if accuracy goes up or down. "
+            "Green = removing it hurts (it's useful). Red = removing it helps (it's noise).*"
         )
 
-        with st.spinner("Running start year optimisation (this may take ~30s)..."):
-            all_years_avail = sorted(df["year"].unique())
-            # Only test start years that give at least 2 pre-holdout seasons
-            holdout_n = min(3, len(all_years_avail) - 3)
-            if holdout_n < 1:
-                st.info("Not enough historical seasons to optimise start year yet.")
-            else:
-                sy_df = optimise_start_year(
-                    df, avail_feats,
-                    holdout_years=holdout_n,
-                    min_train_years=2
-                )
+        current_round_bt = df[df["year"] == datetime.now().year]["round"].max()
+        if isinstance(current_round_bt, float) and np.isnan(current_round_bt):
+            current_round_bt = 0
+        if int(current_round_bt) < 5:
+            st.warning(
+                f"⚠️ **Early-season note (Round {int(current_round_bt)}):** "
+                "Season stats are sparse right now so they'll show as Neutral. "
+                "Re-run after Round 5+ for meaningful results."
+            )
 
-                if sy_df.empty:
-                    st.info("Not enough data to run start year optimisation.")
-                else:
-                    best_row   = sy_df.loc[sy_df["accuracy"].idxmax()]
-                    best_year  = int(best_row["start_year"])
-                    best_acc   = float(best_row["accuracy"])
-                    cur_acc    = sy_df[sy_df["start_year"] == start_year]["accuracy"]
-                    cur_acc_val = float(cur_acc.iloc[0]) if not cur_acc.empty else None
+        if st.button("▶ Run Feature Analysis (~30 seconds)", type="primary"):
+            with st.spinner("Analysing feature groups..."):
+                ablation_df = ablation_test(df, FEATURE_GROUPS, 3)
+            st.session_state["bt_ablation"] = ablation_df
 
-                    # Colour bars: highlight best, dim others
-                    colours = [
-                        "#f39c12" if int(r["start_year"]) == best_year
-                        else ("#e94560" if int(r["start_year"]) == start_year else "#3498db")
-                        for _, r in sy_df.iterrows()
-                    ]
+        ablation_df = st.session_state.get("bt_ablation")
+        if ablation_df is not None and not ablation_df.empty:
+            ablation_df["color"] = ablation_df["interpretation"].apply(
+                lambda x: "#2ecc71" if "Helps" in str(x)
+                else ("#e94560" if "Hurts" in str(x) else "#f39c12")
+            )
+            fig3 = go.Figure(go.Bar(
+                x=ablation_df["delta"], y=ablation_df["group"],
+                orientation="h",
+                marker_color=ablation_df["color"],
+                text=ablation_df["delta"].apply(
+                    lambda x: f"{x:+.2f}%" if x != 0 else "baseline"
+                ),
+                textposition="outside"
+            ))
+            fig3.add_vline(x=0, line_color="white", line_width=1)
+            dark_chart(fig3, 420)
+            fig3.update_layout(
+                title="Accuracy change when feature group removed  (negative = group helps)",
+                xaxis=dict(title="Δ Accuracy %"),
+                yaxis=dict(autorange="reversed")
+            )
+            st.plotly_chart(fig3, width='stretch')
 
-                    fig5 = go.Figure()
-                    fig5.add_trace(go.Bar(
-                        x=sy_df["start_year"],
-                        y=sy_df["accuracy"],
-                        marker_color=colours,
-                        text=sy_df["accuracy"].apply(lambda v: f"{v:.1f}%"),
-                        textposition="outside",
-                        customdata=sy_df[["n_train_games", "n_test_games"]].values,
-                        hovertemplate=(
-                            "<b>Start: %{x}</b><br>"
-                            "Accuracy: %{y:.1f}%<br>"
-                            "Train games: %{customdata[0]}<br>"
-                            "Test games: %{customdata[1]}<extra></extra>"
-                        )
-                    ))
-                    dark_chart(fig5, 380)
-                    fig5.update_layout(
-                        yaxis=dict(
-                            title="Out-of-sample accuracy (%)",
-                            range=[
-                                max(55, sy_df["accuracy"].min() - 2),
-                                min(80, sy_df["accuracy"].max() + 3)
-                            ]
-                        ),
-                        xaxis=dict(title="Training data start year", dtick=1),
-                    )
-                    # Annotation for best year
-                    fig5.add_annotation(
-                        x=best_year, y=best_acc + 1.2,
-                        text="🏆 Best",
-                        showarrow=False,
-                        font=dict(color="#f39c12", size=12)
-                    )
-                    if start_year != best_year:
-                        cur_y = float(sy_df[sy_df["start_year"] == start_year]["accuracy"].iloc[0]) if not sy_df[sy_df["start_year"] == start_year].empty else None
-                        if cur_y:
-                            fig5.add_annotation(
-                                x=start_year, y=cur_y + 1.2,
-                                text="📍 Current",
-                                showarrow=False,
-                                font=dict(color="#e94560", size=12)
-                            )
-                    st.plotly_chart(fig5, width='stretch')
+            # Summary callouts
+            hurting = ablation_df[ablation_df["interpretation"].str.contains("Hurts", na=False)]
+            if not hurting.empty:
+                notes = [f"• **{r['group']}** is adding noise ({r['delta']:+.2f}%) — candidate for removal"
+                         for _, r in hurting.iterrows()]
+                st.info("**Noise detected:**\n" + "\n".join(notes))
 
-                    # Also show n_train_games as a secondary line
-                    fig6 = go.Figure()
-                    fig6.add_trace(go.Scatter(
-                        x=sy_df["start_year"],
-                        y=sy_df["n_train_games"],
-                        mode="lines+markers",
-                        line=dict(color="#2ecc71", width=2),
-                        marker=dict(size=6),
-                        name="Training games",
-                        hovertemplate="Start: %{x}<br>Train games: %{y}<extra></extra>"
-                    ))
-                    dark_chart(fig6, 200)
-                    fig6.update_layout(
-                        yaxis=dict(title="Training games available"),
-                        xaxis=dict(title="Training data start year", dtick=1),
-                        showlegend=False,
-                    )
-                    st.plotly_chart(fig6, width='stretch')
+        # ── Elo Anchor Tuner ──────────────────────────────────────────────────
+        st.markdown("---")
+        st.markdown("### 🎯 Elo Anchor Tuner")
+        st.markdown(
+            "*How much should Elo influence predictions vs the GBM? "
+            "Sweep anchor weights 0%→100% to find the accuracy sweet spot. "
+            "0% = pure GBM, 100% = pure Elo.*"
+        )
+        abl_min_train_elo = st.slider("Minimum training years", 2, 5, 3, key="elo_anchor_min_train")
 
-                    # Summary callout
-                    if cur_acc_val is not None and start_year != best_year:
-                        gap = best_acc - cur_acc_val
-                        extra_tips = int(round(gap / 100 * 207))
-                        st.warning(
-                            f"🏆 **Optimal start year: {best_year}** ({best_acc:.1f}% accuracy on holdout) — "
-                            f"your current setting ({start_year}) scores {cur_acc_val:.1f}%, "
-                            f"a gap of **{gap:+.1f}%** (~{extra_tips} extra correct tips over a season). "
-                            f"Try moving the training slider to {best_year}."
-                        )
-                    elif start_year == best_year:
-                        st.success(
-                            f"✅ **{start_year} is already the optimal start year** ({best_acc:.1f}% on holdout). "
-                            f"You're training on {int(best_row['n_train_games'])} games."
-                        )
-                    else:
-                        st.info(f"Optimal start year based on holdout accuracy: **{best_year}** ({best_acc:.1f}%)")
+        if st.button("▶ Run Elo Anchor Sweep", type="primary", key="run_elo_sweep"):
+            with st.spinner("Sweeping Elo anchor weights 0%→100% — takes ~60 seconds..."):
+                sweep_df = elo_anchor_sweep(df, win_model, margin_model, metrics,
+                                            min_train_years=abl_min_train_elo)
+            st.session_state["elo_sweep_result"] = sweep_df
 
-                    with st.expander("📋 Full results table"):
-                        st.dataframe(
-                            sy_df.rename(columns={
-                                "start_year": "Start Year",
-                                "n_train_games": "Train Games",
-                                "accuracy": "Accuracy (%)",
-                                "brier_score": "Brier Score",
-                                "n_test_games": "Test Games",
-                            }).drop(columns=["holdout_seasons"], errors="ignore"),
-                            width='stretch', hide_index=True
-                        )
+        sweep_df = st.session_state.get("elo_sweep_result")
+        if sweep_df is not None and not sweep_df.empty:
+            best_row    = sweep_df.loc[sweep_df["accuracy"].idxmax()]
+            best_anchor = best_row["elo_anchor"]
+            best_acc    = best_row["accuracy"]
+
+            c1, c2, c3 = st.columns(3)
+            with c1: st.markdown(mc(f"{best_anchor:.0%}", "Optimal Elo Anchor",
+                                    f"Peak accuracy {best_acc:.1f}%"), unsafe_allow_html=True)
+            with c2:
+                v = sweep_df[sweep_df["elo_anchor"]==0.0]["accuracy"].values
+                st.markdown(mc(f"{v[0]:.1f}%" if len(v) else "—", "Pure GBM (0% Elo)"), unsafe_allow_html=True)
+            with c3:
+                v = sweep_df[sweep_df["elo_anchor"]==1.0]["accuracy"].values
+                st.markdown(mc(f"{v[0]:.1f}%" if len(v) else "—", "Pure Elo (100%)"), unsafe_allow_html=True)
+
+            st.markdown("---")
+            fig_sweep = go.Figure()
+            fig_sweep.add_trace(go.Scatter(
+                x=sweep_df["elo_anchor"]*100, y=sweep_df["accuracy"],
+                mode="lines+markers", line=dict(color="#e94560", width=2),
+                marker=dict(size=8), name="Accuracy"
+            ))
+            fig_sweep.add_vline(x=best_anchor*100, line_dash="dot", line_color="#2ecc71",
+                                annotation_text=f"  optimal: {best_anchor:.0%}",
+                                annotation_font_color="#2ecc71")
+            dark_chart(fig_sweep, 320)
+            fig_sweep.update_layout(
+                xaxis=dict(title="Elo Anchor Weight (%)", ticksuffix="%"),
+                yaxis=dict(title="Out-of-Sample Accuracy (%)",
+                           range=[sweep_df["accuracy"].min()-1, sweep_df["accuracy"].max()+1])
+            )
+            st.plotly_chart(fig_sweep, width='stretch')
+
+            fig_brier = go.Figure()
+            fig_brier.add_trace(go.Scatter(
+                x=sweep_df["elo_anchor"]*100, y=sweep_df["brier_score"],
+                mode="lines+markers", line=dict(color="#3498db", width=2),
+                marker=dict(size=8), name="Brier Score"
+            ))
+            best_b = sweep_df.loc[sweep_df["brier_score"].idxmin()]
+            fig_brier.add_vline(x=best_b["elo_anchor"]*100, line_dash="dot", line_color="#2ecc71",
+                                annotation_text=f"  best calibration: {best_b['elo_anchor']:.0%}",
+                                annotation_font_color="#2ecc71")
+            dark_chart(fig_brier, 280)
+            fig_brier.update_layout(
+                xaxis=dict(title="Elo Anchor Weight (%)", ticksuffix="%"),
+                yaxis=dict(title="Brier Score (lower = better calibrated)")
+            )
+            st.plotly_chart(fig_brier, width='stretch')
+
+            disp = sweep_df.copy()
+            disp["elo_anchor"] = disp["elo_anchor"].apply(lambda x: f"{x:.0%}")
+            disp.columns = ["Elo Anchor", "Accuracy %", "Brier Score", "Games"]
+            st.dataframe(disp, hide_index=True, width='stretch')
+            st.caption(f"☝️ Paste to Claude: optimal Elo anchor = {best_anchor:.0%} "
+                       f"({best_acc:.1f}% accuracy, Brier {best_row['brier_score']:.4f})")
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LINEUP STRENGTH
