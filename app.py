@@ -433,9 +433,9 @@ if page == "📊 Dashboard":
     try:
         _odds_key_dash = st.secrets.get("ODDS_API_KEY", "") if hasattr(st, "secrets") else ""
         if _odds_key_dash:
-            _arb_odds = get_odds_api(_odds_key_dash)
-            if not _arb_odds.empty:
-                _arb_found = find_arbitrage(_arb_odds)
+            _arb_odds_dash = get_odds_api(_odds_key_dash)
+            if not _arb_odds_dash.empty:
+                _arb_found = find_arbitrage(_arb_odds_dash)
                 if not _arb_found.empty:
                     for _, _arb in _arb_found.iterrows():
                         st.markdown(f"""
@@ -459,8 +459,14 @@ if page == "📊 Dashboard":
   </div>
 </div>
 """, unsafe_allow_html=True)
-    except Exception:
-        pass
+                else:
+                    _n_g = _arb_odds_dash.groupby(["home_team","away_team"]).ngroups
+                    _n_b = _arb_odds_dash["bookmaker"].nunique()
+                    st.caption(f"⚡ Arb scanner: no opportunities across {_n_g} games / {_n_b} bookmakers — updated every 20 mins")
+            else:
+                st.caption("⚡ Arb scanner: no odds data yet — check back closer to game day")
+    except Exception as _arb_e:
+        st.caption(f"⚡ Arb scanner: {_arb_e}")
 
     try:
         # Fetch ALL games for the year (completed + upcoming)
@@ -1995,8 +2001,12 @@ elif page == "💰 Value Bets":
             _arb_odds_raw = get_odds_api(_arb_key)
             _arb_df = find_arbitrage(_arb_odds_raw) if not _arb_odds_raw.empty else pd.DataFrame()
 
-        if _arb_df.empty:
-            st.success("✅ No arbitrage opportunities right now — bookmakers are aligned.")
+        if _arb_odds_raw.empty:
+            st.warning("⚠️ No odds data returned — bookmakers may not have posted lines for this round yet. Check back closer to game day.")
+        elif _arb_df.empty:
+            _n_games  = _arb_odds_raw.groupby(["home_team","away_team"]).ngroups
+            _n_books  = _arb_odds_raw["bookmaker"].nunique()
+            st.success(f"✅ No arbitrage opportunities right now — scanned {_n_games} games across {_n_books} bookmakers.")
         else:
             st.warning(f"⚡ **{len(_arb_df)} arbitrage opportunit{'y' if len(_arb_df)==1 else 'ies'} found!**")
             for _, arb in _arb_df.iterrows():
