@@ -899,7 +899,7 @@ if page == "📊 Dashboard":
     # Accuracy by year chart
     st.markdown("---")
     st.markdown("## MODEL ACCURACY BY YEAR")
-    avail = [f for f in CORE_FEATURES if f in df.columns]
+    avail = [f for f in metrics["features_used"] if f in df.columns]
     yearly = []
     for year in sorted(df["year"].unique()):
         ydf = df[df["year"] == year].dropna(subset=avail + ["home_win"])
@@ -2165,6 +2165,7 @@ elif page == "💰 Value Bets":
                         .apply(lambda g: pd.Series({
                             "Home": g["Home"].iloc[0],
                             "Away": g["Away"].iloc[0],
+                            "Game Time": g["Game Time"].iloc[0] if "Game Time" in g.columns else "",
                             "Best Home Odds": g["Home Odds"].max(),
                             "Best Home Bookie": g.loc[g["Home Odds"].idxmax(), "Bookmaker"],
                             "Best Away Odds": g["Away Odds"].max(),
@@ -2175,7 +2176,7 @@ elif page == "💰 Value Bets":
                             "H Edge%": g["H Edge%"].max(),
                             "A Edge%": g["A Edge%"].max(),
                             "Pred Margin": g["Pred Margin"].iloc[0],
-                        }))
+                        }), include_groups=False)
                         .reset_index(drop=True))
 
                 # ── Value bet cards ───────────────────────────────────────────
@@ -2312,7 +2313,7 @@ elif page == "💰 Value Bets":
                                 return ""
                             st.dataframe(
                                 sqdf[["Home","Away","Our Model","Squiggle Consensus","Difference","Models Polled"]]
-                                .style.applymap(_cdiff, subset=["Difference"]),
+                                .style.map(_cdiff, subset=["Difference"]),
                                 width='stretch', hide_index=True)
                             st.caption("🟢 We're higher than consensus on home team  🔴 We're lower")
                     else:
