@@ -39,10 +39,10 @@ CONTEXT_FEATURES = [
 ]
 
 SEASON_STAT_FEATURES = [
-    "i50_diff",  # inside 50s      ✅ -1.21%
-    "cp_diff",   # contested poss  ✅ (part of season stats group)
-    "tk_diff",   # tackles         ✅ -1.12%
-    "ho_diff",   # hitouts         ➡️ neutral but keep with season stats group
+    "i50_diff",  # inside 50s      ✅ -0.63%
+    "cp_diff",   # contested poss  ✅
+    "tk_diff",   # tackles         ✅
+    # ho_diff removed — confirmed noise (+0.14%)
     # cl_diff removed — confirmed noise (+0.56%)
     # clanger_diff removed — confirmed noise (+1.18%)
 ]
@@ -53,9 +53,8 @@ PAV_FEATURES = [
 ]
 
 EXPERIENCE_FEATURES = [
-    "exp_avg_diff",        # home avg career games minus away avg
-    "exp_veteran_diff",    # difference in % veterans (150+ games)
-    "exp_developing_diff", # difference in % developing players (<25 games)
+    # Removed — still showing as noise (+0.28%) even with fixed PAV data
+    # exp_avg_diff, exp_veteran_diff, exp_developing_diff
 ]
 
 STANDINGS_FEATURES = [
