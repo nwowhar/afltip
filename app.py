@@ -45,7 +45,7 @@ def _build_prediction_features(*args, style_df=None, **kwargs):
     return build_prediction_features(*args, **kwargs)
 from model.backtest import (run_walk_forward_backtest, compute_yearly_accuracy,
                              ablation_test, permutation_importance_analysis,
-                             margin_prediction_backtest, optimise_start_year,
+                             margin_prediction_backtest,
                              elo_anchor_sweep, FEATURE_GROUPS)
 try:
     from data.team_style import (build_style_features_from_season_stats,
@@ -188,9 +188,7 @@ for _k, _v in _DEFAULTS.items():
 with st.sidebar:
     st.markdown("# 🏉 AFL Predictor")
     st.markdown("---")
-    start_year = st.slider("Model training start year", 2016, 2020,
-                           key="start_year",
-                           help="Oldest year included in model training. 2016 is the proven sweet spot — enough data without stale player pools. The backtest always tests from 2016 onwards regardless of this setting.")
+    start_year = 2016  # Optimal training start year — determined via data staleness analysis
     page = st.radio("Navigate", [
         "📊 Dashboard",
         "🔮 Predict a Game",
@@ -2953,82 +2951,6 @@ which is a high bar.
 Edge should be assessed over **many bets**, not individual games. The model's long-run accuracy of ~66%
 is the ceiling on how often value bets should win.
 """)
-
-    # ── Data Staleness & Optimal Training Year ────────────────────────────────
-    st.markdown("---")
-    st.markdown("## 📅 Optimal Training Start Year")
-    st.markdown("""
-    One of the trickiest questions is: **how far back should we train?** 
-
-    More data = better statistics. But data from 2013 reflects a completely different player pool —
-    most of those players have retired. Training on their patterns means the model is partly learning
-    from irrelevant historical noise.
-
-    The chart below shows, for each possible training start year, what percentage of players from that 
-    era are **still active today** and how many were in their **prime career stage** (75–149 weighted games).
-    A *weighted game* counts finals appearances as **2.5× a regular game** — a Grand Final is worth 
-    more formative experience than a Round 5 trip to Hobart.
-    """)
-
-    with st.spinner("Analysing data staleness across training years..."):
-        staleness = analyse_data_staleness(pav_df, df, start_year=2013)
-
-    if staleness:
-        st.caption(
-            "💡 **Players in PAV data** varies by year — Squiggle's PAV coverage was thinner before 2019 "
-            "so earlier years show fewer players. This reflects data availability, not a code limit."
-        )
-        stal_rows = []
-        for yr, v in sorted(staleness.items()):
-            stal_rows.append({
-                "Year":                  yr,
-                "Players in PAV data":   v["n_players"],   # Squiggle coverage varies — earlier years have fewer entries
-                "Still playing today":   v["n_still_active"],
-                "% Still active":        f"{v['pct_still_active']:.0f}%",
-                "Prime (75-149 games)":  v["n_prime_players"],
-                "Seasons of data":       v["seasons_available"],
-                "Relevance score":       v["relevance_score"],
-                "Use for training":      "✅" if v.get("recommended") else "",
-            })
-        stal_df = pd.DataFrame(stal_rows)
-
-        # Chart: % still active + prime players over years
-        import plotly.graph_objects as go
-        fig_s = go.Figure()
-        fig_s.add_trace(go.Bar(
-            x=stal_df["Year"], y=stal_df["% Still active"],
-            name="% Players still active today",
-            marker_color="#3498db", opacity=0.7
-        ))
-        fig_s.add_trace(go.Scatter(
-            x=stal_df["Year"], y=stal_df["Relevance score"] * 100,
-            name="Relevance score (×100)", mode="lines+markers",
-            line=dict(color="#e94560", width=2),
-            yaxis="y2"
-        ))
-        # Highlight recommended year
-        rec_years = stal_df[stal_df["Recommended"] == "✅"]["Year"].tolist()
-        for ry in rec_years:
-            fig_s.add_vline(x=ry, line_dash="dash", line_color="#2ecc71",
-                            annotation_text=f"Recommended: {ry}", annotation_position="top right")
-
-        fig_s.update_layout(
-            paper_bgcolor="#0a1628", plot_bgcolor="#0a1628",
-            font=dict(color="white"), height=380,
-            yaxis=dict(title="% Players still active", color="white"),
-            yaxis2=dict(title="Relevance score", overlaying="y", side="right", color="#e94560"),
-            xaxis=dict(color="white"),
-            legend=dict(bgcolor="#1a1a2e"),
-            title="Training Data Relevance by Start Year"
-        )
-        st.plotly_chart(fig_s, width='stretch')
-        st.dataframe(stal_df, width='stretch', hide_index=True)
-
-        if rec_years:
-            best = rec_years[0]
-            st.success(f"**Recommended training start year: {best}** — best balance of data volume, player relevance, and prime-career representation. Use the sidebar slider to try different years and compare model accuracy on the Backtest page.")
-    else:
-        st.info("PAV data needed to run staleness analysis — load a few seasons of data first.")
 
     # ── Player Experience Feature explainer ───────────────────────────────────
     st.markdown("---")
