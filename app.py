@@ -2962,13 +2962,13 @@ is the ceiling on how often value bets should win.
 
     **How weighted games work:**
 
-    | Career Stage | Regular Games | Finals Multiplier | Notes |
-    |---|---|---|---|
-    | Developing | 0–24 | ×1.0 | Unproven at elite level |
-    | Emerging | 25–74 | ×1.0 | Building consistency |
-    | Prime | 75–149 | ×1.0 | Peak athleticism + experience |
-    | Veteran | 150–199 | ×1.0 | High experience, declining athleticism |
-    | Elite Veteran | 200+ | ×1.0 | Hard-won wisdom |
+    | Career Stage | Games Range | Notes |
+    |---|---|---|
+    | Developing | 0–24 | Unproven at elite level |
+    | Emerging | 25–74 | Building consistency |
+    | Prime | 75–149 | Peak athleticism + experience |
+    | Veteran | 150–199 | High experience, declining athleticism |
+    | Elite Veteran | 200+ | Hard-won wisdom |
 
     Finals games are counted at **×2.5** — a player who plays 10 finals has effectively 
     experienced the equivalent of 25 regular-season pressure games. Grand Finals, Preliminary 
@@ -2999,6 +2999,7 @@ is the ceiling on how often value bets should win.
                 display_exp["Avg Finals Games"] = display_exp["Avg Finals Games"].round(1)
                 display_exp["% Veterans"] = (display_exp["% Veterans"] * 100).round(1)
                 st.dataframe(display_exp, width='stretch', hide_index=True)
+                st.caption("Avg Finals Games is estimated (~10% of career games) — Squiggle PAV data does not include a separate finals game count.")
             else:
                 st.info("Experience data will populate once PAV data is loaded.")
         except Exception as _e:
