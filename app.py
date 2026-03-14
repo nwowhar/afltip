@@ -2360,265 +2360,134 @@ elif page == "💰 Value Bets":
 # ═══════════════════════════════════════════════════════════════════════════════
 elif page == "📖 How It Works":
     st.markdown("# HOW THE MODEL WORKS")
-    st.markdown("*A plain-English explanation of how win probability and margin are calculated*")
-
+    st.markdown("*A visual guide to how win probability and margin predictions are calculated*")
     st.markdown("---")
+    st.markdown("## The Prediction Pipeline")
 
-    # ── Overview ──────────────────────────────────────────────────────────────
-    st.markdown("## The Big Picture")
+    _n_games   = metrics.get("n_games", 0)
+    _n_feats   = metrics.get("n_features", 0)
+    _acc       = metrics.get("win_accuracy", 0) * 100
+    _elo_min   = int(min(current_elos.values())) if current_elos else 1300
+    _elo_max   = int(max(current_elos.values())) if current_elos else 1700
+
     st.markdown(f"""
-The model uses **Gradient Boosting** — a machine learning technique that builds many small decision trees,
-each one correcting the mistakes of the last. It's trained on **{metrics['n_games']:,} AFL games from {start_year} to present**.
-
-For each game it outputs two things:
-- **Win probability** — the chance the home team wins (e.g. 68%)
-- **Predicted margin** — how many points the model expects the game to be won by (e.g. +14 pts)
-
-The model learns which combinations of factors best predict results by seeing thousands of historical games.
-It doesn't know anything about footy except what the numbers tell it.
-""")
-
-    st.markdown("---")
-    st.markdown("## Model Pipeline")
-    st.markdown("*How raw data becomes a win probability — follow the arrows*")
-
-    st.components.v1.html("""
-<!DOCTYPE html>
-<html>
-<head>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-  body { background: #0d1117; color: white; padding: 24px; }
-
-  .pipeline { display: flex; flex-direction: column; gap: 0; }
-
-  /* ── Row layouts ── */
-  .row { display: flex; align-items: center; justify-content: center; gap: 0; }
-  .row-sources { gap: 16px; margin-bottom: 0; }
-  .row-features { gap: 12px; margin: 0; }
-  .row-output   { gap: 16px; margin-top: 0; }
-
-  /* ── Nodes ── */
-  .node {
-    border-radius: 10px; padding: 12px 16px; text-align: center;
-    font-size: 0.78rem; line-height: 1.4; min-width: 110px;
-    position: relative;
-  }
-  .node-title { font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; }
-  .node-sub   { font-size: 0.7rem; opacity: 0.7; }
-
-  /* Source colours */
-  .src-squiggle { background: #1a1a3e; border: 1.5px solid #e94560; }
-  .src-elo      { background: #1a1a3e; border: 1.5px solid #e94560; }
-  .src-tables   { background: #1a2a1a; border: 1.5px solid #2ecc71; }
-  .src-pav      { background: #1a2a2a; border: 1.5px solid #1abc9c; }
-  .src-lineups  { background: #1a2a2a; border: 1.5px solid #1abc9c; }
-  .src-odds     { background: #2a1a2a; border: 1.5px solid #9b59b6; }
-
-  /* Feature group colours */
-  .feat-elo     { background: #2a0a12; border: 1.5px solid #e94560; }
-  .feat-form    { background: #2a1a00; border: 1.5px solid #f39c12; }
-  .feat-ladder  { background: #002a1a; border: 1.5px solid #2ecc71; }
-  .feat-stats   { background: #0a1a2a; border: 1.5px solid #3498db; }
-  .feat-pav     { background: #002a2a; border: 1.5px solid #1abc9c; }
-  .feat-style   { background: #1a002a; border: 1.5px solid #9b59b6; }
-
-  /* GBM box */
-  .gbm {
-    background: linear-gradient(135deg, #1a1a3e, #0a1628);
-    border: 2px solid #e94560;
-    border-radius: 14px; padding: 18px 24px; text-align: center;
-    min-width: 200px; position: relative;
-  }
-  .gbm-title { font-size: 1rem; font-weight: 700; color: #e94560; margin-bottom: 6px; }
-  .gbm-sub   { font-size: 0.72rem; color: #aaa; }
-  .gbm-badge { 
-    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-    background: #e94560; color: white; font-size: 0.65rem; font-weight: 700;
-    padding: 2px 10px; border-radius: 10px; white-space: nowrap;
-  }
-
-  /* Output nodes */
-  .out-prob   { background: #1a0a12; border: 2px solid #e94560; min-width: 140px; }
-  .out-margin { background: #0a1a2a; border: 2px solid #3498db; min-width: 140px; }
-  .out-value  { background: #002a1a; border: 2px solid #2ecc71; min-width: 140px; }
-  .out-title  { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
-  .out-sub    { font-size: 0.7rem; opacity: 0.7; }
-
-  /* ── Arrows ── */
-  .arrow-down {
-    display: flex; justify-content: center; align-items: center;
-    height: 32px; color: #444; font-size: 1.2rem;
-  }
-  .arrow-right { color: #444; font-size: 1.1rem; margin: 0 4px; align-self: center; }
-
-  /* Elo blend callout */
-  .blend-note {
-    background: #0a1628; border: 1px dashed #f39c12;
-    border-radius: 8px; padding: 8px 14px;
-    font-size: 0.7rem; color: #f39c12; text-align: center;
-    margin: 0 12px;
-  }
-
-  /* Section divider label */
-  .section-label {
-    text-align: center; color: #555; font-size: 0.68rem;
-    letter-spacing: 1px; text-transform: uppercase; margin: 4px 0;
-  }
-
-  .fade-note {
-    background: #1a1a0a; border: 1px dashed #f39c12;
-    border-radius: 6px; padding: 6px 12px; font-size: 0.68rem;
-    color: #f39c12; text-align: center; margin-top: 6px;
-  }
+.pw {{ font-family:sans-serif; padding:8px 0 }}
+.ps {{ color:#888; font-size:0.68rem; letter-spacing:1.5px; text-transform:uppercase; margin:16px 0 6px }}
+.pr {{ display:flex; align-items:stretch; gap:0; margin-bottom:4px }}
+.pb {{ background:#0a1628; border-radius:8px; padding:10px 12px; flex:1; text-align:center }}
+.pt {{ font-size:0.78rem; font-weight:700; color:white; margin-bottom:3px }}
+.pd {{ font-size:0.65rem; color:#888; line-height:1.4 }}
+.pa {{ display:flex; align-items:center; padding:0 4px; color:#444; font-size:1.2rem }}
+.pad {{ text-align:center; color:#444; font-size:1.4rem; margin:3px 0 }}
+.pm {{ background:#16213e; border:1px solid #e94560; border-radius:10px; padding:14px 16px; text-align:center; margin:4px 0 }}
+.pmt {{ font-size:1rem; font-weight:700; color:#e94560; margin-bottom:4px }}
+.pms {{ font-size:0.72rem; color:#aaa }}
+.po {{ display:flex; gap:12px; margin-top:4px }}
+.pob {{ flex:1; border-radius:8px; padding:12px; text-align:center }}
+.pov {{ font-size:1.4rem; font-weight:900; margin-bottom:2px }}
+.pol {{ font-size:0.7rem; color:#aaa }}
+.bdg {{ display:inline-block; font-size:0.58rem; padding:1px 5px; border-radius:3px; margin-left:4px; vertical-align:middle; font-weight:700; background:#222; color:#888 }}
 </style>
-</head>
-<body>
-<div class="pipeline">
 
-  <!-- ── DATA SOURCES ── -->
-  <div class="section-label">DATA SOURCES</div>
-  <div class="row row-sources">
-    <div class="node src-squiggle">
-      <div class="node-title">🏉 Squiggle API</div>
-      <div class="node-sub">Game results<br>Ladder standings<br>Upcoming fixtures</div>
+<div class="pw">
+
+  <div class="ps">① Data Sources</div>
+  <div class="pr">
+    <div class="pb" style="border-top:3px solid #3498db">
+      <div class="pt">🏉 Squiggle API</div>
+      <div class="pd">Game results · Ladder · PAV player ratings · Announced lineups</div>
     </div>
-    <div class="node src-elo">
-      <div class="node-title">📊 Elo Engine</div>
-      <div class="node-sub">Built from<br>every game since<br>2016 +50 home bonus</div>
+    <div class="pa">→</div>
+    <div class="pb" style="border-top:3px solid #9b59b6">
+      <div class="pt">📊 AFL Tables</div>
+      <div class="pd">Season stats · Clearances · Inside 50s · Tackles · Hitouts</div>
     </div>
-    <div class="node src-tables">
-      <div class="node-title">📋 AFL Tables</div>
-      <div class="node-sub">Season averages<br>Clearances, tackles<br>hitouts, inside 50s</div>
-    </div>
-    <div class="node src-pav">
-      <div class="node-title">⭐ PAV Ratings</div>
-      <div class="node-sub">Player values<br>Off / Mid / Def<br>per player</div>
-    </div>
-    <div class="node src-lineups">
-      <div class="node-title">👕 Lineups</div>
-      <div class="node-sub">Announced Thu<br>Selected 22<br>per team</div>
-    </div>
-    <div class="node src-odds">
-      <div class="node-title">💰 Odds API</div>
-      <div class="node-sub">TAB / Sportsbet<br>Neds / Ladbrokes<br>live lines</div>
+    <div class="pa">→</div>
+    <div class="pb" style="border-top:3px solid #e67e22">
+      <div class="pt">📍 Venue &amp; Odds</div>
+      <div class="pd">Ground locations · Travel distances · Bookmaker odds (TAB, Sportsbet)</div>
     </div>
   </div>
 
-  <div class="arrow-down">↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓</div>
+  <div class="pad">↓</div>
 
-  <!-- ── FEATURE GROUPS ── -->
-  <div class="section-label">FEATURE ENGINEERING  (home − away differential)</div>
-  <div class="row row-features">
-    <div class="node feat-elo">
-      <div class="node-title" style="color:#e94560">📈 Elo Diff</div>
-      <div class="node-sub">Rating gap<br>+50 home bonus<br>regressed to mean</div>
+  <div class="ps">② Feature Engineering — what gets fed to the model</div>
+  <div class="pr">
+    <div class="pb" style="border-top:3px solid #e94560">
+      <div class="pt">⚡ Elo Rating</div>
+      <div class="pd">Chess-style team rating · Updated every game · +50pt home advantage<br>
+      <span style="color:#666;font-size:0.62rem">Current range: {_elo_min}–{_elo_max} pts</span></div>
     </div>
-    <div class="node feat-form">
-      <div class="node-title" style="color:#f39c12">🔥 Form</div>
-      <div class="node-sub">Last 5 avg margin<br>Streak<br>Last game margin</div>
+    <div class="pa"> </div>
+    <div class="pb" style="border-top:3px solid #f39c12">
+      <div class="pt">📈 Form <span class="bdg">fades in R3+</span></div>
+      <div class="pd">Last 5 avg margin · Win streak · Last game margin · Consistency score</div>
     </div>
-    <div class="node feat-ladder">
-      <div class="node-title" style="color:#2ecc71">🏆 Ladder</div>
-      <div class="node-sub">Rank diff<br>Win diff<br>% diff</div>
+    <div class="pa"> </div>
+    <div class="pb" style="border-top:3px solid #2ecc71">
+      <div class="pt">🪜 Ladder <span class="bdg">fades in R6+</span></div>
+      <div class="pd">Rank diff · Percentage diff · Wins diff</div>
     </div>
-    <div class="node feat-stats">
-      <div class="node-title" style="color:#3498db">📊 Season Stats</div>
-      <div class="node-sub">Clearances<br>Inside 50s<br>Tackles · Hitouts</div>
+  </div>
+  <div style="height:5px"></div>
+  <div class="pr">
+    <div class="pb" style="border-top:3px solid #9b59b6">
+      <div class="pt">📉 Season Stats <span class="bdg">from R3+</span></div>
+      <div class="pd">Clearances · Inside 50s · Contested poss · Tackles · Hitouts</div>
     </div>
-    <div class="node feat-pav">
-      <div class="node-title" style="color:#1abc9c">⭐ PAV</div>
-      <div class="node-sub">Total team PAV<br>Off / Mid / Def<br>split</div>
+    <div class="pa"> </div>
+    <div class="pb" style="border-top:3px solid #1abc9c">
+      <div class="pt">🎨 Playing Style</div>
+      <div class="pd">Kick ratio · Ruck dominance · Kick-vs-tackle matchup</div>
     </div>
-    <div class="node feat-style">
-      <div class="node-title" style="color:#9b59b6">🎨 Style</div>
-      <div class="node-sub">Kick ratio<br>Ruck advantage<br>Hitout dominance</div>
+    <div class="pa"> </div>
+    <div class="pb" style="border-top:3px solid #e91e8c">
+      <div class="pt">⭐ PAV Lineups <span class="bdg">Thu+</span></div>
+      <div class="pd">Selected 22 PAV total · Offence · Defence · Midfield split</div>
     </div>
   </div>
 
-  <div class="fade-note">
-    ⚡ Early-season fade-in: Form → 0% R1–2 · 40% R3–5 · 75% R6–9 · 100% R10+
-    &nbsp;|&nbsp; Ladder → 0% R1–2 · 15% R3–5 · 25% R6–9 · 100% R10+
-    &nbsp;|&nbsp; Season stats → prev-year until R6
+  <div class="pad">↓</div>
+
+  <div style="background:#0a1628;border:1px dashed #555;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:0.72rem;color:#888">
+    <b style="color:#f39c12">⚠️ Early season blend:</b>&nbsp;
+    R1–2 = 80% Elo / 20% model &nbsp;·&nbsp;
+    R3–5 = 50/50 &nbsp;·&nbsp;
+    R6–9 = 25% Elo / 75% model &nbsp;·&nbsp;
+    R10+ = 100% model
+    <span style="margin-left:8px;color:#555">— prevents one game of data overriding a large Elo gap</span>
   </div>
 
-  <div class="arrow-down" style="height:28px">↓</div>
-
-  <!-- ── GBM MODEL ── -->
-  <div class="row">
-    <div class="gbm">
-      <div class="gbm-badge">GRADIENT BOOSTING MODEL</div>
-      <div class="gbm-title">🤖 GBM Prediction</div>
-      <div class="gbm-sub">200 decision trees<br>trained on 2,000+ games since 2016<br>learns which feature combinations predict wins</div>
-    </div>
-  </div>
-
-  <div class="row" style="margin-top:6px; margin-bottom:2px; justify-content:center;">
-    <div class="blend-note">
-      🎯 Elo anchor blend — early season: 80% Elo + 20% GBM → fades to 100% GBM by R10
+  <div class="ps">③ Gradient Boosting Model (GBM)</div>
+  <div class="pm">
+    <div class="pmt">🤖 Gradient Boosting Machine</div>
+    <div class="pms">
+      200 decision trees &nbsp;·&nbsp; {_n_games:,} training games ({start_year}–present) &nbsp;·&nbsp; {_n_feats} features &nbsp;·&nbsp; <b style="color:#2ecc71">{_acc:.1f}% cross-validated accuracy</b><br>
+      Each tree corrects mistakes of the last — the ensemble learns which feature combinations predict wins
     </div>
   </div>
 
-  <div class="arrow-down">↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓</div>
+  <div class="pad">↓</div>
 
-  <!-- ── OUTPUTS ── -->
-  <div class="section-label">OUTPUTS</div>
-  <div class="row row-output">
-    <div class="node out-prob">
-      <div class="out-title" style="color:#e94560">🎯 Win Prob</div>
-      <div class="out-sub">Home team %<br>e.g. 68.4%</div>
+  <div class="ps">④ Outputs</div>
+  <div class="po">
+    <div class="pob" style="background:#1a0a14;border:1px solid #e94560">
+      <div class="pov" style="color:#e94560">68%</div>
+      <div class="pol">WIN PROBABILITY<br>chance home team wins</div>
     </div>
-    <div class="node out-margin">
-      <div class="out-title" style="color:#3498db">📏 Margin</div>
-      <div class="out-sub">Expected pts gap<br>e.g. +14 pts</div>
+    <div class="pob" style="background:#0a1620;border:1px solid #3498db">
+      <div class="pov" style="color:#3498db">+14 pts</div>
+      <div class="pol">PREDICTED MARGIN<br>separate regression model</div>
     </div>
-    <div class="node out-value">
-      <div class="out-title" style="color:#2ecc71">💰 Edge vs Odds</div>
-      <div class="out-sub">Model % − bookie %<br>Kelly stake size</div>
+    <div class="pob" style="background:#0a1620;border:1px solid #2ecc71">
+      <div class="pov" style="color:#2ecc71">+7%</div>
+      <div class="pol">EDGE VS BOOKMAKER<br>when odds are available</div>
     </div>
   </div>
 
 </div>
-</body>
-</html>
-""", height=620, scrolling=False)
-
-    st.markdown("---")
-    st.markdown("## Step by Step: How a Prediction is Made")
-
-    steps = [
-        ("1️⃣", "Elo Ratings", "#e94560",
-         "Elo is a chess-style rating system applied to AFL teams. Every team starts at 1500. After each game, ratings shift based on the result and how expected it was — beating a strong team gives you more points than beating a weak one. The home team gets a +50 point advantage built in, which reflects the real-world home ground advantage seen in AFL data. The Elo *difference* between the two teams going into a game is the single most predictive feature in the model.",
-         f"Current range in our model: {min(current_elos.values()):.0f} – {max(current_elos.values()):.0f} pts"),
-
-        ("2️⃣", "Recent Form", "#f39c12",
-         "The model looks at each team's last 5 games and calculates the average winning/losing margin. A team averaging +20 pts over their last 5 is considered in much better form than one averaging -10. It also tracks consistency — a team that wins by 40 one week and loses by 30 the next is treated differently to a team that consistently wins by 15.",
-         "Captured as: last5_avg (average margin), last5_std (consistency), last3_avg, last_margin, streak"),
-
-        ("3️⃣", "Travel & Fatigue", "#2ecc71",
-         "Interstate travel is genuinely tiring in the AFL, particularly for Perth-based teams or east coast teams flying to Perth. The model calculates straight-line distance each team travels to the venue. This is combined with rest days to create a 'fatigue index': (km ÷ 1000) × max(14 − rest days, 0). A team flying 2,700km to Perth on 6 days rest scores ~8 on this index vs 0 for the home side.",
-         "Perth games flagged separately — historical data shows significant away disadvantage at Optus Stadium"),
-
-        ("4️⃣", "Rest Days", "#3498db",
-         "Days since each team's last game. More rest generally means fresher legs and more preparation time. The model caps this at 21 days — anything longer (pre-season gap, bye) resets to a neutral 7 days so Round 1 predictions aren't skewed by the entire off-season.",
-         "7 days = neutral baseline. <6 days = short turnaround flag. >21 days capped at neutral."),
-
-        ("5️⃣", "Season Stats", "#9b59b6",
-         "Season-average statistics from AFL Tables: clearances, inside 50s, contested possessions, tackles, hitouts, and clangers. These capture each team's playing style and execution quality across the whole season. A team that wins clearances tends to control tempo; a team with high inside 50s creates more scoring chances. Clangers are negative — direct turnovers gifting opposition possessions.",
-         "Data source: afltables.com — updated once per round"),
-
-        ("6️⃣", "PAV Lineup Strength", "#1abc9c",
-         "Player Approximate Value (PAV) is a per-player rating system from Squiggle that estimates each player's total contribution split into offensive, defensive, and midfield value. When lineups are announced (usually Thursday), we sum the PAV of each team's selected 22 to get 'team strength today'. This automatically accounts for injuries, suspensions and selection changes.",
-         "Only available after Thursday lineup announcements. Before that, PAV features default to 0."),
-    ]
-
-    for icon, title, colour, explanation, detail in steps:
-        st.markdown(f"""
-<div style="background:#0a1628;border-left:4px solid {colour};border-radius:8px;padding:16px;margin-bottom:12px">
-  <div style="font-size:1.05rem;font-weight:700;color:white;margin-bottom:8px">{icon} {title}</div>
-  <div style="color:#ccc;font-size:0.85rem;line-height:1.6;margin-bottom:8px">{explanation}</div>
-  <div style="color:#666;font-size:0.75rem;font-style:italic">{detail}</div>
-</div>""", unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("## How Win % is Calculated")
@@ -2695,17 +2564,21 @@ is the ceiling on how often value bets should win.
         staleness = analyse_data_staleness(pav_df, df, start_year=2013)
 
     if staleness:
+        st.caption(
+            "💡 **Players in PAV data** varies by year — Squiggle's PAV coverage was thinner before 2019 "
+            "so earlier years show fewer players. This reflects data availability, not a code limit."
+        )
         stal_rows = []
         for yr, v in sorted(staleness.items()):
             stal_rows.append({
-                "Year":             yr,
-                "Players that year": v["n_players"],
-                "Still active today": v["n_still_active"],
-                "% Still active":   v["pct_still_active"],
-                "Prime players":    v["n_prime_players"],
-                "Seasons of data":  v["seasons_available"],
-                "Relevance score":  v["relevance_score"],
-                "Recommended":      "✅" if v.get("recommended") else "",
+                "Year":                  yr,
+                "Players in PAV data":   v["n_players"],   # Squiggle coverage varies — earlier years have fewer entries
+                "Still playing today":   v["n_still_active"],
+                "% Still active":        f"{v['pct_still_active']:.0f}%",
+                "Prime (75-149 games)":  v["n_prime_players"],
+                "Seasons of data":       v["seasons_available"],
+                "Relevance score":       v["relevance_score"],
+                "Use for training":      "✅" if v.get("recommended") else "",
             })
         stal_df = pd.DataFrame(stal_rows)
 
