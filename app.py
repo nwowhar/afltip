@@ -1153,40 +1153,154 @@ elif page == "🔮 Predict a Game":
 # TEAM FORM
 # ═══════════════════════════════════════════════════════════════════════════════
 elif page == "📈 Team Form":
-    st.markdown("# TEAM FORM ANALYSIS")
-    selected = st.selectbox("Select Team", teams, key="form_team")
-    n        = st.slider("Last N games", 5, 30, 15, key="form_n")
-    form     = get_team_form_df(selected, n)
+    st.markdown("# TEAM FORM")
+
+    _fc1, _fc2 = st.columns([2, 1])
+    with _fc1:
+        selected = st.selectbox("Select Team", teams, key="form_team")
+    with _fc2:
+        n = st.slider("Games", 5, 30, 10, key="form_n")
+
+    form = get_team_form_df(selected, n)
 
     if form.empty:
         st.warning("No data found.")
     else:
-        hs   = team_stats.get(selected, {})
-        wins = (form["result"] == "W").sum()
+        hs     = team_stats.get(selected, {})
+        wins   = (form["result"] == "W").sum()
         losses = (form["result"] == "L").sum()
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: st.markdown(mc(f"{wins}W {losses}L", f"Last {n} Games"), unsafe_allow_html=True)
-        with c2: st.markdown(mc(f"{form['margin'].mean():+.1f}", "Avg Margin"), unsafe_allow_html=True)
-        with c3: st.markdown(mc(f"{hs.get('streak',0):+d}", "Current Streak"), unsafe_allow_html=True)
-        with c4: st.markdown(mc(f"{current_elos.get(selected,1500):.0f}", "Elo Rating"), unsafe_allow_html=True)
+        draws  = (form["result"] == "D").sum()
+        avg_margin   = form["margin"].mean()
+        biggest_win  = form["margin"].max()
+        biggest_loss = form["margin"].min()
+        home_form = form[form["venue_type"] == "Home"]
+        away_form = form[form["venue_type"] == "Away"]
+        home_win_rate = (home_form["result"] == "W").mean() * 100 if len(home_form) else 0
+        away_win_rate = (away_form["result"] == "W").mean() * 100 if len(away_form) else 0
 
+        # Top stats
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1: st.markdown(mc(
+            f"{wins}W {losses}L{f' {draws}D' if draws else ''}",
+            f"Last {n} Games",
+            f"{wins/n*100:.0f}% win rate"
+        ), unsafe_allow_html=True)
+        with c2: st.markdown(mc(
+            f"{avg_margin:+.1f} pts",
+            "Avg Margin",
+            "positive = winning by"
+        ), unsafe_allow_html=True)
+        with c3: st.markdown(mc(
+            f"{hs.get('streak', 0):+d}",
+            "Current Streak",
+            "positive = wins in a row"
+        ), unsafe_allow_html=True)
+        with c4: st.markdown(mc(
+            f"{home_win_rate:.0f}% / {away_win_rate:.0f}%",
+            "Home / Away Win %",
+            f"{len(home_form)}H {len(away_form)}A games"
+        ), unsafe_allow_html=True)
+        with c5: st.markdown(mc(
+            f"{current_elos.get(selected, 1500):.0f}",
+            "Elo Rating",
+            f"best win: +{biggest_win:.0f} · worst: {biggest_loss:.0f}"
+        ), unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # Last 10 game result cards
+        st.markdown(f"### Last {n} Results")
+        _cards = ""
+        for _, row in form.iloc[::-1].iterrows():
+            _res_col = "#2ecc71" if row["result"] == "W" else ("#e74c3c" if row["result"] == "L" else "#f39c12")
+            _margin_str = f"+{row['margin']:.0f}" if row["margin"] > 0 else f"{row['margin']:.0f}"
+            _venue_icon = "🏠" if row["venue_type"] == "Home" else "✈️"
+            _year_rnd = f"R{int(row['round'])} {int(row['year'])}"
+            _cards += f"""
+<div style='display:inline-flex;flex-direction:column;align-items:center;
+            background:#0a1628;border-radius:8px;padding:8px 10px;margin:3px;
+            border-top:3px solid {_res_col};min-width:80px'>
+  <div style='color:{_res_col};font-weight:700;font-size:1.1rem'>{row["result"]}</div>
+  <div style='color:white;font-size:0.72rem;font-weight:600'>{_margin_str}</div>
+  <div style='color:#aaa;font-size:0.65rem'>{_venue_icon} vs {row["opponent"][:3].upper()}</div>
+  <div style='color:#555;font-size:0.62rem'>{_year_rnd}</div>
+</div>"""
+        st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:2px'>{_cards}</div>",
+                    unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # Margin bar chart
         colors = ["#2ecc71" if m > 0 else "#e94560" for m in form["margin"]]
-        fig = go.Figure(go.Bar(x=form["game_label"], y=form["margin"],
-            marker_color=colors, text=form["result"], textposition="outside"))
+        _labels = [f"R{int(r['round'])} {str(r['year'])[2:]} vs {r['opponent'][:3].upper()}"
+                   for _, r in form.iterrows()]
+        fig = go.Figure(go.Bar(
+            x=_labels, y=form["margin"],
+            marker_color=colors,
+            text=[f"{m:+.0f}" for m in form["margin"]],
+            textposition="outside"
+        ))
         fig.add_hline(y=0, line_color="white", line_width=1)
-        dark_chart(fig, 400)
-        fig.update_layout(title=f"{selected} — Game Margins",
-                          xaxis=dict(tickangle=-45))
+        fig.add_hline(y=avg_margin, line_dash="dot", line_color="#f39c12",
+                      annotation_text=f"  avg {avg_margin:+.1f}", annotation_font_color="#f39c12")
+        dark_chart(fig, 380)
+        fig.update_layout(
+            title=f"{selected} — Last {n} Game Margins",
+            xaxis=dict(tickangle=-45, title=""),
+            yaxis=dict(title="Margin (pts)")
+        )
         st.plotly_chart(fig, width='stretch')
 
+        # Cumulative margin trend
         form["cumulative"] = form["margin"].cumsum()
-        fig2 = go.Figure(go.Scatter(x=form["game_label"], y=form["cumulative"],
-            mode="lines+markers", line=dict(color="#e94560", width=2),
-            fill="tozeroy", fillcolor="rgba(233,69,96,0.1)"))
-        dark_chart(fig2, 280)
-        fig2.update_layout(title="Cumulative Margin",
-                           xaxis=dict(tickangle=-45))
+        fig2 = go.Figure(go.Scatter(
+            x=_labels, y=form["cumulative"],
+            mode="lines+markers",
+            line=dict(color="#e94560", width=2),
+            marker=dict(size=6, color=colors),
+            fill="tozeroy", fillcolor="rgba(233,69,96,0.08)"
+        ))
+        fig2.add_hline(y=0, line_color="#555", line_width=1)
+        dark_chart(fig2, 260)
+        fig2.update_layout(
+            title="Cumulative Margin Trend",
+            xaxis=dict(tickangle=-45, title=""),
+            yaxis=dict(title="Cumulative pts")
+        )
         st.plotly_chart(fig2, width='stretch')
+
+        # Home vs Away breakdown
+        if len(home_form) > 0 and len(away_form) > 0:
+            st.markdown("### Home vs Away")
+            _hac1, _hac2 = st.columns(2)
+            with _hac1:
+                h_colors = ["#2ecc71" if m > 0 else "#e94560" for m in home_form["margin"]]
+                fig3 = go.Figure(go.Bar(
+                    x=[f"R{int(r['round'])} vs {r['opponent'][:3].upper()}"
+                       for _, r in home_form.iterrows()],
+                    y=home_form["margin"], marker_color=h_colors,
+                    text=[f"{m:+.0f}" for m in home_form["margin"]],
+                    textposition="outside"
+                ))
+                fig3.add_hline(y=0, line_color="white", line_width=1)
+                dark_chart(fig3, 280)
+                fig3.update_layout(title=f"🏠 Home ({home_win_rate:.0f}% wins)",
+                                   xaxis=dict(tickangle=-45))
+                st.plotly_chart(fig3, width='stretch')
+            with _hac2:
+                a_colors = ["#2ecc71" if m > 0 else "#e94560" for m in away_form["margin"]]
+                fig4 = go.Figure(go.Bar(
+                    x=[f"R{int(r['round'])} vs {r['opponent'][:3].upper()}"
+                       for _, r in away_form.iterrows()],
+                    y=away_form["margin"], marker_color=a_colors,
+                    text=[f"{m:+.0f}" for m in away_form["margin"]],
+                    textposition="outside"
+                ))
+                fig4.add_hline(y=0, line_color="white", line_width=1)
+                dark_chart(fig4, 280)
+                fig4.update_layout(title=f"✈️ Away ({away_win_rate:.0f}% wins)",
+                                   xaxis=dict(tickangle=-45))
+                st.plotly_chart(fig4, width='stretch')
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ELO LADDER
