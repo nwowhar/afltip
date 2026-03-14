@@ -2292,21 +2292,24 @@ elif page == "💰 Value Bets":
                         opp_bookie   = g["Best Away Bookie"] if is_home_value else g["Best Home Bookie"]
                         opp_implied  = 1 / opp_odds * 100 if opp_odds > 0 else 0
 
-                        card = f"""
-<div style="background:{card_colour};border:1px solid #2ecc71;border-radius:10px;padding:18px;margin-bottom:14px">
-
-  <!-- Header -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
-    <div>
-      <div>
-        <span style="font-size:1.2rem;font-weight:700;color:white">{ht}</span>
-        <span style="color:#e94560;margin:0 10px;font-weight:700;letter-spacing:2px">VS</span>
-        <span style="font-size:1.2rem;font-weight:700;color:white">{at}</span>
-      </div>
-      {_gt_line}
-    </div>
-    <span style="background:#2ecc71;color:#000;font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:4px;white-space:nowrap">{badge}</span>
-  </div>
+                        _time_html = (f"<div style='color:#888;font-size:0.75rem;margin-top:2px'>"
+                                      f"&#128336; {_gt}</div>") if _gt else ""
+                        card = (
+                            f"<div style='background:{card_colour};border:1px solid #2ecc71;"
+                            f"border-radius:10px;padding:18px;margin-bottom:14px'>"
+                            f"<div style='display:flex;justify-content:space-between;"
+                            f"align-items:flex-start;margin-bottom:14px'>"
+                            f"<div><div>"
+                            f"<span style='font-size:1.2rem;font-weight:700;color:white'>{ht}</span>"
+                            f"<span style='color:#e94560;margin:0 10px;font-weight:700;"
+                            f"letter-spacing:2px'>VS</span>"
+                            f"<span style='font-size:1.2rem;font-weight:700;color:white'>{at}</span>"
+                            f"</div>{_time_html}</div>"
+                            f"<span style='background:#2ecc71;color:#000;font-size:0.75rem;"
+                            f"font-weight:700;padding:4px 10px;border-radius:4px;"
+                            f"white-space:nowrap'>{badge}</span>"
+                            f"</div>"
+                        ) + f"""
 
   <!-- Bet details row -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
