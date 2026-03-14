@@ -2279,7 +2279,7 @@ elif page == "💰 Value Bets":
                         winner_str = ht if g["Pred Margin"] > 0 else at
 
                         _gt = str(g.get("Game Time", "") or "")
-                        _gt_line = f'<div style="color:#888;font-size:0.75rem;margin-top:2px">🕐 {_gt}</div>' if _gt else ""
+                        _gt_line = f"<div style='color:#888;font-size:0.75rem;margin-top:2px'>🕐 {_gt}</div>" if _gt else ""
 
                         # Win/loss scenarios
                         win_payout   = stake * val_odds          # total back if win
