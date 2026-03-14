@@ -2980,6 +2980,18 @@ is the ceiling on how often value bets should win.
     - `exp_avg_diff`: Home team's average career games minus away team's average. Positive = home team more experienced.
     - `exp_veteran_diff`: Difference in % of veterans (150+ weighted games). High = more battle-hardened side.
     - `exp_developing_diff`: Difference in % of developing players (< 25 games). Negative value is better for home team.
+
+    **Data source & accuracy note:**
+
+    Career game counts are estimated from Squiggle's PAV (Player Approximate Value) data rather than 
+    scraped directly from AFL Tables. Since PAV doesn't include a games-played column, we derive career 
+    games from cumulative `PAV_total` using a calibration constant of ~0.17 PAV per game.
+
+    This is an approximation — exact career game counts would require scraping ~450 individual player 
+    pages from AFL Tables (~2-3 min load time). The proxy gives sensible-looking results and is 
+    sufficient for a feature that currently shows as marginal in ablation testing. If ablation after 
+    Round 6+ shows experience as a strong signal (>0.5% accuracy improvement), we'll switch to exact 
+    AFL Tables counts. If it remains neutral or negative, the feature will be dropped entirely.
     """)
 
     # Show current team experience breakdown
