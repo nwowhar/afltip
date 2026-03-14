@@ -332,3 +332,90 @@ def margin_prediction_backtest(df: pd.DataFrame,
         })
 
     return pd.DataFrame(rows)
+
+
+def elo_anchor_sweep(df: pd.DataFrame,
+                     win_model,
+                     margin_model,
+                     metrics: dict,
+                     min_train_years: int = 3,
+                     anchors: list = None) -> pd.DataFrame:
+    """
+    Sweep a range of Elo anchor weights and measure out-of-sample accuracy.
+    For each anchor value, re-run the walk-forward backtest blending GBM
+    predictions with pure Elo at that fixed weight.
+
+    anchors: list of floats 0.0-1.0 (default: 0, 0.1, 0.2, ... 1.0)
+    Returns DataFrame with columns: elo_anchor, accuracy, brier_score, n_games
+    """
+    from model.predictor import predict_game as _predict_game
+
+    if anchors is None:
+        anchors = [round(x * 0.1, 1) for x in range(11)]  # 0.0 to 1.0
+
+    feature_set = metrics.get("features_used", [])
+    available   = [f for f in feature_set if f in df.columns]
+
+    years = sorted(df["year"].unique())
+    rows  = []
+
+    for anchor in anchors:
+        correct_list = []
+        brier_list   = []
+
+        for i, test_year in enumerate(years):
+            train_years = years[:i]
+            if len(train_years) < min_train_years:
+                continue
+
+            train = df[df["year"].isin(train_years)]
+            test  = df[df["year"] == test_year]
+            if len(train) < 50 or test.empty:
+                continue
+
+            # Train a fresh model for this fold
+            from sklearn.pipeline import Pipeline
+            from sklearn.preprocessing import StandardScaler
+            from sklearn.ensemble import GradientBoostingClassifier
+
+            fold_model = Pipeline([
+                ("scaler", StandardScaler()),
+                ("clf",    GradientBoostingClassifier(
+                    n_estimators=200, max_depth=3,
+                    learning_rate=0.05, subsample=0.8,
+                    random_state=42
+                ))
+            ])
+            clean_train = train.dropna(subset=available + ["home_win"])
+            if len(clean_train) < 50:
+                continue
+            fold_model.fit(clean_train[available], clean_train["home_win"])
+
+            for _, row in test.iterrows():
+                feats = {f: float(row.get(f, 0.0)) for f in available}
+                feats["elo_diff"] = float(row.get("elo_diff", 0.0))
+
+                # Use a dummy margin model (we only care about win accuracy here)
+                class _DummyMargin:
+                    def predict(self, X): return [0.0]
+
+                pred = _predict_game(
+                    fold_model, _DummyMargin(),
+                    feats, available,
+                    elo_anchor=anchor
+                )
+                prob      = pred["home_win_prob"] / 100.0
+                actual    = int(row.get("home_win", 0))
+                predicted = 1 if prob > 0.5 else 0
+                correct_list.append(int(predicted == actual))
+                brier_list.append((prob - actual) ** 2)
+
+        if correct_list:
+            rows.append({
+                "elo_anchor":  anchor,
+                "accuracy":    round(sum(correct_list) / len(correct_list) * 100, 2),
+                "brier_score": round(sum(brier_list)   / len(brier_list),  4),
+                "n_games":     len(correct_list),
+            })
+
+    return pd.DataFrame(rows)
