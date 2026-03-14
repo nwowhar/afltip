@@ -258,7 +258,9 @@ def load_season_stats(start_year):
 
 @st.cache_data(ttl=86400, show_spinner="⭐ Fetching PAV player ratings...")
 def load_pav(start_year):
-    return get_pav_multi_year(start_year)
+    # PAV fetches from 2010 regardless of training start_year —
+    # career totals need full history to correctly classify veterans
+    return get_pav_multi_year(2010)
 
 @st.cache_data(ttl=1800, show_spinner="👕 Fetching announced lineups...")
 def load_lineups():
