@@ -28,8 +28,8 @@ BASE_FEATURES = [
 ]
 
 FATIGUE_FEATURES = [
-    "travel_diff", "travel_home_km", "travel_away_km",
-    # Rest days removed — consistent noise across ablations (+0.56%)
+    # Travel removed — confirmed noise (+0.31%)
+    # Rest days removed — confirmed noise (+0.56%)
     # Travel×Rest, Travel record already removed previously
 ]
 
