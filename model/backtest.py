@@ -29,7 +29,9 @@ FEATURE_GROUPS = {
     "Ladder position":   ["ladder_rank_diff", "ladder_pct_diff", "ladder_wins_diff"],
     "Style: Kick ratio": ["kick_ratio_diff", "kick_vs_tackle"],
     "Style: Hitouts":    ["hitout_diff", "ruck_advantage"],
-    # Removed via ablation: Rest days (+0.56%), PAV lineup (+0.19%), Experience (+0.19%)
+    "Experience":        ["exp_avg_diff", "exp_veteran_diff", "exp_developing_diff"],
+    # Removed via ablation: Rest days (+0.56%), PAV lineup (+0.19%)
+    # Experience re-enabled — PAV data now fixed (per-team fetch from 2010), re-test
     # Previously removed: Travel×Rest, Travel record, Clangers, Marks, Style:Tackles
 }
 
