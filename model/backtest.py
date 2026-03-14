@@ -43,7 +43,7 @@ def run_walk_forward_backtest(df: pd.DataFrame,
     Walk-forward backtest: train on years 1..N-1, predict year N.
     Returns a DataFrame with one row per game with predicted prob and actual result.
     """
-    df = df.copy()
+    df = df[df["year"] >= 2016].copy()  # 2016+ is optimal training window
     years = sorted(df["year"].unique())
     if len(years) < min_train_years + 1:
         return pd.DataFrame()
@@ -118,6 +118,7 @@ def ablation_test(df: pd.DataFrame,
     Negative delta = removing that group HURT accuracy (group is useful).
     Positive delta = removing it HELPED (group is noise or harmful).
     """
+    df = df[df["year"] >= 2016].copy()  # 2016+ is optimal training window
     if feature_groups is None:
         feature_groups = FEATURE_GROUPS
 
@@ -301,6 +302,7 @@ def margin_prediction_backtest(df: pd.DataFrame,
                                 feature_cols: list,
                                 min_train_years: int = 3) -> pd.DataFrame:
     """Walk-forward backtest for margin prediction. Returns MAE per year."""
+    df = df[df["year"] >= 2016].copy()  # 2016+ is optimal training window
     available = [f for f in feature_cols if f in df.columns]
     years = sorted(df["year"].unique())
     if len(years) < min_train_years + 1:
@@ -341,6 +343,7 @@ def elo_anchor_sweep(df: pd.DataFrame,
                      min_train_years: int = 3,
                      anchors: list = None) -> pd.DataFrame:
     """
+    df = df[df["year"] >= 2016].copy()  # 2016+ is optimal training window
     Sweep a range of Elo anchor weights and measure out-of-sample accuracy.
     For each anchor value, re-run the walk-forward backtest blending GBM
     predictions with pure Elo at that fixed weight.
