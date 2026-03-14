@@ -39,12 +39,12 @@ CONTEXT_FEATURES = [
 ]
 
 SEASON_STAT_FEATURES = [
-    "cl_diff",   # clearances
-    "i50_diff",  # inside 50s
-    "cp_diff",   # contested possessions
-    "tk_diff",   # tackles
-    "ho_diff",   # hitouts
-    # clanger_diff removed — confirmed noise in ablation (+1.18% delta)
+    "i50_diff",  # inside 50s      ✅ -1.21%
+    "cp_diff",   # contested poss  ✅ (part of season stats group)
+    "tk_diff",   # tackles         ✅ -1.12%
+    "ho_diff",   # hitouts         ➡️ neutral but keep with season stats group
+    # cl_diff removed — confirmed noise (+0.56%)
+    # clanger_diff removed — confirmed noise (+1.18%)
 ]
 
 PAV_FEATURES = [
@@ -65,12 +65,9 @@ STANDINGS_FEATURES = [
 ]
 
 STYLE_FEATURES = [
-    "kick_ratio_diff",  # kick-heavy vs handball-heavy style gap
-    "kick_vs_tackle",   # interaction: kick style vs pressure defence
-    "hitout_diff",      # ruck dominance
-    "ruck_advantage",   # explicit ruck label (= hitout_diff)
-    # tackle_diff removed — confirmed noise (+0.63% delta)
-    # mark_diff removed  — confirmed noise (+0.83% delta)
+    # All style features removed via ablation:
+    # kick_ratio_diff, kick_vs_tackle (+0.28% — noise)
+    # hitout_diff, ruck_advantage (+0.84% — noise)
 ]
 
 ALL_FEATURES = (BASE_FEATURES + FATIGUE_FEATURES +
