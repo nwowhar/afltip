@@ -3167,15 +3167,13 @@ is the ceiling on how often value bets should win.
                 latest_exp["Career Stage Mix"] = latest_exp.apply(
                     lambda r: f"{r['pct_veterans']*100:.0f}% vet / {r['pct_developing']*100:.0f}% dev", axis=1)
                 display_exp = latest_exp[["team", "avg_career_games", "med_career_games",
-                                          "avg_finals_games", "pct_veterans", "Career Stage Mix"]].copy()
+                                          "pct_veterans", "Career Stage Mix"]].copy()
                 display_exp.columns = ["Team", "Avg Career Games", "Median Career Games",
-                                       "Avg Finals Games", "% Veterans", "Career Mix"]
+                                       "% Veterans", "Career Mix"]
                 display_exp["Avg Career Games"] = display_exp["Avg Career Games"].round(1)
                 display_exp["Median Career Games"] = display_exp["Median Career Games"].round(1)
-                display_exp["Avg Finals Games"] = display_exp["Avg Finals Games"].round(1)
                 display_exp["% Veterans"] = (display_exp["% Veterans"] * 100).round(1)
                 st.dataframe(display_exp, width='stretch', hide_index=True)
-                st.caption("Avg Finals Games is estimated (~10% of career games) — Squiggle PAV data does not include a separate finals game count.")
             else:
                 st.info("Experience data will populate once PAV data is loaded.")
         except Exception as _e:
