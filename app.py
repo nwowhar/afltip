@@ -2493,9 +2493,23 @@ elif page == "💰 Value Bets":
                 st.markdown("### 🏆 Recommended Multi")
                 st.markdown("*Top 3 highest-confidence picks this round — strong favourites with the best available odds*")
 
-                # Get all upcoming games and find top favourites by our model confidence
+                # Get all upcoming games — fetch fresh since we're on Value Bets page
+                try:
+                    import requests as _req_m
+                    _r_m = _req_m.get(
+                        f"https://api.squiggle.com.au/?q=games;year={datetime.now().year}",
+                        headers={"User-Agent": "AFL-Predictor/1.0"}, timeout=10
+                    )
+                    _all_games_m = pd.DataFrame(_r_m.json().get("games", []))
+                    _upcoming_m  = _all_games_m[_all_games_m["complete"] < 100].copy() if not _all_games_m.empty else pd.DataFrame()
+                    if not _upcoming_m.empty:
+                        _next_rnd_m = int(_upcoming_m["round"].min())
+                        _upcoming_m = _upcoming_m[_upcoming_m["round"] == _next_rnd_m]
+                except Exception:
+                    _upcoming_m = pd.DataFrame()
+
                 _all_preds = []
-                for _, _mg in upcoming.iterrows():
+                for _, _mg in _upcoming_m.iterrows():
                     _mh = normalise_team(str(_mg.get("hteam","")))
                     _ma = normalise_team(str(_mg.get("ateam","")))
                     _mv = str(_mg.get("venue",""))
