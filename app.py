@@ -231,6 +231,8 @@ def find_arbitrage(odds_df: pd.DataFrame) -> pd.DataFrame:
         arb_pct = (1 / best_h_odds) + (1 / best_a_odds)
         if arb_pct < 1.0:
             profit_pct = round((1 / arb_pct - 1) * 100, 3)
+            if profit_pct < 2.5:
+                continue  # not worth acting on — need thousands to make meaningful profit
             # Optimal stakes for $100 total outlay
             h_stake = round(100 / (best_h_odds * arb_pct), 2)
             a_stake = round(100 / (best_a_odds * arb_pct), 2)
@@ -462,7 +464,7 @@ if page == "📊 Dashboard":
                 else:
                     _n_g = _arb_odds_dash.groupby(["home_team","away_team"]).ngroups
                     _n_b = _arb_odds_dash["bookmaker"].nunique()
-                    st.caption(f"⚡ Arb scanner: no opportunities across {_n_g} games / {_n_b} bookmakers — updated every 20 mins")
+                    st.caption(f"⚡ Arb scanner: no opportunities ≥2.5% across {_n_g} games / {_n_b} bookmakers — updated every 20 mins")
             else:
                 st.caption("⚡ Arb scanner: no odds data yet — check back closer to game day")
     except Exception as _arb_e:
@@ -2006,11 +2008,11 @@ elif page == "💰 Value Bets":
         elif _arb_df.empty:
             _n_games  = _arb_odds_raw.groupby(["home_team","away_team"]).ngroups
             _n_books  = _arb_odds_raw["bookmaker"].nunique()
-            st.success(f"✅ No arbitrage opportunities right now — scanned {_n_games} games across {_n_books} bookmakers.")
+            st.success(f"✅ No arbitrage opportunities ≥2.5% right now — scanned {_n_games} games across {_n_books} bookmakers.")
         else:
             st.warning(f"⚡ **{len(_arb_df)} arbitrage opportunit{'y' if len(_arb_df)==1 else 'ies'} found!**")
             for _, arb in _arb_df.iterrows():
-                profit_colour = "#2ecc71" if arb["profit_pct"] >= 1.0 else "#f39c12"
+                profit_colour = "#2ecc71" if arb["profit_pct"] >= 4.0 else "#f39c12"
                 st.markdown(f"""
 <div style="background:#0a1628;border:2px solid {profit_colour};border-radius:10px;
             padding:18px;margin-bottom:12px">
