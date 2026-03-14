@@ -53,8 +53,9 @@ PAV_FEATURES = [
 ]
 
 EXPERIENCE_FEATURES = [
-    # Experience removed — marginal noise (+0.19%)
-    # exp_avg_diff, exp_veteran_diff, exp_developing_diff
+    "exp_avg_diff",        # home avg career games minus away avg
+    "exp_veteran_diff",    # difference in % veterans (150+ games)
+    "exp_developing_diff", # difference in % developing players (<25 games)
 ]
 
 STANDINGS_FEATURES = [
