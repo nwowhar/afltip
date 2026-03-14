@@ -2300,7 +2300,7 @@ elif page == "💰 Value Bets":
     <div>
       <div>
         <span style="font-size:1.2rem;font-weight:700;color:white">{ht}</span>
-        <span style="color:#e94560;margin:0 10px;font-family:'Bebas Neue'">VS</span>
+        <span style="color:#e94560;margin:0 10px;font-weight:700;letter-spacing:2px">VS</span>
         <span style="font-size:1.2rem;font-weight:700;color:white">{at}</span>
       </div>
       {_gt_line}
@@ -2351,7 +2351,7 @@ elif page == "💰 Value Bets":
       </div>
       <div style="background:#0a1628;border:1px solid #3498db;border-radius:8px;padding:12px;text-align:center">
         <div style="color:#3498db;font-size:0.68rem;margin-bottom:4px">📊 EXPECTED VALUE</div>
-        <div style="color:#3498db;font-weight:700;font-size:1.4rem">{f"+${exp_value:.2f}" if exp_value >= 0 else f"-${abs(exp_value):.2f}"}</div>
+        <div style="color:#3498db;font-weight:700;font-size:1.4rem">{"+" if exp_value >= 0 else "-"}${abs(exp_value):.2f}</div>
         <div style="color:#aaa;font-size:0.7rem;margin-top:2px">per bet, long run</div>
       </div>
     </div>
