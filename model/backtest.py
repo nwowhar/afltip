@@ -21,16 +21,16 @@ FEATURE_GROUPS = {
     # Travel removed — confirmed noise (+0.31%)
     "Streak":            ["streak_diff", "home_streak", "away_streak"],
     "Last margin":       ["last_margin_diff", "last3_diff", "last5_diff"],
-    "Season stats":      ["i50_diff", "cp_diff", "tk_diff", "ho_diff"],
-    # Stats: Clearances removed (+0.56%)
+    "Season stats":      ["i50_diff", "cp_diff", "tk_diff"],
+    # ho_diff removed (+0.14%), cl_diff (+0.56%), clanger_diff (+1.18%)
     "Stats: Inside 50s": ["i50_diff"],
     "Stats: Tackles":    ["tk_diff"],
-    "Stats: Hitouts":    ["ho_diff"],
+    # Stats: Hitouts removed (+0.14%)
     "Ladder position":   ["ladder_rank_diff", "ladder_pct_diff", "ladder_wins_diff"],
-    "Experience":        ["exp_avg_diff", "exp_veteran_diff", "exp_developing_diff"],
-    # Removed via ablation: Style:Kick ratio (+0.28%), Style:Hitouts (+0.84%)
+    # Experience removed again (+0.28%) — noise even with fixed PAV data
+    # Style:Kick ratio (+0.28%), Style:Hitouts (+0.84%), ho_diff (+0.14%)
     # Stats:Clearances (+0.56%), Rest days (+0.56%), PAV lineup (+0.19%)
-    # Previously removed: Travel×Rest, Travel record, Clangers, Marks, Style:Tackles
+    # Travel×Rest, Travel record, Clangers, Marks, Style:Tackles
 }
 
 ALL_FEATURES = [f for feats in FEATURE_GROUPS.values() for f in feats]
