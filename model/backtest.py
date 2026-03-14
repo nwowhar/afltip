@@ -18,7 +18,7 @@ FEATURE_GROUPS = {
     "Elo":               ["elo_diff"],
     "Form (rolling)":    ["form_diff", "home_form", "away_form",
                           "home_consistency", "away_consistency"],
-    "Travel":            ["travel_diff", "travel_home_km", "travel_away_km"],
+    # Travel removed — confirmed noise (+0.31%)
     "Streak":            ["streak_diff", "home_streak", "away_streak"],
     "Last margin":       ["last_margin_diff", "last3_diff", "last5_diff"],
     "Season stats":      ["cl_diff", "i50_diff", "cp_diff", "tk_diff", "ho_diff"],
