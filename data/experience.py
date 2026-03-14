@@ -290,17 +290,13 @@ def compute_experience_from_pav(pav_df: pd.DataFrame,
             continue
         for team, grp in yr_pav.groupby(team_col):
             wg = grp["career_games"].values
-            # Estimate finals games: ~10% of career games are finals on average
-            # PAV data doesn't include a separate finals count so we approximate
-            est_finals = wg * 0.10
             records.append({
-                "team":               team,
-                "year":               int(yr),
-                "avg_career_games":   float(np.mean(wg))        if len(wg) else 0,
-                "med_career_games":   float(np.median(wg))      if len(wg) else 0,
-                "avg_finals_games":   float(np.mean(est_finals)) if len(wg) else 0,
-                "pct_veterans":       float(np.mean(wg >= 150)) if len(wg) else 0,
-                "pct_developing":     float(np.mean(wg < 25))   if len(wg) else 0,
+                "team":             team,
+                "year":             int(yr),
+                "avg_career_games": float(np.mean(wg))    if len(wg) else 0,
+                "med_career_games": float(np.median(wg))  if len(wg) else 0,
+                "pct_veterans":     float(np.mean(wg >= 150)) if len(wg) else 0,
+                "pct_developing":   float(np.mean(wg < 25))   if len(wg) else 0,
             })
 
     return pd.DataFrame(records) if records else pd.DataFrame()
