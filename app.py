@@ -176,7 +176,7 @@ _DEFAULTS = {
     "backtest_min":    3,
     "inout_team":      "All teams",
     "pav_team":        "All",
-    "bankroll":        1000,
+    "bankroll":        100,
     "kelly_fraction":  "Quarter Kelly (recommended)",
     "min_edge":        3,
 }
@@ -489,6 +489,64 @@ if page == "📊 Dashboard":
                 _default_round = int(_all_rounds[-1])
             if st.session_state.get("selected_round") not in _all_rounds:
                 st.session_state["selected_round"] = _default_round
+
+            # ── Compact ladder ────────────────────────────────────────────
+            _cur_standings = standings_df[standings_df["year"] == datetime.now().year].copy() if standings_df is not None and not standings_df.empty else pd.DataFrame()
+            if not _cur_standings.empty:
+                _pct_col = "percentage" if "percentage" in _cur_standings.columns else "pct"
+                _cur_standings = _cur_standings.sort_values("rank").head(18)
+
+                st.markdown("### 🏆 LADDER")
+                _rows_html = ""
+                for _, _lr in _cur_standings.iterrows():
+                    _pos   = int(_lr.get("rank", 0))
+                    _team  = str(_lr.get("team", ""))
+                    _w     = int(_lr.get("wins", 0))
+                    _l     = int(_lr.get("losses", 0))
+                    _d     = int(_lr.get("draws", 0))
+                    _pct   = float(_lr.get(_pct_col, 0))
+                    _pts   = int(_lr.get("pts", _w * 4))
+                    _elo   = float(current_elos.get(_team, 1500))
+
+                    # Top 8 highlight, top 4 stronger
+                    if _pos <= 4:   _bg = "#0d2a3d"; _pos_col = "#3498db"
+                    elif _pos <= 8: _bg = "#0a1f2e"; _pos_col = "#aaa"
+                    else:           _bg = "#0a1628"; _pos_col = "#555"
+
+                    _rows_html += f"""
+<div style="display:grid;grid-template-columns:28px 1fr 36px 36px 36px 64px 64px;
+            align-items:center;gap:6px;padding:6px 10px;background:{_bg};
+            border-radius:6px;margin-bottom:3px;font-size:0.82rem">
+  <div style="color:{_pos_col};font-weight:700;text-align:center">{_pos}</div>
+  <div style="color:white;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{_team}</div>
+  <div style="color:#2ecc71;text-align:center;font-weight:600">{_w}</div>
+  <div style="color:#e74c3c;text-align:center">{_l}</div>
+  <div style="color:#aaa;text-align:center">{_d}</div>
+  <div style="color:#f39c12;text-align:center;font-weight:600">{_pct:.1f}%</div>
+  <div style="color:#3498db;text-align:center">{_elo:.0f}</div>
+</div>"""
+
+                _header_html = """
+<div style="display:grid;grid-template-columns:28px 1fr 36px 36px 36px 64px 64px;
+            align-items:center;gap:6px;padding:4px 10px;margin-bottom:4px;font-size:0.68rem">
+  <div style="color:#555;text-align:center">#</div>
+  <div style="color:#555">TEAM</div>
+  <div style="color:#555;text-align:center">W</div>
+  <div style="color:#555;text-align:center">L</div>
+  <div style="color:#555;text-align:center">D</div>
+  <div style="color:#555;text-align:center">PCT %</div>
+  <div style="color:#555;text-align:center">ELO</div>
+</div>"""
+
+                st.markdown(
+                    f'<div style="background:#0a1628;border-radius:10px;padding:10px 4px">'
+                    f'{_header_html}{_rows_html}'
+                    f'<div style="color:#333;font-size:0.65rem;text-align:right;padding:4px 10px 0">'
+                    f'■■■■ top 4 &nbsp; ■■■■ top 8</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+                st.markdown("")
 
             col_title, col_picker = st.columns([2, 1])
             with col_title:
@@ -2430,8 +2488,148 @@ elif page == "💰 Value Bets":
 
                 # ── Multi builder ─────────────────────────────────────────────
                 st.markdown("---")
-                st.markdown("### 🎰 Multi Builder")
-                st.markdown("*Build a multi from the round's value bets — shows combined odds and expected value*")
+
+                # ── Auto Best Multi ───────────────────────────────────────────
+                st.markdown("### 🏆 Recommended Multi")
+                st.markdown("*Top 3 highest-confidence picks this round — strong favourites with the best available odds*")
+
+                # Get all upcoming games and find top favourites by our model confidence
+                _all_preds = []
+                for _, _mg in upcoming.iterrows():
+                    _mh = normalise_team(str(_mg.get("hteam","")))
+                    _ma = normalise_team(str(_mg.get("ateam","")))
+                    _mv = str(_mg.get("venue",""))
+                    if _mh not in current_elos or _ma not in current_elos:
+                        continue
+                    try:
+                        _mf = _build_prediction_features(
+                            _mh, _ma, _mv, current_elos, team_stats,
+                            season_stats, lineup_strength, df, exp_df, standings_df,
+                            style_df=style_df,
+                            current_round=int(selected_round) if selected_round else None
+                        )
+                        _mp = predict_game(win_model, margin_model, _mf, metrics["features_used"])
+                        _mconf = max(_mp["home_win_prob"], _mp["away_win_prob"]) / 100
+                        _mteam = _mh if _mp["home_win_prob"] > _mp["away_win_prob"] else _ma
+                        _mmargin = abs(_mp["predicted_margin"])
+                        _all_preds.append({
+                            "home": _mh, "away": _ma, "venue": _mv,
+                            "tip": _mteam, "conf": _mconf, "margin": _mmargin,
+                        })
+                    except Exception:
+                        continue
+
+                # Sort by confidence, take top 3
+                _top3 = sorted(_all_preds, key=lambda x: -x["conf"])[:3]
+
+                if len(_top3) >= 2:
+                    # Look up best available odds for each tip from odds_df if available
+                    _odds_key_m = ""
+                    try:
+                        _odds_key_m = st.secrets.get("ODDS_API_KEY", "")
+                    except Exception:
+                        pass
+
+                    _odds_lookup = {}
+                    if _odds_key_m:
+                        try:
+                            _round_odds = get_odds_api(_odds_key_m)
+                            if not _round_odds.empty:
+                                for _, _or in _round_odds.iterrows():
+                                    _oh = normalise_team(_or["home_team"])
+                                    _oa = normalise_team(_or["away_team"])
+                                    _key = f"{_oh}|{_oa}"
+                                    if _key not in _odds_lookup:
+                                        _odds_lookup[_key] = {"home_odds": {}, "away_odds": {}}
+                                    _odds_lookup[_key]["home_odds"][_or["bookmaker"]] = float(_or["home_odds"])
+                                    _odds_lookup[_key]["away_odds"][_or["bookmaker"]] = float(_or["away_odds"])
+                        except Exception:
+                            pass
+
+                    _multi_odds = 1.0
+                    _multi_prob = 1.0
+                    _leg_lines  = ""
+                    _multi_stake = 100.0  # fixed $100 stake for recommended multi
+
+                    for _leg in _top3:
+                        _lkey = f"{_leg['home']}|{_leg['away']}"
+                        _is_home = _leg["tip"] == _leg["home"]
+                        _odds_side = "home_odds" if _is_home else "away_odds"
+
+                        # Get best odds from bookmakers if available, else estimate from Elo
+                        if _lkey in _odds_lookup and _odds_lookup[_lkey][_odds_side]:
+                            _best_bookie = max(_odds_lookup[_lkey][_odds_side], key=_odds_lookup[_lkey][_odds_side].get)
+                            _best_leg_odds = _odds_lookup[_lkey][_odds_side][_best_bookie]
+                        else:
+                            # Estimate fair odds from our probability (no vig)
+                            _best_leg_odds = round(1 / max(_leg["conf"], 0.01), 2)
+                            _best_bookie = "est."
+
+                        _multi_odds *= _best_leg_odds
+                        _multi_prob *= _leg["conf"]
+
+                        _conf_colour = "#2ecc71" if _leg["conf"] >= 0.70 else "#f39c12"
+                        _leg_lines += f"""
+<div style="display:flex;justify-content:space-between;align-items:center;
+            padding:10px 14px;background:#0a1628;border-radius:8px;margin-bottom:6px">
+  <div>
+    <div style="color:white;font-weight:700;font-size:0.95rem">{_leg["tip"]}</div>
+    <div style="color:#555;font-size:0.72rem">{_leg["home"]} vs {_leg["away"]}</div>
+  </div>
+  <div style="text-align:center">
+    <div style="color:{_conf_colour};font-weight:700;font-size:1rem">{_leg["conf"]*100:.1f}%</div>
+    <div style="color:#555;font-size:0.68rem">confidence</div>
+  </div>
+  <div style="text-align:center">
+    <div style="color:#aaa;font-size:0.72rem">predicted by</div>
+    <div style="color:#aaa;font-size:0.72rem">{_leg["margin"]:.0f} pts</div>
+  </div>
+  <div style="text-align:right">
+    <div style="color:#f39c12;font-weight:700;font-size:1.1rem">${_best_leg_odds:.2f}</div>
+    <div style="color:#555;font-size:0.68rem">{_best_bookie}</div>
+  </div>
+</div>"""
+
+                    _multi_return  = _multi_stake * _multi_odds
+                    _multi_profit  = _multi_return - _multi_stake
+
+                    st.markdown(f"""
+<div style="background:#0f2a1a;border:2px solid #2ecc71;border-radius:12px;padding:18px;margin-bottom:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-size:1.1rem;font-weight:700;color:white">{len(_top3)}-Leg Favourites Multi</div>
+    <div style="color:#2ecc71;font-size:0.8rem">{_multi_prob*100:.1f}% combined probability</div>
+  </div>
+  {_leg_lines}
+  <div style="border-top:1px solid #1a3a2a;margin:12px 0"></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    <div style="background:#0a1628;border-radius:8px;padding:12px;text-align:center">
+      <div style="color:#aaa;font-size:0.65rem;margin-bottom:4px">COMBINED ODDS</div>
+      <div style="color:#f39c12;font-weight:700;font-size:1.4rem">${_multi_odds:.2f}</div>
+    </div>
+    <div style="background:#0a1628;border-radius:8px;padding:12px;text-align:center">
+      <div style="color:#aaa;font-size:0.65rem;margin-bottom:4px">STAKE</div>
+      <div style="color:white;font-weight:700;font-size:1.4rem">${_multi_stake:.0f}</div>
+    </div>
+    <div style="background:#0d2a0d;border:1px solid #2ecc71;border-radius:8px;padding:12px;text-align:center">
+      <div style="color:#2ecc71;font-size:0.65rem;margin-bottom:4px">✅ IF WIN</div>
+      <div style="color:#2ecc71;font-weight:700;font-size:1.4rem">+${_multi_profit:.2f}</div>
+      <div style="color:#aaa;font-size:0.7rem">return ${_multi_return:.2f}</div>
+    </div>
+    <div style="background:#2a0d0d;border:1px solid #e74c3c;border-radius:8px;padding:12px;text-align:center">
+      <div style="color:#e74c3c;font-size:0.65rem;margin-bottom:4px">❌ IF LOSS</div>
+      <div style="color:#e74c3c;font-weight:700;font-size:1.4rem">-${_multi_stake:.0f}</div>
+      <div style="color:#aaa;font-size:0.7rem">stake forfeited</div>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+                    st.caption("⚠️ Multis are high variance — even strong favourites lose. Never stake more than you can afford to lose.")
+                else:
+                    st.info("Not enough upcoming games to build a multi yet — check back closer to game day.")
+
+                st.markdown("---")
+                st.markdown("### 🎰 Custom Multi Builder")
+                st.markdown("*Manually select legs from this round's value bets*")
 
                 value_games = [(g["Home"], g["Away"], g["H Edge%"], g["A Edge%"],
                                 g["Best Home Odds"], g["Best Away Odds"],
