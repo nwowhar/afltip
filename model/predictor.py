@@ -423,7 +423,10 @@ def predict_game(win_model, margin_model,
 
     X = np.array([[float(features.get(f, 0.0)) for f in feature_set]])
     win_prob         = win_model.predict_proba(X)[0][1]
-    predicted_margin = margin_model.predict(X)[0]
+    # Scale GBM margin by 1.5 to correct for MSE regression-to-mean
+    # GBM trained on MSE clusters predictions near the mean (~18pts)
+    # Scaling to ~1.5x better reflects real AFL margin variance
+    predicted_margin = margin_model.predict(X)[0] * 1.5
 
     # Determine Elo blend weight
     if elo_anchor is not None:
@@ -448,7 +451,7 @@ def predict_game(win_model, margin_model,
     if elo_blend > 0 and "elo_diff" in features:
         elo_diff   = float(features["elo_diff"])
         elo_prob   = 1 / (1 + 10 ** (-elo_diff / 400))
-        elo_margin = elo_diff * 0.05
+        elo_margin = elo_diff * 0.14  # ~14pts per 100 Elo pts (AFL calibrated)
         win_prob         = elo_blend * elo_prob   + (1 - elo_blend) * win_prob
         predicted_margin = elo_blend * elo_margin + (1 - elo_blend) * predicted_margin
 
