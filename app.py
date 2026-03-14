@@ -45,7 +45,8 @@ def _build_prediction_features(*args, style_df=None, **kwargs):
     return build_prediction_features(*args, **kwargs)
 from model.backtest import (run_walk_forward_backtest, compute_yearly_accuracy,
                              ablation_test, permutation_importance_analysis,
-                             margin_prediction_backtest, optimise_start_year, FEATURE_GROUPS)
+                             margin_prediction_backtest, optimise_start_year,
+                             elo_anchor_sweep, FEATURE_GROUPS)
 try:
     from data.team_style import (build_style_features_from_season_stats,
                                   compute_style_matchup, STYLE_FEATURES)
@@ -1071,6 +1072,81 @@ elif page == "🏆 Elo Ladder":
                       yaxis=dict(autorange="reversed"))
     st.plotly_chart(fig, width='stretch')
     st.dataframe(elo_df, width='stretch', hide_index=True)
+
+    # ── Elo Anchor Tuner ──────────────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("### 🎯 Elo Anchor Tuner")
+    st.markdown(
+        "*How much should Elo influence predictions vs the GBM? "
+        "Sweep anchor weights 0%→100% to find the accuracy sweet spot. "
+        "0% = pure GBM, 100% = pure Elo.*"
+    )
+    abl_min_train_elo = st.slider("Minimum training years", 2, 5, 3, key="elo_anchor_min_train")
+
+    if st.button("▶ Run Elo Anchor Sweep", type="primary", key="run_elo_sweep"):
+        with st.spinner("Sweeping Elo anchor weights 0%→100% — takes ~60 seconds..."):
+            sweep_df = elo_anchor_sweep(df, win_model, margin_model, metrics,
+                                        min_train_years=abl_min_train_elo)
+        st.session_state["elo_sweep_result"] = sweep_df
+
+    sweep_df = st.session_state.get("elo_sweep_result")
+    if sweep_df is not None and not sweep_df.empty:
+        best_row    = sweep_df.loc[sweep_df["accuracy"].idxmax()]
+        best_anchor = best_row["elo_anchor"]
+        best_acc    = best_row["accuracy"]
+
+        c1, c2, c3 = st.columns(3)
+        with c1: st.markdown(mc(f"{best_anchor:.0%}", "Optimal Elo Anchor",
+                                f"Peak accuracy {best_acc:.1f}%"), unsafe_allow_html=True)
+        with c2:
+            v = sweep_df[sweep_df["elo_anchor"]==0.0]["accuracy"].values
+            st.markdown(mc(f"{v[0]:.1f}%" if len(v) else "—", "Pure GBM (0% Elo)"), unsafe_allow_html=True)
+        with c3:
+            v = sweep_df[sweep_df["elo_anchor"]==1.0]["accuracy"].values
+            st.markdown(mc(f"{v[0]:.1f}%" if len(v) else "—", "Pure Elo (100%)"), unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        fig_sweep = go.Figure()
+        fig_sweep.add_trace(go.Scatter(
+            x=sweep_df["elo_anchor"]*100, y=sweep_df["accuracy"],
+            mode="lines+markers", line=dict(color="#e94560", width=2),
+            marker=dict(size=8), name="Accuracy"
+        ))
+        fig_sweep.add_vline(x=best_anchor*100, line_dash="dot", line_color="#2ecc71",
+                            annotation_text=f"  optimal: {best_anchor:.0%}",
+                            annotation_font_color="#2ecc71")
+        dark_chart(fig_sweep, 320)
+        fig_sweep.update_layout(
+            xaxis=dict(title="Elo Anchor Weight (%)", ticksuffix="%"),
+            yaxis=dict(title="Out-of-Sample Accuracy (%)",
+                       range=[sweep_df["accuracy"].min()-1, sweep_df["accuracy"].max()+1])
+        )
+        st.plotly_chart(fig_sweep, width="stretch")
+
+        fig_brier = go.Figure()
+        fig_brier.add_trace(go.Scatter(
+            x=sweep_df["elo_anchor"]*100, y=sweep_df["brier_score"],
+            mode="lines+markers", line=dict(color="#3498db", width=2),
+            marker=dict(size=8), name="Brier Score"
+        ))
+        best_b = sweep_df.loc[sweep_df["brier_score"].idxmin()]
+        fig_brier.add_vline(x=best_b["elo_anchor"]*100, line_dash="dot", line_color="#2ecc71",
+                            annotation_text=f"  best calibration: {best_b['elo_anchor']:.0%}",
+                            annotation_font_color="#2ecc71")
+        dark_chart(fig_brier, 280)
+        fig_brier.update_layout(
+            xaxis=dict(title="Elo Anchor Weight (%)", ticksuffix="%"),
+            yaxis=dict(title="Brier Score (lower = better calibrated)")
+        )
+        st.plotly_chart(fig_brier, width="stretch")
+
+        disp = sweep_df.copy()
+        disp["elo_anchor"] = disp["elo_anchor"].apply(lambda x: f"{x:.0%}")
+        disp.columns = ["Elo Anchor", "Accuracy %", "Brier Score", "Games"]
+        st.dataframe(disp, hide_index=True, width="stretch")
+        st.caption(f"☝️ Paste to Claude: optimal Elo anchor = {best_anchor:.0%} "
+                   f"({best_acc:.1f}% accuracy, Brier {best_row['brier_score']:.4f})")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TEAM STATS LEADERBOARD
