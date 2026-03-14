@@ -22,26 +22,48 @@ HEADERS = {"User-Agent": "AFL-Predictor/1.0 (github.com/nwowhar/afltip)"}
 # ── PAV ───────────────────────────────────────────────────────────────────────
 
 
+# Squiggle team IDs (numeric) for per-team PAV fetching
+_SQUIGGLE_TEAM_IDS = {
+    "1": "Adelaide", "2": "Brisbane Lions", "3": "Carlton", "4": "Collingwood",
+    "5": "Essendon", "6": "Fremantle", "7": "Geelong", "8": "Gold Coast",
+    "9": "GWS Giants", "10": "Hawthorn", "11": "Melbourne", "12": "North Melbourne",
+    "13": "Port Adelaide", "14": "Richmond", "15": "St Kilda", "16": "Sydney",
+    "17": "West Coast", "18": "Western Bulldogs",
+}
+
+
 def get_pav(year: int) -> pd.DataFrame:
-    """Fetch Player Approximate Value ratings for a given year."""
-    url = f"{BASE}?q=pav;year={year}"
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=15)
-        r.raise_for_status()
-        data = r.json().get("pav", [])
-        if not data:
-            return pd.DataFrame()
-        df = pd.DataFrame(data)
-        df["year"] = year
-        # Resolve numeric team IDs to names
-        if "team" in df.columns:
-            df["team"] = df["team"].astype(str).map(
-                lambda x: _SQUIGGLE_TEAM_ID_MAP.get(x, x)
-            )
-        return df
-    except Exception as e:
-        print(f"PAV fetch failed {year}: {e}")
+    """
+    Fetch Player Approximate Value ratings for a given year.
+    Fetches per-team to avoid server-side result caps that truncate
+    earlier years to ~50 players when fetching the full league at once.
+    """
+    frames = []
+    for team_id, team_name in _SQUIGGLE_TEAM_IDS.items():
+        url = f"{BASE}?q=pav;year={year};team={team_id}"
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=15)
+            r.raise_for_status()
+            data = r.json().get("pav", [])
+            if not data:
+                continue
+            df = pd.DataFrame(data)
+            df["year"] = year
+            df["team"] = team_name  # already resolved
+            frames.append(df)
+        except Exception as e:
+            print(f"PAV fetch failed {year} {team_name}: {e}")
+            continue
+
+    if not frames:
         return pd.DataFrame()
+
+    combined = pd.concat(frames, ignore_index=True)
+    # Drop duplicates in case a player appeared for multiple teams
+    key_cols = [c for c in ["firstname", "givenname", "surname", "year"] if c in combined.columns]
+    if key_cols:
+        combined = combined.drop_duplicates(subset=key_cols)
+    return combined
 
 
 def get_pav_multi_year(start_year: int = 2013) -> pd.DataFrame:
