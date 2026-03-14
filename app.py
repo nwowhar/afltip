@@ -2215,55 +2215,97 @@ elif page == "💰 Value Bets":
                         winner_str = ht if g["Pred Margin"] > 0 else at
 
                         _gt = str(g.get("Game Time", "") or "")
-                        _gt_line = f'<div style="color:#888;font-size:0.72rem;margin-top:2px">🕐 {_gt}</div>' if _gt else ""
+                        _gt_line = f'<div style="color:#888;font-size:0.75rem;margin-top:2px">🕐 {_gt}</div>' if _gt else ""
+
+                        # Win/loss scenarios
+                        win_payout   = stake * val_odds          # total back if win
+                        win_profit   = win_payout - stake        # net profit if win
+                        loss_amount  = stake                     # lose stake if loss
+                        exp_value    = val_our * win_profit - (1 - val_our) * loss_amount
+                        break_even   = 1 / val_odds * 100        # implied prob to break even
+
+                        opp_odds     = g["Best Away Odds"] if is_home_value else g["Best Home Odds"]
+                        opp_bookie   = g["Best Away Bookie"] if is_home_value else g["Best Home Bookie"]
+                        opp_implied  = 1 / opp_odds * 100 if opp_odds > 0 else 0
+
                         card = f"""
-<div style="background:{card_colour};border:1px solid #2ecc71;border-radius:10px;padding:16px;margin-bottom:12px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div style="background:{card_colour};border:1px solid #2ecc71;border-radius:10px;padding:18px;margin-bottom:14px">
+
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
     <div>
-      <div><span style="font-size:1.1rem;font-weight:700;color:white">{ht}</span>
-      <span style="color:#e94560;margin:0 8px">vs</span>
-      <span style="font-size:1.1rem;font-weight:700;color:white">{at}</span></div>
+      <div>
+        <span style="font-size:1.2rem;font-weight:700;color:white">{ht}</span>
+        <span style="color:#e94560;margin:0 10px;font-family:'Bebas Neue'">VS</span>
+        <span style="font-size:1.2rem;font-weight:700;color:white">{at}</span>
+      </div>
       {_gt_line}
     </div>
-    <span style="background:#2ecc71;color:#000;font-size:0.72rem;font-weight:700;padding:3px 8px;border-radius:4px">{badge}</span>
+    <span style="background:#2ecc71;color:#000;font-size:0.75rem;font-weight:700;padding:4px 10px;border-radius:4px;white-space:nowrap">{badge}</span>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">
-    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
-      <div style="color:#aaa;font-size:0.68rem;margin-bottom:4px">BET ON</div>
-      <div style="color:#2ecc71;font-weight:700;font-size:1rem">{val_team}</div>
-      <div style="color:#666;font-size:0.7rem">@ {val_bookie}</div>
+
+  <!-- Bet details row -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
+    <div style="background:#0a1628;border-radius:8px;padding:12px;text-align:center">
+      <div style="color:#aaa;font-size:0.65rem;letter-spacing:0.5px;margin-bottom:6px">BET ON</div>
+      <div style="color:#2ecc71;font-weight:700;font-size:1.05rem">{val_team}</div>
+      <div style="color:#555;font-size:0.68rem;margin-top:2px">{val_bookie}</div>
     </div>
-    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
-      <div style="color:#aaa;font-size:0.68rem;margin-bottom:4px">ODDS</div>
-      <div style="color:white;font-weight:700;font-size:1.1rem">${val_odds:.2f}</div>
-      <div style="color:#666;font-size:0.7rem">implied {1/val_odds*100:.1f}%</div>
+    <div style="background:#0a1628;border-radius:8px;padding:12px;text-align:center">
+      <div style="color:#aaa;font-size:0.65rem;letter-spacing:0.5px;margin-bottom:6px">ODDS</div>
+      <div style="color:white;font-weight:700;font-size:1.3rem">${val_odds:.2f}</div>
+      <div style="color:#555;font-size:0.68rem;margin-top:2px">bookie implies {break_even:.1f}%</div>
     </div>
-    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
-      <div style="color:#aaa;font-size:0.68rem;margin-bottom:4px">OUR MODEL</div>
-      <div style="color:#3498db;font-weight:700;font-size:1.1rem">{val_our*100:.1f}%</div>
-      <div style="color:#2ecc71;font-size:0.7rem">edge: +{val_edge:.1f}%</div>
+    <div style="background:#0a1628;border-radius:8px;padding:12px;text-align:center">
+      <div style="color:#aaa;font-size:0.65rem;letter-spacing:0.5px;margin-bottom:6px">OUR PROBABILITY</div>
+      <div style="color:#3498db;font-weight:700;font-size:1.3rem">{val_our*100:.1f}%</div>
+      <div style="color:#2ecc71;font-size:0.68rem;margin-top:2px">+{val_edge:.1f}% edge</div>
     </div>
-    <div style="background:#0a1628;border-radius:6px;padding:10px;text-align:center">
-      <div style="color:#aaa;font-size:0.68rem;margin-bottom:4px">KELLY STAKE</div>
-      <div style="color:#f39c12;font-weight:700;font-size:1.1rem">${stake:.2f}</div>
-      <div style="color:#666;font-size:0.7rem">{kelly_pct:.1f}% of bankroll</div>
-    </div>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-    <div style="background:#0a1628;border-radius:6px;padding:8px;text-align:center">
-      <div style="color:#aaa;font-size:0.68rem">Expected Return</div>
-      <div style="color:#2ecc71;font-weight:600">${exp_return:.2f}</div>
-      <div style="color:#666;font-size:0.7rem">profit: ${exp_profit:.2f}</div>
-    </div>
-    <div style="background:#0a1628;border-radius:6px;padding:8px;text-align:center">
-      <div style="color:#aaa;font-size:0.68rem">Model Prediction</div>
-      <div style="color:white;font-weight:600">{winner_str} by ~{pred_margin_str}</div>
-    </div>
-    <div style="background:#0a1628;border-radius:6px;padding:8px;text-align:center">
-      <div style="color:#aaa;font-size:0.68rem">Best Opp. Odds</div>
-      <div style="color:white;font-weight:600">${g["Best Home Odds"] if not is_home_value else g["Best Away Odds"]:.2f} ({g["Best Home Bookie"] if not is_home_value else g["Best Away Bookie"]})</div>
+    <div style="background:#0a1628;border-radius:8px;padding:12px;text-align:center">
+      <div style="color:#aaa;font-size:0.65rem;letter-spacing:0.5px;margin-bottom:6px">KELLY STAKE</div>
+      <div style="color:#f39c12;font-weight:700;font-size:1.3rem">${stake:.2f}</div>
+      <div style="color:#555;font-size:0.68rem;margin-top:2px">{kelly_pct:.1f}% of ${bankroll:,}</div>
     </div>
   </div>
+
+  <!-- Divider -->
+  <div style="border-top:1px solid #1a2a4a;margin:10px 0"></div>
+
+  <!-- Payout calculator -->
+  <div style="margin-bottom:8px">
+    <div style="color:#aaa;font-size:0.7rem;letter-spacing:0.5px;margin-bottom:8px">PAYOUT CALCULATOR — staking ${stake:.2f}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div style="background:#0d2a0d;border:1px solid #2ecc71;border-radius:8px;padding:12px;text-align:center">
+        <div style="color:#2ecc71;font-size:0.68rem;margin-bottom:4px">✅ IF WIN</div>
+        <div style="color:#2ecc71;font-weight:700;font-size:1.4rem">+${win_profit:.2f}</div>
+        <div style="color:#aaa;font-size:0.7rem;margin-top:2px">return ${win_payout:.2f} total</div>
+      </div>
+      <div style="background:#2a0d0d;border:1px solid #e74c3c;border-radius:8px;padding:12px;text-align:center">
+        <div style="color:#e74c3c;font-size:0.68rem;margin-bottom:4px">❌ IF LOSS</div>
+        <div style="color:#e74c3c;font-weight:700;font-size:1.4rem">-${loss_amount:.2f}</div>
+        <div style="color:#aaa;font-size:0.7rem;margin-top:2px">stake forfeited</div>
+      </div>
+      <div style="background:#0a1628;border:1px solid #3498db;border-radius:8px;padding:12px;text-align:center">
+        <div style="color:#3498db;font-size:0.68rem;margin-bottom:4px">📊 EXPECTED VALUE</div>
+        <div style="color:#3498db;font-weight:700;font-size:1.4rem">{f"+${exp_value:.2f}" if exp_value >= 0 else f"-${abs(exp_value):.2f}"}</div>
+        <div style="color:#aaa;font-size:0.7rem;margin-top:2px">per bet, long run</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer info -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+    <div style="background:#0a1628;border-radius:6px;padding:8px 12px">
+      <span style="color:#aaa;font-size:0.68rem">Model tips: </span>
+      <span style="color:white;font-size:0.8rem;font-weight:600">{winner_str} by ~{pred_margin_str}</span>
+    </div>
+    <div style="background:#0a1628;border-radius:6px;padding:8px 12px">
+      <span style="color:#aaa;font-size:0.68rem">Opposing best odds: </span>
+      <span style="color:white;font-size:0.8rem;font-weight:600">${opp_odds:.2f} ({opp_bookie})</span>
+      <span style="color:#555;font-size:0.68rem"> · implies {opp_implied:.1f}%</span>
+    </div>
+  </div>
+
 </div>"""
                         st.markdown(card, unsafe_allow_html=True)
 
