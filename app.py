@@ -1472,15 +1472,19 @@ elif page == "🔬 Feature Importance":
     st.markdown("---")
 
     GROUP_COLORS = {
-        "Elo":            "#e94560",
-        "Form (rolling)": "#e67e22",
-        "Travel":         "#f1c40f",
-        "Rest days":      "#2ecc71",
-        "Streak":         "#1abc9c",
-        "Last margin":    "#3498db",
-        "Season stats":   "#9b59b6",
-        "PAV lineup":     "#e91e8c",
-        "Other":          "#666",
+        "Elo":               "#e94560",
+        "Form (rolling)":    "#e67e22",
+        "Streak":            "#1abc9c",
+        "Last margin":       "#3498db",
+        "Season stats":      "#9b59b6",
+        "Stats: Clearances": "#8e44ad",
+        "Stats: Inside 50s": "#7d3c98",
+        "Stats: Tackles":    "#6c3483",
+        "Stats: Hitouts":    "#5b2c6f",
+        "Ladder position":   "#2ecc71",
+        "Style: Kick ratio": "#f39c12",
+        "Style: Hitouts":    "#e67e22",
+        "Other":             "#555",
     }
 
     fi = fi_df.copy()
