@@ -105,6 +105,7 @@ def get_squiggle_consensus(year=None, round_num=None):
     except Exception:
         return pd.DataFrame()
 
+@st.cache_data(ttl=1200, show_spinner=False)  # refresh every 20 mins
 def get_odds_api(api_key):
     try:
         r = _requests_module.get(
@@ -1926,7 +1927,8 @@ elif page == "💰 Value Bets":
                                        ["Full Kelly", "Half Kelly (safer)", "Quarter Kelly (recommended)"],
                                        key="kelly_fraction")
     with bc3:
-        min_edge = st.slider("Min edge to show (%)", 0, 15, key="min_edge")
+        min_edge = st.slider("Minimum edge to show (%)", 0, 15, 5, key="min_edge",
+                              help="Only show bets where our model gives at least this much edge over the bookmaker's implied probability. 5%+ is a reasonable threshold for genuine value.")
 
     kelly_divisor = {"Full Kelly": 1, "Half Kelly (safer)": 2, "Quarter Kelly (recommended)": 4}[kelly_fraction]
 
@@ -2028,9 +2030,10 @@ elif page == "💰 Value Bets":
                 value = best[best["best_edge"] >= min_edge].sort_values("best_edge", ascending=False)
 
                 if value.empty:
-                    st.info(f"No bets found with edge ≥ {min_edge}%. Try lowering the minimum edge slider.")
+                    st.info(f"No value bets found with ≥{min_edge}% edge. Either the market is efficient this week or try a lower threshold.")
                 else:
-                    st.markdown(f"### 🎯 {len(value)} Value Bet{'s' if len(value)>1 else ''} Found (Edge ≥ {min_edge}%)")
+                    st.markdown(f"### 🎯 {len(value)} Value Bet{'s' if len(value)>1 else ''} Found")
+                    st.markdown(f"*Our model gives ≥{min_edge}% edge over the bookmaker's implied probability on these games. Edge = our probability minus the bookie's fair probability.*")
 
                     for _, g in value.iterrows():
                         ht = g["Home"]
@@ -2057,13 +2060,16 @@ elif page == "💰 Value Bets":
                         pred_margin_str = f"{abs(g['Pred Margin']):.0f} pts"
                         winner_str = ht if g["Pred Margin"] > 0 else at
 
+                        _gt = str(g.get("Game Time", "") or "")
+                        _gt_line = f'<div style="color:#888;font-size:0.72rem;margin-top:2px">🕐 {_gt}</div>' if _gt else ""
                         card = f"""
 <div style="background:{card_colour};border:1px solid #2ecc71;border-radius:10px;padding:16px;margin-bottom:12px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div>
-      <span style="font-size:1.1rem;font-weight:700;color:white">{ht}</span>
+      <div><span style="font-size:1.1rem;font-weight:700;color:white">{ht}</span>
       <span style="color:#e94560;margin:0 8px">vs</span>
-      <span style="font-size:1.1rem;font-weight:700;color:white">{at}</span>
+      <span style="font-size:1.1rem;font-weight:700;color:white">{at}</span></div>
+      {_gt_line}
     </div>
     <span style="background:#2ecc71;color:#000;font-size:0.72rem;font-weight:700;padding:3px 8px;border-radius:4px">{badge}</span>
   </div>
