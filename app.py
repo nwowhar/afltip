@@ -187,9 +187,9 @@ for _k, _v in _DEFAULTS.items():
 with st.sidebar:
     st.markdown("# 🏉 AFL Predictor")
     st.markdown("---")
-    start_year = st.slider("Training data from", 2016, 2020,
+    start_year = st.slider("Model training start year", 2016, 2020,
                            key="start_year",
-                           help="Model trains on all completed games from this year to present. Sweet spot is around 2016 — enough data without stale player pools from retired eras.")
+                           help="Oldest year included in model training. 2016 is the proven sweet spot — enough data without stale player pools. The backtest always tests from 2016 onwards regardless of this setting.")
     page = st.radio("Navigate", [
         "📊 Dashboard",
         "🔮 Predict a Game",
@@ -1467,9 +1467,18 @@ elif page == "🔬 Feature Importance":
 # ═══════════════════════════════════════════════════════════════════════════════
 elif page == "📉 Backtest":
     st.markdown("# WALK-FORWARD BACKTEST")
-    st.markdown("*Train on years 1..N-1, predict year N — true out-of-sample performance*")
+    st.markdown(
+        "*Each year is predicted using only data from prior years — true out-of-sample. "
+        "Testing always runs from **2016 onwards** (optimal window). "
+        "The sidebar start year controls how far back **training data** goes — "
+        "earlier = more data but potentially stale.*"
+    )
 
-    min_train = st.slider("Minimum training years before testing", 2, 5, 3, key="backtest_min")
+    min_train = st.slider(
+        "Minimum training years before first test year",
+        2, 5, 3, key="backtest_min",
+        help="E.g. 3 means the first year tested is 2019 (trained on 2016-2018). Higher = more reliable first predictions but fewer test years."
+    )
 
     with st.spinner("Running walk-forward backtest..."):
         avail_feats = [f for f in CORE_FEATURES if f in df.columns]
