@@ -2379,6 +2379,211 @@ It doesn't know anything about footy except what the numbers tell it.
 """)
 
     st.markdown("---")
+    st.markdown("## Model Pipeline")
+    st.markdown("*How raw data becomes a win probability — follow the arrows*")
+
+    st.components.v1.html("""
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: #0d1117; color: white; padding: 24px; }
+
+  .pipeline { display: flex; flex-direction: column; gap: 0; }
+
+  /* ── Row layouts ── */
+  .row { display: flex; align-items: center; justify-content: center; gap: 0; }
+  .row-sources { gap: 16px; margin-bottom: 0; }
+  .row-features { gap: 12px; margin: 0; }
+  .row-output   { gap: 16px; margin-top: 0; }
+
+  /* ── Nodes ── */
+  .node {
+    border-radius: 10px; padding: 12px 16px; text-align: center;
+    font-size: 0.78rem; line-height: 1.4; min-width: 110px;
+    position: relative;
+  }
+  .node-title { font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; }
+  .node-sub   { font-size: 0.7rem; opacity: 0.7; }
+
+  /* Source colours */
+  .src-squiggle { background: #1a1a3e; border: 1.5px solid #e94560; }
+  .src-elo      { background: #1a1a3e; border: 1.5px solid #e94560; }
+  .src-tables   { background: #1a2a1a; border: 1.5px solid #2ecc71; }
+  .src-pav      { background: #1a2a2a; border: 1.5px solid #1abc9c; }
+  .src-lineups  { background: #1a2a2a; border: 1.5px solid #1abc9c; }
+  .src-odds     { background: #2a1a2a; border: 1.5px solid #9b59b6; }
+
+  /* Feature group colours */
+  .feat-elo     { background: #2a0a12; border: 1.5px solid #e94560; }
+  .feat-form    { background: #2a1a00; border: 1.5px solid #f39c12; }
+  .feat-ladder  { background: #002a1a; border: 1.5px solid #2ecc71; }
+  .feat-stats   { background: #0a1a2a; border: 1.5px solid #3498db; }
+  .feat-pav     { background: #002a2a; border: 1.5px solid #1abc9c; }
+  .feat-style   { background: #1a002a; border: 1.5px solid #9b59b6; }
+
+  /* GBM box */
+  .gbm {
+    background: linear-gradient(135deg, #1a1a3e, #0a1628);
+    border: 2px solid #e94560;
+    border-radius: 14px; padding: 18px 24px; text-align: center;
+    min-width: 200px; position: relative;
+  }
+  .gbm-title { font-size: 1rem; font-weight: 700; color: #e94560; margin-bottom: 6px; }
+  .gbm-sub   { font-size: 0.72rem; color: #aaa; }
+  .gbm-badge { 
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    background: #e94560; color: white; font-size: 0.65rem; font-weight: 700;
+    padding: 2px 10px; border-radius: 10px; white-space: nowrap;
+  }
+
+  /* Output nodes */
+  .out-prob   { background: #1a0a12; border: 2px solid #e94560; min-width: 140px; }
+  .out-margin { background: #0a1a2a; border: 2px solid #3498db; min-width: 140px; }
+  .out-value  { background: #002a1a; border: 2px solid #2ecc71; min-width: 140px; }
+  .out-title  { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+  .out-sub    { font-size: 0.7rem; opacity: 0.7; }
+
+  /* ── Arrows ── */
+  .arrow-down {
+    display: flex; justify-content: center; align-items: center;
+    height: 32px; color: #444; font-size: 1.2rem;
+  }
+  .arrow-right { color: #444; font-size: 1.1rem; margin: 0 4px; align-self: center; }
+
+  /* Elo blend callout */
+  .blend-note {
+    background: #0a1628; border: 1px dashed #f39c12;
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 0.7rem; color: #f39c12; text-align: center;
+    margin: 0 12px;
+  }
+
+  /* Section divider label */
+  .section-label {
+    text-align: center; color: #555; font-size: 0.68rem;
+    letter-spacing: 1px; text-transform: uppercase; margin: 4px 0;
+  }
+
+  .fade-note {
+    background: #1a1a0a; border: 1px dashed #f39c12;
+    border-radius: 6px; padding: 6px 12px; font-size: 0.68rem;
+    color: #f39c12; text-align: center; margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="pipeline">
+
+  <!-- ── DATA SOURCES ── -->
+  <div class="section-label">DATA SOURCES</div>
+  <div class="row row-sources">
+    <div class="node src-squiggle">
+      <div class="node-title">🏉 Squiggle API</div>
+      <div class="node-sub">Game results<br>Ladder standings<br>Upcoming fixtures</div>
+    </div>
+    <div class="node src-elo">
+      <div class="node-title">📊 Elo Engine</div>
+      <div class="node-sub">Built from<br>every game since<br>2016 +50 home bonus</div>
+    </div>
+    <div class="node src-tables">
+      <div class="node-title">📋 AFL Tables</div>
+      <div class="node-sub">Season averages<br>Clearances, tackles<br>hitouts, inside 50s</div>
+    </div>
+    <div class="node src-pav">
+      <div class="node-title">⭐ PAV Ratings</div>
+      <div class="node-sub">Player values<br>Off / Mid / Def<br>per player</div>
+    </div>
+    <div class="node src-lineups">
+      <div class="node-title">👕 Lineups</div>
+      <div class="node-sub">Announced Thu<br>Selected 22<br>per team</div>
+    </div>
+    <div class="node src-odds">
+      <div class="node-title">💰 Odds API</div>
+      <div class="node-sub">TAB / Sportsbet<br>Neds / Ladbrokes<br>live lines</div>
+    </div>
+  </div>
+
+  <div class="arrow-down">↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓</div>
+
+  <!-- ── FEATURE GROUPS ── -->
+  <div class="section-label">FEATURE ENGINEERING  (home − away differential)</div>
+  <div class="row row-features">
+    <div class="node feat-elo">
+      <div class="node-title" style="color:#e94560">📈 Elo Diff</div>
+      <div class="node-sub">Rating gap<br>+50 home bonus<br>regressed to mean</div>
+    </div>
+    <div class="node feat-form">
+      <div class="node-title" style="color:#f39c12">🔥 Form</div>
+      <div class="node-sub">Last 5 avg margin<br>Streak<br>Last game margin</div>
+    </div>
+    <div class="node feat-ladder">
+      <div class="node-title" style="color:#2ecc71">🏆 Ladder</div>
+      <div class="node-sub">Rank diff<br>Win diff<br>% diff</div>
+    </div>
+    <div class="node feat-stats">
+      <div class="node-title" style="color:#3498db">📊 Season Stats</div>
+      <div class="node-sub">Clearances<br>Inside 50s<br>Tackles · Hitouts</div>
+    </div>
+    <div class="node feat-pav">
+      <div class="node-title" style="color:#1abc9c">⭐ PAV</div>
+      <div class="node-sub">Total team PAV<br>Off / Mid / Def<br>split</div>
+    </div>
+    <div class="node feat-style">
+      <div class="node-title" style="color:#9b59b6">🎨 Style</div>
+      <div class="node-sub">Kick ratio<br>Ruck advantage<br>Hitout dominance</div>
+    </div>
+  </div>
+
+  <div class="fade-note">
+    ⚡ Early-season fade-in: Form → 0% R1–2 · 40% R3–5 · 75% R6–9 · 100% R10+
+    &nbsp;|&nbsp; Ladder → 0% R1–2 · 15% R3–5 · 25% R6–9 · 100% R10+
+    &nbsp;|&nbsp; Season stats → prev-year until R6
+  </div>
+
+  <div class="arrow-down" style="height:28px">↓</div>
+
+  <!-- ── GBM MODEL ── -->
+  <div class="row">
+    <div class="gbm">
+      <div class="gbm-badge">GRADIENT BOOSTING MODEL</div>
+      <div class="gbm-title">🤖 GBM Prediction</div>
+      <div class="gbm-sub">200 decision trees<br>trained on 2,000+ games since 2016<br>learns which feature combinations predict wins</div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:6px; margin-bottom:2px; justify-content:center;">
+    <div class="blend-note">
+      🎯 Elo anchor blend — early season: 80% Elo + 20% GBM → fades to 100% GBM by R10
+    </div>
+  </div>
+
+  <div class="arrow-down">↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓</div>
+
+  <!-- ── OUTPUTS ── -->
+  <div class="section-label">OUTPUTS</div>
+  <div class="row row-output">
+    <div class="node out-prob">
+      <div class="out-title" style="color:#e94560">🎯 Win Prob</div>
+      <div class="out-sub">Home team %<br>e.g. 68.4%</div>
+    </div>
+    <div class="node out-margin">
+      <div class="out-title" style="color:#3498db">📏 Margin</div>
+      <div class="out-sub">Expected pts gap<br>e.g. +14 pts</div>
+    </div>
+    <div class="node out-value">
+      <div class="out-title" style="color:#2ecc71">💰 Edge vs Odds</div>
+      <div class="out-sub">Model % − bookie %<br>Kelly stake size</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
+""", height=620, scrolling=False)
+
+    st.markdown("---")
     st.markdown("## Step by Step: How a Prediction is Made")
 
     steps = [
