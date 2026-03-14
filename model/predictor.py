@@ -398,10 +398,21 @@ def train_models(df: pd.DataFrame, feature_set: list = None) -> tuple:
 
 def predict_game(win_model, margin_model,
                  features: dict,
-                 feature_set: list = None) -> dict:
+                 feature_set: list = None,
+                 elo_anchor: float = None) -> dict:
     """
     Predict a single game from a feature dict.
     Pass feature_set=metrics['features_used'] for guaranteed compatibility.
+
+    elo_anchor: if provided (0.0-1.0), blends pure Elo prediction with GBM output.
+                0.0 = pure GBM, 1.0 = pure Elo. Overrides the round-based schedule.
+                Used by the Elo anchor tuning tool in the backtest page.
+
+    Default behaviour: round-based blend schedule
+        R1-2:  80% Elo / 20% GBM
+        R3-5:  50% Elo / 50% GBM
+        R6-9:  25% Elo / 75% GBM
+        R10+:  100% GBM
     """
     if feature_set is None:
         try:
@@ -413,6 +424,34 @@ def predict_game(win_model, margin_model,
     X = np.array([[float(features.get(f, 0.0)) for f in feature_set]])
     win_prob         = win_model.predict_proba(X)[0][1]
     predicted_margin = margin_model.predict(X)[0]
+
+    # Determine Elo blend weight
+    if elo_anchor is not None:
+        # Explicit override — used by tuning tool
+        elo_blend = float(elo_anchor)
+    else:
+        # Round-based schedule
+        current_round = features.get("_current_round", None)
+        if current_round is not None:
+            current_round = int(current_round)
+            if current_round <= 2:
+                elo_blend = 0.80
+            elif current_round <= 5:
+                elo_blend = 0.50
+            elif current_round <= 9:
+                elo_blend = 0.25
+            else:
+                elo_blend = 0.0
+        else:
+            elo_blend = 0.0
+
+    if elo_blend > 0 and "elo_diff" in features:
+        elo_diff   = float(features["elo_diff"])
+        elo_prob   = 1 / (1 + 10 ** (-elo_diff / 400))
+        elo_margin = elo_diff * 0.05
+        win_prob         = elo_blend * elo_prob   + (1 - elo_blend) * win_prob
+        predicted_margin = elo_blend * elo_margin + (1 - elo_blend) * predicted_margin
+
     return {
         "home_win_prob":    round(win_prob * 100, 1),
         "away_win_prob":    round((1 - win_prob) * 100, 1),
@@ -541,6 +580,10 @@ def build_prediction_features(home_team: str, away_team: str,
 
     # Form fade-in: early season form data is noisy (only 1-2 games)
     # Round 1=20%, Round 2=40%, Round 3=60%, Round 4=80%, Round 5+=100%
+    # Inject current_round into features so predict_game can apply Elo blend
+    # Uses a private key so it doesn't interfere with the GBM feature vector
+    # (predict_game reads it from the dict but it won't be in feature_set)
+
     # Form fade-in schedule:
     # Rounds 1-2: 0%  — carry-over from last season (finals results, bye weeks) is misleading
     # Rounds 3-5: 40% — small sample, lean on Elo
@@ -558,6 +601,8 @@ def build_prediction_features(home_team: str, away_team: str,
         _form_weight = 1.0
 
     feats = {
+        # Private key for predict_game Elo blend — not in feature_set
+        "_current_round":         float(current_round) if current_round else 0.0,
         # Elo
         "elo_diff":               h_elo - a_elo + float(home_advantage),
         # Form — faded in early season so 1 game doesn't override large Elo gaps
