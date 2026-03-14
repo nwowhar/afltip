@@ -208,6 +208,47 @@ with st.sidebar:
 
 # ── Data loading ──────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600, show_spinner="📡 Fetching game results...")
+
+def find_arbitrage(odds_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Scan odds across bookmakers for arbitrage opportunities.
+    An arb exists when: 1/best_home_odds + 1/best_away_odds < 1.0
+    Returns DataFrame of arb opportunities with profit % and stakes.
+    """
+    if odds_df.empty:
+        return pd.DataFrame()
+
+    rows = []
+    for game_key, group in odds_df.groupby(["home_team", "away_team"]):
+        ht, at = game_key
+        best_h_idx  = group["home_odds"].idxmax()
+        best_a_idx  = group["away_odds"].idxmax()
+        best_h_odds = group.loc[best_h_idx, "home_odds"]
+        best_a_odds = group.loc[best_a_idx, "away_odds"]
+        best_h_book = group.loc[best_h_idx, "bookmaker"]
+        best_a_book = group.loc[best_a_idx, "bookmaker"]
+
+        arb_pct = (1 / best_h_odds) + (1 / best_a_odds)
+        if arb_pct < 1.0:
+            profit_pct = round((1 / arb_pct - 1) * 100, 3)
+            # Optimal stakes for $100 total outlay
+            h_stake = round(100 / (best_h_odds * arb_pct), 2)
+            a_stake = round(100 / (best_a_odds * arb_pct), 2)
+            rows.append({
+                "home":           ht,
+                "away":           at,
+                "best_home_odds": best_h_odds,
+                "best_home_book": best_h_book,
+                "best_away_odds": best_a_odds,
+                "best_away_book": best_a_book,
+                "arb_pct":        round(arb_pct * 100, 2),
+                "profit_pct":     profit_pct,
+                "h_stake_per100": h_stake,
+                "a_stake_per100": a_stake,
+            })
+    return pd.DataFrame(rows).sort_values("profit_pct", ascending=False) if rows else pd.DataFrame()
+
+
 def load_games(start_year):
     return get_all_games(start_year)
 
@@ -387,6 +428,39 @@ if page == "📊 Dashboard":
 """, unsafe_allow_html=True)
 
     st.markdown("---")
+
+    # ── Arbitrage alert ───────────────────────────────────────────────────────
+    try:
+        _odds_key_dash = st.secrets.get("ODDS_API_KEY", "") if hasattr(st, "secrets") else ""
+        if _odds_key_dash:
+            _arb_odds = get_odds_api(_odds_key_dash)
+            if not _arb_odds.empty:
+                _arb_found = find_arbitrage(_arb_odds)
+                if not _arb_found.empty:
+                    for _, _arb in _arb_found.iterrows():
+                        st.markdown(f"""
+<div style="background:linear-gradient(135deg,#0a2a0a,#0d3b0d);border:2px solid #2ecc71;
+            border-radius:10px;padding:14px 18px;margin-bottom:10px">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <span style="color:#2ecc71;font-size:1.1rem;font-weight:700">⚡ ARBITRAGE OPPORTUNITY</span>
+      <span style="color:white;margin-left:12px;font-size:1rem">{_arb['home']} vs {_arb['away']}</span>
+    </div>
+    <span style="background:#2ecc71;color:#000;font-weight:700;padding:4px 10px;
+                 border-radius:6px;font-size:0.9rem">+{_arb['profit_pct']:.2f}% guaranteed</span>
+  </div>
+  <div style="color:#aaa;font-size:0.8rem;margin-top:6px">
+    Bet <b style="color:white">${_arb['h_stake_per100']:.2f}</b> on {_arb['home']} 
+    @ <b style="color:#2ecc71">{_arb['best_home_odds']}</b> ({_arb['best_home_book']})
+    &nbsp;+&nbsp;
+    <b style="color:white">${_arb['a_stake_per100']:.2f}</b> on {_arb['away']} 
+    @ <b style="color:#2ecc71">{_arb['best_away_odds']}</b> ({_arb['best_away_book']})
+    &nbsp;·&nbsp; per $100 staked
+  </div>
+</div>
+""", unsafe_allow_html=True)
+    except Exception:
+        pass
 
     try:
         # Fetch ALL games for the year (completed + upcoming)
@@ -1899,6 +1973,75 @@ elif page == "🎨 Style Matchup":
 elif page == "💰 Value Bets":
     st.markdown("# 💰 VALUE BETS")
     st.markdown("*Find edges between our model's probabilities and bookmaker odds*")
+
+    # ── Arbitrage Scanner ─────────────────────────────────────────────────────
+    st.markdown("## ⚡ Arbitrage Scanner")
+    st.markdown(
+        "*An arbitrage opportunity exists when the best available odds across all "
+        "bookmakers sum to less than 100% implied probability — meaning you can bet "
+        "both sides and lock in a guaranteed profit regardless of the result.*"
+    )
+
+    _arb_key = ""
+    try:
+        _arb_key = st.secrets.get("ODDS_API_KEY", "")
+    except Exception:
+        pass
+
+    if not _arb_key:
+        st.info("Add your `ODDS_API_KEY` to Streamlit secrets to enable the arbitrage scanner.")
+    else:
+        with st.spinner("Scanning for arbitrage opportunities..."):
+            _arb_odds_raw = get_odds_api(_arb_key)
+            _arb_df = find_arbitrage(_arb_odds_raw) if not _arb_odds_raw.empty else pd.DataFrame()
+
+        if _arb_df.empty:
+            st.success("✅ No arbitrage opportunities right now — bookmakers are aligned.")
+        else:
+            st.warning(f"⚡ **{len(_arb_df)} arbitrage opportunit{'y' if len(_arb_df)==1 else 'ies'} found!**")
+            for _, arb in _arb_df.iterrows():
+                profit_colour = "#2ecc71" if arb["profit_pct"] >= 1.0 else "#f39c12"
+                st.markdown(f"""
+<div style="background:#0a1628;border:2px solid {profit_colour};border-radius:10px;
+            padding:18px;margin-bottom:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:1.15rem;font-weight:700;color:white">
+      {arb["home"]} vs {arb["away"]}
+    </div>
+    <div style="background:{profit_colour};color:#000;font-weight:700;padding:5px 12px;
+                border-radius:6px;font-size:1rem">
+      +{arb["profit_pct"]:.3f}% guaranteed profit
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div style="background:#0f1f3d;border-radius:8px;padding:12px">
+      <div style="color:#aaa;font-size:0.72rem;margin-bottom:4px">BET 1 — {arb["home"]}</div>
+      <div style="font-size:1.4rem;font-weight:700;color:{profit_colour}">{arb["best_home_odds"]}</div>
+      <div style="color:#aaa;font-size:0.8rem">{arb["best_home_book"]}</div>
+      <div style="color:white;font-size:0.85rem;margin-top:6px">
+        Stake <b>${arb["h_stake_per100"]:.2f}</b> per $100 outlay
+      </div>
+    </div>
+    <div style="background:#0f1f3d;border-radius:8px;padding:12px">
+      <div style="color:#aaa;font-size:0.72rem;margin-bottom:4px">BET 2 — {arb["away"]}</div>
+      <div style="font-size:1.4rem;font-weight:700;color:{profit_colour}">{arb["best_away_odds"]}</div>
+      <div style="color:#aaa;font-size:0.8rem">{arb["best_away_book"]}</div>
+      <div style="color:white;font-size:0.85rem;margin-top:6px">
+        Stake <b>${arb["a_stake_per100"]:.2f}</b> per $100 outlay
+      </div>
+    </div>
+  </div>
+  <div style="background:#0f1f3d;border-radius:8px;padding:10px;font-size:0.8rem;color:#aaa">
+    Combined implied probability: <b style="color:white">{arb["arb_pct"]:.2f}%</b>
+    &nbsp;·&nbsp; Market is <b style="color:{profit_colour}">{100 - arb["arb_pct"]:.2f}%</b> overround in your favour
+    &nbsp;·&nbsp; Odds refreshed every 20 mins
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+            st.caption("⚠️ Act fast — arb opportunities close within minutes once bookmakers notice. Always verify odds before placing.")
+
+    st.markdown("---")
 
     # ── Helper to get our model prob for any matchup ──────────────────────────
     def get_our_prob(ht, at, venue=""):
