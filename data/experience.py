@@ -251,7 +251,14 @@ def compute_experience_from_pav(pav_df: pd.DataFrame,
 
     pav[games_col] = pd.to_numeric(pav[games_col], errors="coerce").fillna(0)
 
-    # Sum regular-season games per player across all years in dataset
+    # Deduplicate: per-team fetch can return the same player-year multiple times
+    # (e.g. if a player appeared for two teams in a year). Keep the row with most games.
+    pav = (pav.sort_values(games_col, ascending=False)
+              .drop_duplicates(subset=["player_key", "year"], keep="first")
+              .copy())
+
+    # Sum season games per player across all years to get career total
+    # Each row = one season, so sum gives total career games in our dataset window
     career_totals = (pav.groupby("player_key")[games_col]
                         .sum()
                         .reset_index()
