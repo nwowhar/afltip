@@ -908,23 +908,64 @@ if page == "📊 Dashboard":
                     # ── Key numbers table ──────────────────────────────────
                     st.markdown("---")
                     st.markdown("**📊 All factors at a glance**")
+
+                    # Map display labels to feature names for importance lookup
+                    _label_to_feats = {
+                        "Elo Rating":           ["elo_diff"],
+                        "Form (last 5 avg)":    ["form_diff", "home_form", "away_form"],
+                        "Current Streak":       ["streak_diff", "home_streak", "away_streak"],
+                        "Last Game Margin":     ["last_margin_diff", "last3_diff"],
+                        "Travel to Venue":      ["travel_diff", "travel_home_km", "travel_away_km"],
+                        "Days Rest":            ["days_rest_diff"],
+                        "Travel Fatigue":       ["travel_fatigue_diff"],
+                        "Clearances (season)":  ["cl_diff"],
+                        "Inside 50s (season)":  ["i50_diff"],
+                        "Contested Poss":       ["cp_diff"],
+                        "Tackles (season)":     ["tk_diff"],
+                        "Clangers (season)":    ["clanger_diff"],
+                    }
+
+                    # Get feature importances from fi_df
+                    _fi_lookup = {}
+                    if fi_df is not None and not fi_df.empty:
+                        for _, _frow in fi_df.iterrows():
+                            _fi_lookup[_frow["feature"]] = float(_frow["importance"])
+
+                    # Total importance for normalisation
+                    _total_imp = sum(_fi_lookup.values()) if _fi_lookup else 1.0
+
                     all_rows = []
                     for label, hv, av, hib, unit, explanation in factor_meta:
                         if hv == 0 and av == 0:
                             continue
                         diff = hv - av if hib else av - hv
-                        if diff > 0.5:   edge_tag = f"✅ {home}"
+                        if diff > 0.5:    edge_tag = f"✅ {home}"
                         elif diff < -0.5: edge_tag = f"✅ {away}"
-                        else:             edge_tag = "—  Even"
+                        else:             edge_tag = "— Even"
+
+                        # Estimate pts impact: feature importance × diff × scaling constant
+                        # Feature importance (0-1) × predicted margin gives rough pts contribution
+                        _feats = _label_to_feats.get(label, [])
+                        _imp = sum(_fi_lookup.get(f, 0) for f in _feats)
+                        _imp_share = _imp / _total_imp if _total_imp > 0 else 0
+                        # Scale: importance share × total predicted margin × direction sign
+                        _pts_impact = _imp_share * margin * (1 if diff > 0 else -1)
+                        _pts_str = (f"+{_pts_impact:.1f} pts ({home})"
+                                    if _pts_impact > 0.3
+                                    else (f"+{abs(_pts_impact):.1f} pts ({away})"
+                                          if _pts_impact < -0.3
+                                          else "< 0.3 pts"))
+
                         all_rows.append({
-                            "Factor": label,
-                            home: f"{hv:.1f} {unit}",
-                            away: f"{av:.1f} {unit}",
-                            "Edge": edge_tag,
-                            "What it means": explanation[:80] + "..." if len(explanation) > 80 else explanation,
+                            "Factor":          label,
+                            home:              f"{hv:.1f} {unit}",
+                            away:              f"{av:.1f} {unit}",
+                            "Edge":            edge_tag,
+                            "Est. Pts Impact": _pts_str,
                         })
                     if all_rows:
                         st.dataframe(pd.DataFrame(all_rows), width='stretch', hide_index=True)
+                        st.caption("Est. Pts Impact = each factor's share of feature importance × predicted margin. Rough guide only — the GBM combines all features non-linearly.")
 
                     # ── Narrative ─────────────────────────────────────────
                     st.markdown("---")
