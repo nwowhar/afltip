@@ -187,7 +187,7 @@ for _k, _v in _DEFAULTS.items():
 with st.sidebar:
     st.markdown("# 🏉 AFL Predictor")
     st.markdown("---")
-    start_year = st.slider("Training data from", 2012, 2020,
+    start_year = st.slider("Training data from", 2016, 2020,
                            key="start_year",
                            help="Model trains on all completed games from this year to present. Sweet spot is around 2016 — enough data without stale player pools from retired eras.")
     page = st.radio("Navigate", [
