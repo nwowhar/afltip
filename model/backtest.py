@@ -21,17 +21,15 @@ FEATURE_GROUPS = {
     # Travel removed — confirmed noise (+0.31%)
     "Streak":            ["streak_diff", "home_streak", "away_streak"],
     "Last margin":       ["last_margin_diff", "last3_diff", "last5_diff"],
-    "Season stats":      ["cl_diff", "i50_diff", "cp_diff", "tk_diff", "ho_diff"],
-    "Stats: Clearances": ["cl_diff", "cp_diff"],
+    "Season stats":      ["i50_diff", "cp_diff", "tk_diff", "ho_diff"],
+    # Stats: Clearances removed (+0.56%)
     "Stats: Inside 50s": ["i50_diff"],
     "Stats: Tackles":    ["tk_diff"],
     "Stats: Hitouts":    ["ho_diff"],
     "Ladder position":   ["ladder_rank_diff", "ladder_pct_diff", "ladder_wins_diff"],
-    "Style: Kick ratio": ["kick_ratio_diff", "kick_vs_tackle"],
-    "Style: Hitouts":    ["hitout_diff", "ruck_advantage"],
     "Experience":        ["exp_avg_diff", "exp_veteran_diff", "exp_developing_diff"],
-    # Removed via ablation: Rest days (+0.56%), PAV lineup (+0.19%)
-    # Experience re-enabled — PAV data now fixed (per-team fetch from 2010), re-test
+    # Removed via ablation: Style:Kick ratio (+0.28%), Style:Hitouts (+0.84%)
+    # Stats:Clearances (+0.56%), Rest days (+0.56%), PAV lineup (+0.19%)
     # Previously removed: Travel×Rest, Travel record, Clangers, Marks, Style:Tackles
 }
 
