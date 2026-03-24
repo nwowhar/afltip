@@ -23,6 +23,9 @@ from sklearn.pipeline import Pipeline
 # ── Feature sets ──────────────────────────────────────────────────────────────
 BASE_FEATURES = [
     "elo_diff",
+    "odelo_diff",      # ODELO combined margin differential
+    "odelo_att_diff",  # attack rating differential
+    "odelo_def_diff",  # defence rating differential
     "form_diff", "home_form", "away_form",
     "home_consistency", "away_consistency",
 ]
@@ -87,6 +90,12 @@ def build_features(df: pd.DataFrame, window: int = 5) -> pd.DataFrame:
     df = df.copy()
     sort_col = "date_parsed" if "date_parsed" in df.columns else "id"
     df = df.sort_values([sort_col, "id"]).reset_index(drop=True)
+    # Derive ODELO diff features from pre-built columns
+    for col in ["h_att_elo","h_def_elo","a_att_elo","a_def_elo","odelo_diff"]:
+        if col not in df.columns:
+            df[col] = 0.0
+    df["odelo_att_diff"] = df["h_att_elo"] - df["a_att_elo"]
+    df["odelo_def_diff"] = df["h_def_elo"] - df["a_def_elo"]
 
     df["margin"]   = (df["hscore"].fillna(0) - df["ascore"].fillna(0)).astype(float)
     df["home_win"] = (df["margin"] > 0).astype(int)
@@ -584,6 +593,11 @@ def build_prediction_features(home_team: str, away_team: str,
     # Uses a private key so it doesn't interfere with the GBM feature vector
     # (predict_game reads it from the dict but it won't be in feature_set)
 
+    # ODELO ratings lookup — stored in elo_ratings under "_odelo" key
+    _odelo = elo_ratings.get("_odelo", {}) if isinstance(elo_ratings, dict) else {}
+    odelo_h = _odelo.get(home_team, {"att": 0.0, "def": 0.0})
+    odelo_a = _odelo.get(away_team, {"att": 0.0, "def": 0.0})
+
     # Form fade-in schedule:
     # Rounds 1-2: 0%  — carry-over from last season (finals results, bye weeks) is misleading
     # Rounds 3-5: 40% — small sample, lean on Elo
@@ -605,6 +619,10 @@ def build_prediction_features(home_team: str, away_team: str,
         "_current_round":         float(current_round) if current_round else 0.0,
         # Elo
         "elo_diff":               h_elo - a_elo + float(home_advantage),
+        # ODELO — offensive/defensive Elo split
+        "odelo_diff":     ((odelo_h["att"] - odelo_a["def"]) + (odelo_h["def"] - odelo_a["att"])) / 2,
+        "odelo_att_diff":  odelo_h["att"] - odelo_a["att"],
+        "odelo_def_diff":  odelo_h["def"] - odelo_a["def"],
         # Form — faded in early season so 1 game doesn't override large Elo gaps
         "form_diff":              (h_form - a_form) * _form_weight,
         "home_form":              h_form * _form_weight,
