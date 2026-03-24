@@ -27,7 +27,7 @@ FEATURE_GROUPS = {
     "Stats: Tackles":    ["tk_diff"],
     # Stats: Hitouts removed (+0.14%)
     "Ladder position":   ["ladder_rank_diff", "ladder_pct_diff", "ladder_wins_diff"],
-    # Experience removed again (+0.28%) — noise even with fixed PAV data
+    # Experience removed permanently — PAV can't map players to career games
     # Style:Kick ratio (+0.28%), Style:Hitouts (+0.84%), ho_diff (+0.14%)
     # Stats:Clearances (+0.56%), Rest days (+0.56%), PAV lineup (+0.19%)
     # Travel×Rest, Travel record, Clangers, Marks, Style:Tackles
