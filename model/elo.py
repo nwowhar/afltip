@@ -92,3 +92,103 @@ def regress_elos_to_mean(elo_dict: dict, regress_factor: float = 0.3) -> dict:
 def win_probability_from_elo(home_elo: float, away_elo: float) -> float:
     """Win probability for home team including home advantage."""
     return expected_score(home_elo + HOME_ADVANTAGE, away_elo)
+
+
+# ── Offensive / Defensive Elo (ODELO) ────────────────────────────────────────
+# Based on Holy Grail Ratings' ODELO system.
+# Each team has separate attack and defence ratings representing how many
+# points above/below the league average they score/concede.
+# Expected margin = ((home_att - away_def) + (home_def - away_att)) / 2
+
+ODELO_INITIAL   = 0.0    # Start at 0 = league average
+ODELO_K         = 8.0    # Update speed (smaller than regular Elo — margins are noisier)
+ODELO_REGRESS   = 0.3    # Regress to mean between seasons (same as regular Elo)
+AVG_SCORE       = 85.0   # Historical AFL average score per team per game
+
+
+def build_odelo_ratings(games_df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    """
+    Build offensive and defensive Elo ratings from historical games.
+    
+    Attack rating: how many pts above average the team scores
+    Defence rating: how many pts above average the team concedes (positive = good defence)
+    
+    Returns:
+        - games_df with pre-game ODELO columns added
+        - final dict {team: {"att": float, "def": float}}
+    """
+    df = games_df.copy()
+    df = df.sort_values(["year", "round", "id"]).reset_index(drop=True)
+
+    ratings  = {}   # {team: {"att": float, "def": float}}
+    prev_year = None
+
+    h_att_pre, h_def_pre, a_att_pre, a_def_pre = [], [], [], []
+
+    for _, row in df.iterrows():
+        home = str(row["hteam"]).strip()
+        away = str(row["ateam"]).strip()
+        year = int(row.get("year", 0))
+
+        if not home or not away or home == "nan" or away == "nan":
+            for lst in [h_att_pre, h_def_pre, a_att_pre, a_def_pre]:
+                lst.append(ODELO_INITIAL)
+            continue
+
+        # Season rollover — regress to mean
+        if prev_year is not None and year != prev_year:
+            for team in ratings:
+                ratings[team]["att"] *= (1 - ODELO_REGRESS)
+                ratings[team]["def"] *= (1 - ODELO_REGRESS)
+        prev_year = year
+
+        # Initialise new teams
+        for team in [home, away]:
+            if team not in ratings:
+                ratings[team] = {"att": ODELO_INITIAL, "def": ODELO_INITIAL}
+
+        # Record pre-game ratings
+        h_att_pre.append(ratings[home]["att"])
+        h_def_pre.append(ratings[home]["def"])
+        a_att_pre.append(ratings[away]["att"])
+        a_def_pre.append(ratings[away]["def"])
+
+        # Actual scores
+        hscore = float(row.get("hscore", 0) or 0)
+        ascore = float(row.get("ascore", 0) or 0)
+
+        # Expected scores from ODELO
+        exp_home_score = AVG_SCORE + ratings[home]["att"] - ratings[away]["def"]
+        exp_away_score = AVG_SCORE + ratings[away]["att"] - ratings[home]["def"]
+
+        # Update attack: did we score more than expected?
+        ratings[home]["att"] += ODELO_K * (hscore - exp_home_score) / AVG_SCORE
+        ratings[away]["att"] += ODELO_K * (ascore - exp_away_score) / AVG_SCORE
+
+        # Update defence: did we concede less than expected? (positive = good)
+        ratings[home]["def"] += ODELO_K * (exp_away_score - ascore) / AVG_SCORE
+        ratings[away]["def"] += ODELO_K * (exp_home_score - hscore) / AVG_SCORE
+
+    df["h_att_elo"] = h_att_pre
+    df["h_def_elo"] = h_def_pre
+    df["a_att_elo"] = a_att_pre
+    df["a_def_elo"] = a_def_pre
+
+    # ODELO predicted margin differential (home perspective)
+    df["odelo_diff"] = (
+        (df["h_att_elo"] - df["a_def_elo"]) +
+        (df["h_def_elo"] - df["a_att_elo"])
+    ) / 2
+
+    return df, ratings
+
+
+def regress_odelo_to_mean(odelo_dict: dict, regress_factor: float = ODELO_REGRESS) -> dict:
+    """Regress ODELO ratings toward zero (league average) at season start."""
+    return {
+        team: {
+            "att": float(v["att"] * (1 - regress_factor)),
+            "def": float(v["def"] * (1 - regress_factor)),
+        }
+        for team, v in odelo_dict.items()
+    }
