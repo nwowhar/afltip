@@ -415,10 +415,11 @@ def predict_game(win_model, margin_model,
                 Used by the Elo anchor tuning tool in the backtest page.
 
     Default behaviour: round-based blend schedule
-        R1-2:  80% Elo / 20% GBM
-        R3-5:  50% Elo / 50% GBM
-        R6-9:  25% Elo / 75% GBM
-        R10+:  100% GBM
+        Calibrated from Elo anchor sweep (68.0% accuracy at 50%, Brier best at 40%)
+        R1-2:  80% Elo / 20% GBM  — season data too sparse, lean on Elo
+        R3-5:  60% Elo / 40% GBM  — data building, Elo still dominant
+        R6-9:  50% Elo / 50% GBM  — optimal blend from tuner
+        R10+:  45% Elo / 55% GBM  — enough data for GBM, keep Elo anchored
     """
     if feature_set is None:
         try:
@@ -444,15 +445,15 @@ def predict_game(win_model, margin_model,
         if current_round is not None:
             current_round = int(current_round)
             if current_round <= 2:
-                elo_blend = 0.80
+                elo_blend = 0.80   # early season — Elo dominates
             elif current_round <= 5:
-                elo_blend = 0.50
+                elo_blend = 0.60   # data building
             elif current_round <= 9:
-                elo_blend = 0.25
+                elo_blend = 0.50   # optimal from tuner sweep
             else:
-                elo_blend = 0.0
+                elo_blend = 0.45   # settled season — slight Elo anchor
         else:
-            elo_blend = 0.0
+            elo_blend = 0.50   # unknown round — use tuner optimum
 
     if elo_blend > 0 and "elo_diff" in features:
         elo_diff   = float(features["elo_diff"])
