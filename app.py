@@ -19,7 +19,8 @@ except ImportError:
     _experience_available = False
     def compute_experience_from_pav(*a, **kw): return __import__('pandas').DataFrame()
     def analyse_data_staleness(*a, **kw): return {}
-from model.elo import build_elo_ratings, regress_elos_to_mean
+from model.elo import (build_elo_ratings, regress_elos_to_mean,
+                        build_odelo_ratings, regress_odelo_to_mean)
 try:
     from model.predictor import (build_features, add_season_stat_features,
                                   add_pav_features, add_experience_features,
@@ -310,6 +311,8 @@ def _build_model_fresh(start_year):
 
     df = enrich_games(games_df)
     df, elo_history = build_elo_ratings(df)
+    # Build ODELO (offensive/defensive Elo) — stored under "_odelo" key
+    df, odelo_history = build_odelo_ratings(df)
     df = build_features(df)
     df = add_season_stat_features(df, season_stats)
     df = add_pav_features(df, pav_df)
@@ -324,6 +327,8 @@ def _build_model_fresh(start_year):
 
     win_model, margin_model, metrics, fi_df = train_models(df)
     current_elos = regress_elos_to_mean(elo_history)
+    # Embed regressed ODELO into current_elos under "_odelo" key
+    current_elos["_odelo"] = regress_odelo_to_mean(odelo_history)
     team_stats   = get_team_current_stats(df)
 
     return df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df, standings_df, style_df
@@ -422,8 +427,9 @@ if page == "📊 Dashboard":
         _tip_games = pd.DataFrame(_tip_r.json().get("games", []))
         _done_tip  = _tip_games[_tip_games["complete"] == 100].copy() if not _tip_games.empty else pd.DataFrame()
         if not _done_tip.empty:
-            _yr_df_tip = df[df["year"] == datetime.now().year]
-            _tip_rnd   = int(_yr_df_tip["round"].max()) + 1 if not _yr_df_tip.empty else 1
+            _yr_df_tip  = df[df["year"] == datetime.now().year]
+            _tip_rnd    = int(_yr_df_tip["round"].max()) + 1 if not _yr_df_tip.empty else 1
+            _tips_by_rnd = {}  # round -> [correct, total]
             for _, _tg in _done_tip.iterrows():
                 _th = normalise_team(str(_tg.get("hteam", "")))
                 _ta = normalise_team(str(_tg.get("ateam", "")))
@@ -443,8 +449,13 @@ if page == "📊 Dashboard":
                     _tas = int(_tg.get("ascore", 0) or 0)
                     _actual_winner = _th if _ths > _tas else _ta
                     _tips_total += 1
+                    _rnd_key = int(_tg.get("round", 0))
+                    if _rnd_key not in _tips_by_rnd:
+                        _tips_by_rnd[_rnd_key] = [0, 0]
+                    _tips_by_rnd[_rnd_key][1] += 1
                     if _t_winner == _actual_winner:
                         _tips_correct += 1
+                        _tips_by_rnd[_rnd_key][0] += 1
                 except Exception:
                     continue
         _tips_pct = _tips_correct / _tips_total * 100 if _tips_total else 0
@@ -459,12 +470,39 @@ if page == "📊 Dashboard":
     with c3: st.markdown(mc(f"{metrics['margin_r2']:.3f}", "Margin R²"), unsafe_allow_html=True)
     with c4: st.markdown(mc(f"{metrics['n_games']:,}", "Training Games"), unsafe_allow_html=True)
     with c5:
-        _tip_colour = "#2ecc71" if _tips_pct >= 60 else "#f39c12" if _tips_pct >= 50 else "#e94560"
+        _tip_colour = "#2ecc71" if _tips_pct >= 65 else "#f39c12" if _tips_pct >= 55 else "#e94560"
+        _tip_icon   = "✅" if _tips_pct >= 65 else "⚠️" if _tips_pct >= 55 else "📉"
         st.markdown(mc(
             f'<span style="color:{_tip_colour}">{_tips_correct}/{_tips_total}</span>',
             f"2026 Tips ({_tips_pct:.0f}%)",
-            f"{'✅' if _tips_pct >= 60 else '⚠️'} season record so far"
+            f"{_tip_icon} grows more reliable from Rd 5+"
         ), unsafe_allow_html=True)
+
+    # ── 2026 round-by-round tips breakdown ───────────────────────────────────
+    if _tips_total > 0:
+        try:
+            _rnd_html = ""
+            for _rk in sorted(_tips_by_rnd.keys()):
+                _rc, _rt = _tips_by_rnd[_rk]
+                _rpct = _rc / _rt * 100 if _rt else 0
+                _rc_col = "#2ecc71" if _rpct >= 65 else "#f39c12" if _rpct >= 50 else "#e94560"
+                _rnd_html += (
+                    f"<div style='display:inline-block;background:#0a1628;border-radius:8px;"
+                    f"padding:8px 14px;margin:3px;text-align:center;min-width:80px'>"
+                    f"<div style='color:#aaa;font-size:0.68rem'>Round {_rk}</div>"
+                    f"<div style='color:{_rc_col};font-weight:700;font-size:1.1rem'>{_rc}/{_rt}</div>"
+                    f"<div style='color:{_rc_col};font-size:0.72rem'>{_rpct:.0f}%</div>"
+                    f"</div>"
+                )
+            st.markdown(
+                f"<div style='margin:8px 0 4px'>"
+                f"<span style='color:#aaa;font-size:0.8rem'>2026 Season Tips by Round</span>"
+                f"</div>"
+                f"<div>{_rnd_html}</div>",
+                unsafe_allow_html=True
+            )
+        except Exception:
+            pass
 
     # ── Metric explanations ───────────────────────────────────────────────────
     with st.expander("📊 What do these numbers mean?"):
