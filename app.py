@@ -278,8 +278,27 @@ def load_style_features(start_year):
         return __import__('pandas').DataFrame()
     return build_style_features_from_season_stats(ss)
 
-@st.cache_data(ttl=3601, show_spinner="🤖 Building Elo ratings & training model...")
-def build_model(start_year):
+import joblib, hashlib, os as _os
+
+_MODEL_CACHE_DIR = "/tmp/afltip_cache"
+_os.makedirs(_MODEL_CACHE_DIR, exist_ok=True)
+
+@st.cache_data(ttl=3600, show_spinner="📡 Checking for new games...")
+def get_cache_key(start_year):
+    """Returns a hash based on latest game + feature count — changes when new data arrives."""
+    try:
+        games_df = load_games(start_year)
+        if games_df is None or games_df.empty:
+            return "empty"
+        latest_id  = str(games_df["id"].max()) if "id" in games_df.columns else str(len(games_df))
+        n_features = str(len(CORE_FEATURES))
+        raw = f"{start_year}_{latest_id}_{n_features}"
+        return hashlib.md5(raw.encode()).hexdigest()[:12]
+    except Exception:
+        return "fallback"
+
+def _build_model_fresh(start_year):
+    """Full model build — called when cache miss."""
     games_df = load_games(start_year)
     if games_df is None or games_df.empty:
         return None, None, None, None, {}, {}, None, None, None, None, None, None
@@ -297,7 +316,6 @@ def build_model(start_year):
     exp_df = compute_experience_from_pav(pav_df, games_df, year=datetime.now().year)
     df = add_experience_features(df, exp_df)
     df = add_standings_features(df, standings_df)
-    # Add style features — leakage-safe (uses year-1 season stats)
     try:
         from model.predictor import add_style_features
         df = add_style_features(df, style_df)
@@ -309,6 +327,40 @@ def build_model(start_year):
     team_stats   = get_team_current_stats(df)
 
     return df, win_model, margin_model, metrics, current_elos, team_stats, season_stats, pav_df, fi_df, exp_df, standings_df, style_df
+
+def build_model(start_year):
+    """Load from disk cache if available and current, otherwise rebuild and save."""
+    cache_key  = get_cache_key(start_year)
+    cache_path = f"{_MODEL_CACHE_DIR}/model_{cache_key}.pkl"
+
+    if _os.path.exists(cache_path):
+        try:
+            result = joblib.load(cache_path)
+            # Quick sanity check
+            if result and result[0] is not None:
+                return result
+        except Exception:
+            pass  # corrupt cache — rebuild
+
+    # Cache miss or corrupt — train fresh
+    with st.spinner("🤖 Training model on historical data... (first load only, ~30s)"):
+        result = _build_model_fresh(start_year)
+
+    # Save to disk for next load
+    if result and result[0] is not None:
+        try:
+            joblib.dump(result, cache_path)
+            # Clean up old cache files
+            for _f in _os.listdir(_MODEL_CACHE_DIR):
+                if _f.startswith("model_") and _f != f"model_{cache_key}.pkl":
+                    try:
+                        _os.remove(f"{_MODEL_CACHE_DIR}/{_f}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass  # disk full or permission issue — not critical
+
+    return result
 
 with st.spinner("Loading model..."):
     result = build_model(start_year)
@@ -357,13 +409,62 @@ if page == "📊 Dashboard":
     st.markdown("# AFL MATCH PREDICTOR")
     st.markdown(f"*{metrics['n_games']:,} games · {metrics['n_features']} features · {start_year}–present*")
 
+    # ── 2026 season tips record ───────────────────────────────────────────────
+    _tips_correct = 0
+    _tips_total   = 0
+    _tips_pct     = 0.0
+    try:
+        import requests as _rq_tip
+        _tip_r = _rq_tip.get(
+            f"https://api.squiggle.com.au/?q=games;year={datetime.now().year}",
+            headers={"User-Agent": "AFL-Predictor/1.0"}, timeout=8
+        )
+        _tip_games = pd.DataFrame(_tip_r.json().get("games", []))
+        _done_tip  = _tip_games[_tip_games["complete"] == 100].copy() if not _tip_games.empty else pd.DataFrame()
+        if not _done_tip.empty:
+            _yr_df_tip = df[df["year"] == datetime.now().year]
+            _tip_rnd   = int(_yr_df_tip["round"].max()) + 1 if not _yr_df_tip.empty else 1
+            for _, _tg in _done_tip.iterrows():
+                _th = normalise_team(str(_tg.get("hteam", "")))
+                _ta = normalise_team(str(_tg.get("ateam", "")))
+                _tv = str(_tg.get("venue", ""))
+                _tround = int(_tg.get("round", 1))
+                if _th not in current_elos or _ta not in current_elos:
+                    continue
+                try:
+                    _tf = _build_prediction_features(
+                        _th, _ta, _tv, current_elos, team_stats,
+                        season_stats, {}, df, exp_df, standings_df,
+                        style_df=style_df, current_round=_tround
+                    )
+                    _tp = predict_game(win_model, margin_model, _tf, metrics["features_used"])
+                    _t_winner = _th if _tp["home_win_prob"] > 50 else _ta
+                    _ths = int(_tg.get("hscore", 0) or 0)
+                    _tas = int(_tg.get("ascore", 0) or 0)
+                    _actual_winner = _th if _ths > _tas else _ta
+                    _tips_total += 1
+                    if _t_winner == _actual_winner:
+                        _tips_correct += 1
+                except Exception:
+                    continue
+        _tips_pct = _tips_correct / _tips_total * 100 if _tips_total else 0
+    except Exception:
+        pass
+
     gain = metrics.get("accuracy_gain", 0)
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: st.markdown(mc(f"{metrics['win_accuracy']*100:.1f}%", "Win Prediction Accuracy",
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1: st.markdown(mc(f"{metrics['win_accuracy']*100:.1f}%", "Model Accuracy",
                             f"+{gain*100:.1f}% vs Elo-only" if gain > 0 else ""), unsafe_allow_html=True)
     with c2: st.markdown(mc(f"{metrics['base_accuracy']*100:.1f}%", "Elo-Only Baseline"), unsafe_allow_html=True)
     with c3: st.markdown(mc(f"{metrics['margin_r2']:.3f}", "Margin R²"), unsafe_allow_html=True)
     with c4: st.markdown(mc(f"{metrics['n_games']:,}", "Training Games"), unsafe_allow_html=True)
+    with c5:
+        _tip_colour = "#2ecc71" if _tips_pct >= 60 else "#f39c12" if _tips_pct >= 50 else "#e94560"
+        st.markdown(mc(
+            f'<span style="color:{_tip_colour}">{_tips_correct}/{_tips_total}</span>',
+            f"2026 Tips ({_tips_pct:.0f}%)",
+            f"{'✅' if _tips_pct >= 60 else '⚠️'} season record so far"
+        ), unsafe_allow_html=True)
 
     # ── Metric explanations ───────────────────────────────────────────────────
     with st.expander("📊 What do these numbers mean?"):
