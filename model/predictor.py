@@ -53,8 +53,8 @@ PAV_FEATURES = [
 ]
 
 EXPERIENCE_FEATURES = [
-    # Removed — still showing as noise (+0.28%) even with fixed PAV data
-    # exp_avg_diff, exp_veteran_diff, exp_developing_diff
+    # Removed permanently — PAV data can't map individual players to career games
+    # so the team-level proxy is too noisy to be predictive
 ]
 
 STANDINGS_FEATURES = [
@@ -681,9 +681,8 @@ def build_prediction_features(home_team: str, away_team: str,
                 row = experience_df[(experience_df["team"] == team) &
                                     (experience_df["year"] == yr - 1)]
             return float(row.iloc[0][col]) if not row.empty and col in row.columns else 0.0
-        feats["exp_avg_diff"]        = _exp(home_team, "avg_career_games") - _exp(away_team, "avg_career_games")
-        feats["exp_veteran_diff"]    = _exp(home_team, "pct_veterans")     - _exp(away_team, "pct_veterans")
-        feats["exp_developing_diff"] = _exp(home_team, "pct_developing")   - _exp(away_team, "pct_developing")
+        # Experience features disabled — PAV proxy too noisy, not predictive
+        # feats["exp_avg_diff"] = feats["exp_veteran_diff"] = feats["exp_developing_diff"] = 0.0
 
     # Standings / ladder features
     feats["ladder_rank_diff"] = 0.0
