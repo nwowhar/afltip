@@ -16,6 +16,9 @@ from sklearn.inspection import permutation_importance
 # ── Feature groups for ablation testing ──────────────────────────────────────
 FEATURE_GROUPS = {
     "Elo":               ["elo_diff"],
+    "ODELO":             ["odelo_diff", "odelo_att_diff", "odelo_def_diff"],
+    "ODELO Attack":      ["odelo_att_diff"],
+    "ODELO Defence":     ["odelo_def_diff"],
     "Form (rolling)":    ["form_diff", "home_form", "away_form",
                           "home_consistency", "away_consistency"],
     # Travel removed — confirmed noise (+0.31%)
