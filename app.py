@@ -284,6 +284,29 @@ import joblib, hashlib, os as _os
 _MODEL_CACHE_DIR = "/tmp/afltip_cache"
 _os.makedirs(_MODEL_CACHE_DIR, exist_ok=True)
 
+# ── Pre-baked predictions (GitHub Actions) ────────────────────────────────────
+_PREDICTIONS_FILE = os.path.join(os.path.dirname(__file__), "data", "predictions.json")
+_META_FILE        = os.path.join(os.path.dirname(__file__), "data", "model_meta.json")
+
+@st.cache_data(ttl=300, show_spinner=False)  # re-read every 5 mins
+def load_prebaked_predictions() -> tuple[list, dict]:
+    """Load pre-baked predictions from JSON if available."""
+    predictions, meta = [], {}
+    try:
+        if os.path.exists(_PREDICTIONS_FILE):
+            with open(_PREDICTIONS_FILE) as f:
+                data = json.load(f)
+            predictions = data.get("predictions", [])
+        if os.path.exists(_META_FILE):
+            with open(_META_FILE) as f:
+                meta = json.load(f)
+    except Exception:
+        pass
+    return predictions, meta
+
+_prebaked, _prebaked_meta = load_prebaked_predictions()
+_USE_PREBAKED = len(_prebaked) > 0
+
 @st.cache_data(ttl=3600, show_spinner="📡 Checking for new games...")
 def get_cache_key(start_year):
     """Returns a hash based on latest game + feature count — changes when new data arrives."""
@@ -413,6 +436,19 @@ def get_team_form_df(team, n=15):
 if page == "📊 Dashboard":
     st.markdown("# AFL MATCH PREDICTOR")
     st.markdown(f"*{metrics['n_games']:,} games · {metrics['n_features']} features · {start_year}–present*")
+
+    # Pre-baked prediction status banner
+    if _USE_PREBAKED and _prebaked_meta:
+        _gen_at = _prebaked_meta.get("generated_at", "")
+        _rnd    = _prebaked_meta.get("current_round", "?")
+        _mode   = _prebaked_meta.get("mode", "")
+        _mode_icon = "🔄" if _mode == "pre_bounce" else "📅"
+        try:
+            from datetime import datetime as _dt2
+            _dt_str = _dt2.fromisoformat(_gen_at).strftime("%a %d %b %H:%M")
+        except Exception:
+            _dt_str = _gen_at[:16]
+        st.caption(f"{_mode_icon} Predictions pre-baked — Round {_rnd} · last updated {_dt_str} AEST · refreshes every 20 mins on game day")
 
     # ── 2026 season tips record ───────────────────────────────────────────────
     _tips_correct = 0
@@ -836,23 +872,37 @@ if page == "📊 Dashboard":
                 if home not in current_elos or away not in current_elos:
                     continue
 
-                try:
-                    # Use build_prediction_features for consistency with Predict page
-                    feats = _build_prediction_features(
-                        home, away, venue,
-                        current_elos, team_stats,
-                        season_stats, lineup_strength,
-                        df, exp_df, standings_df,
-                        style_df=style_df,
-                        current_round=int(selected_round) if selected_round else None
-                    )
-                except Exception as game_err:
-                    import traceback
-                    st.error(f"Error for {home} vs {away}: {game_err}")
-                    st.code(traceback.format_exc())
-                    continue
+                # Use pre-baked predictions if available, else run live
+                _prebaked_match = None
+                if _USE_PREBAKED:
+                    for _pb in _prebaked:
+                        if (normalise_team(_pb.get("home","")) == home and
+                            normalise_team(_pb.get("away","")) == away):
+                            _prebaked_match = _pb
+                            break
 
-                pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
+                if _prebaked_match:
+                    pred = {
+                        "home_win_prob":     _prebaked_match["home_win_prob"],
+                        "away_win_prob":     _prebaked_match["away_win_prob"],
+                        "predicted_margin":  _prebaked_match["predicted_margin"],
+                    }
+                else:
+                    try:
+                        feats = _build_prediction_features(
+                            home, away, venue,
+                            current_elos, team_stats,
+                            season_stats, lineup_strength,
+                            df, exp_df, standings_df,
+                            style_df=style_df,
+                            current_round=int(selected_round) if selected_round else None
+                        )
+                    except Exception as game_err:
+                        import traceback
+                        st.error(f"Error for {home} vs {away}: {game_err}")
+                        st.code(traceback.format_exc())
+                        continue
+                    pred = predict_game(win_model, margin_model, feats, metrics["features_used"])
                 winner = home if pred["home_win_prob"] > 50 else away
                 margin = abs(pred["predicted_margin"])
                 hs = team_stats.get(home, {})
