@@ -1,0 +1,94 @@
+name: Generate AFL Predictions
+
+on:
+  schedule:
+    # Mon–Thu 8am AWST = 0am UTC (AWST is UTC+8)
+    - cron: "0 0 * * 1-4"
+
+    # Friday 8pm AWST = 12pm UTC
+    - cron: "0 12 * * 5"
+
+    # Saturday: every 20 mins 11am–11pm AWST = 3am–3pm UTC
+    # GitHub Actions minimum is 5 mins, but we'll use 20 min intervals
+    - cron: "0,20,40 3,4,5,6,7,8,9,10,11,12,13,14,15 * * 6"
+
+    # Sunday: every 20 mins 11am–8pm AWST = 3am–12pm UTC
+    - cron: "0,20,40 3,4,5,6,7,8,9,10,11,12 * * 0"
+
+  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Mode: full, refresh, or pre_bounce"
+        required: false
+        default: "full"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Determine run mode
+        id: mode
+        run: |
+          # Manual trigger uses input mode
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ github.event.inputs.mode }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get current UTC hour and day
+          HOUR=$(date -u +%H)
+          DAY=$(date -u +%u)   # 1=Mon, 7=Sun
+
+          # Mon–Thu 0am UTC = refresh mode (Elo/form update, no full retrain)
+          if [ "$DAY" -le 4 ] && [ "$HOUR" -eq 0 ]; then
+            echo "mode=refresh" >> $GITHUB_OUTPUT
+
+          # Fri 12pm UTC = full prediction run for weekend
+          elif [ "$DAY" -eq 5 ] && [ "$HOUR" -eq 12 ]; then
+            echo "mode=full" >> $GITHUB_OUTPUT
+
+          # Sat/Sun = pre_bounce (fast prediction refresh, no retrain)
+          else
+            echo "mode=pre_bounce" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run prediction generator
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          echo "Running mode: ${{ steps.mode.outputs.mode }}"
+          python generate_predictions.py --mode ${{ steps.mode.outputs.mode }}
+
+      - name: Commit predictions to repo
+        run: |
+          git config user.name  "AFL Predictor Bot"
+          git config user.email "bot@afltip.streamlit.app"
+
+          git add data/predictions.json data/model_meta.json
+
+          # Only commit if something changed
+          if git diff --staged --quiet; then
+            echo "No changes to predictions — skipping commit"
+          else
+            TIMESTAMP=$(TZ="Australia/Perth" date "+%a %d %b %H:%M AWST")
+            git commit -m "predictions: $TIMESTAMP [mode=${{ steps.mode.outputs.mode }}]"
+            git push
+          fi
