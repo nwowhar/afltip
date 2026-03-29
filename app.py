@@ -2454,7 +2454,7 @@ elif page == "💰 Value Bets":
 </div>
 """, unsafe_allow_html=True)
 
-            st.caption("⚠️ Act fast — arb opportunities close within minutes once bookmakers notice. Always verify odds before placing.")
+            st.caption("⚠️ Act fast — arb opportunities close within minutes once bookmakers notice. Always verify odds before placing. Stakes shown to 2dp — the exact split is required to guarantee profit.")
 
     st.markdown("---")
 
@@ -3125,8 +3125,9 @@ elif page == "📖 How It Works":
     _n_games   = metrics.get("n_games", 0)
     _n_feats   = metrics.get("n_features", 0)
     _acc       = metrics.get("win_accuracy", 0) * 100
-    _elo_min   = int(min(current_elos.values())) if current_elos else 1300
-    _elo_max   = int(max(current_elos.values())) if current_elos else 1700
+    _elo_vals  = [v for v in current_elos.values() if isinstance(v, (int, float))]
+    _elo_min   = int(min(_elo_vals)) if _elo_vals else 1300
+    _elo_max   = int(max(_elo_vals)) if _elo_vals else 1700
 
     st.markdown(f"""
 <style>
