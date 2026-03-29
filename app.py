@@ -450,53 +450,50 @@ if page == "📊 Dashboard":
             _dt_str = _gen_at[:16]
         st.caption(f"{_mode_icon} Predictions pre-baked — Round {_rnd} · last updated {_dt_str} AEST · refreshes every 20 mins on game day")
 
-    # ── 2026 season tips record ───────────────────────────────────────────────
-    _tips_correct = 0
-    _tips_total   = 0
-    _tips_pct     = 0.0
-    try:
-        import requests as _rq_tip
-        _tip_r = _rq_tip.get(
-            f"https://api.squiggle.com.au/?q=games;year={datetime.now().year}",
-            headers={"User-Agent": "AFL-Predictor/1.0"}, timeout=8
-        )
-        _tip_games = pd.DataFrame(_tip_r.json().get("games", []))
-        _done_tip  = _tip_games[_tip_games["complete"] == 100].copy() if not _tip_games.empty else pd.DataFrame()
-        if not _done_tip.empty:
-            _yr_df_tip  = df[df["year"] == datetime.now().year]
-            _tip_rnd    = int(_yr_df_tip["round"].max()) + 1 if not _yr_df_tip.empty else 1
-            _tips_by_rnd = {}  # round -> [correct, total]
-            for _, _tg in _done_tip.iterrows():
-                _th = normalise_team(str(_tg.get("hteam", "")))
-                _ta = normalise_team(str(_tg.get("ateam", "")))
-                _tv = str(_tg.get("venue", ""))
-                _tround = int(_tg.get("round", 1))
-                if _th not in current_elos or _ta not in current_elos:
-                    continue
-                try:
-                    _tf = _build_prediction_features(
-                        _th, _ta, _tv, current_elos, team_stats,
-                        season_stats, {}, df, exp_df, standings_df,
-                        style_df=style_df, current_round=_tround
-                    )
-                    _tp = predict_game(win_model, margin_model, _tf, metrics["features_used"])
-                    _t_winner = _th if _tp["home_win_prob"] > 50 else _ta
-                    _ths = int(_tg.get("hscore", 0) or 0)
-                    _tas = int(_tg.get("ascore", 0) or 0)
-                    _actual_winner = _th if _ths > _tas else _ta
-                    _tips_total += 1
-                    _rnd_key = int(_tg.get("round", 0))
-                    if _rnd_key not in _tips_by_rnd:
-                        _tips_by_rnd[_rnd_key] = [0, 0]
-                    _tips_by_rnd[_rnd_key][1] += 1
-                    if _t_winner == _actual_winner:
-                        _tips_correct += 1
-                        _tips_by_rnd[_rnd_key][0] += 1
-                except Exception:
-                    continue
-        _tips_pct = _tips_correct / _tips_total * 100 if _tips_total else 0
-    except Exception:
-        pass
+    # ── 2026 season tips record ─────────────────────────────────────────────
+    # Use pre-baked value from model_meta.json (set by GitHub Actions)
+    # Fall back to live calculation if not available
+    _tips_correct = int(_prebaked_meta.get("tips_correct", 0))
+    _tips_total   = int(_prebaked_meta.get("tips_total",   0))
+    _tips_pct     = float(_prebaked_meta.get("tips_pct",   0.0))
+
+    # If no pre-baked data, try a lightweight live calculation
+    if _tips_total == 0:
+        try:
+            import requests as _rq_tip
+            _tip_r = _rq_tip.get(
+                f"https://api.squiggle.com.au/?q=games;year={datetime.now().year}",
+                headers={"User-Agent": "AFL-Predictor/1.0"}, timeout=8
+            )
+            _tip_games = pd.DataFrame(_tip_r.json().get("games", []))
+            _done_tip  = _tip_games[_tip_games["complete"] == 100].copy() if not _tip_games.empty else pd.DataFrame()
+            if not _done_tip.empty:
+                for _, _tg in _done_tip.iterrows():
+                    _th = normalise_team(str(_tg.get("hteam", "")))
+                    _ta = normalise_team(str(_tg.get("ateam", "")))
+                    _tv = str(_tg.get("venue", ""))
+                    _tround = int(_tg.get("round", 1))
+                    if _th not in current_elos or _ta not in current_elos:
+                        continue
+                    try:
+                        _tf = _build_prediction_features(
+                            _th, _ta, _tv, current_elos, team_stats,
+                            season_stats, {}, df, exp_df, standings_df,
+                            style_df=style_df, current_round=_tround
+                        )
+                        _tp = predict_game(win_model, margin_model, _tf, metrics["features_used"])
+                        _t_winner = _th if _tp["home_win_prob"] > 50 else _ta
+                        _ths = int(_tg.get("hscore", 0) or 0)
+                        _tas = int(_tg.get("ascore", 0) or 0)
+                        _actual_winner = _th if _ths > _tas else _ta
+                        _tips_total += 1
+                        if _t_winner == _actual_winner:
+                            _tips_correct += 1
+                    except Exception:
+                        continue
+            _tips_pct = _tips_correct / _tips_total * 100 if _tips_total else 0
+        except Exception:
+            pass
 
     gain = metrics.get("accuracy_gain", 0)
     c1, c2, c3, c4, c5 = st.columns(5)
