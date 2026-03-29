@@ -1,1 +1,14 @@
-{"model_accuracy": null, "current_round": null, "tips_correct": 0, "tips_total": 0}
+{
+  "generated_at": "2026-03-29T11:49:27.186637+00:00",
+  "mode": "full",
+  "model_accuracy": 68.1,
+  "model_r2": 0.255,
+  "n_games_trained": 2078,
+  "n_features": 21,
+  "current_round": 3,
+  "n_upcoming": 190,
+  "tips_correct": 15,
+  "tips_total": 22,
+  "tips_pct": 68.2,
+  "year": 2026
+}
