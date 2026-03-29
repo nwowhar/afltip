@@ -1183,32 +1183,65 @@ if page == "📊 Dashboard":
         st.warning(f"Could not load upcoming games: {e}")
         st.code(traceback.format_exc())
 
-    # Accuracy by year chart
+    # Accuracy by year chart — use walk-forward backtest for honest out-of-sample accuracy
+    # Exclude current year (in-sample data inflates accuracy dramatically with small samples)
     st.markdown("---")
     st.markdown("## MODEL ACCURACY BY YEAR")
+    st.markdown("*Out-of-sample accuracy — each year predicted using only prior years' data*")
+    _cur_year = datetime.now().year
     avail = [f for f in metrics["features_used"] if f in df.columns]
     yearly = []
-    for year in sorted(df["year"].unique()):
-        ydf = df[df["year"] == year].dropna(subset=avail + ["home_win"])
-        if len(ydf) < 10: continue
-        preds = win_model.predict(ydf[avail].values)
-        acc   = (preds == ydf["home_win"].values).mean()
-        yearly.append({"year": year, "accuracy": acc * 100})
+    years_sorted = sorted(df["year"].unique())
+    for i, year in enumerate(years_sorted):
+        if year >= _cur_year:
+            continue  # exclude current year — too few games, always inflated
+        if i < 3:
+            continue  # need at least 3 prior years to train on
+        # Train only on prior years, predict this year = true out-of-sample
+        train = df[df["year"] < year].dropna(subset=avail + ["home_win"])
+        test  = df[df["year"] == year].dropna(subset=avail + ["home_win"])
+        if len(train) < 100 or len(test) < 10:
+            continue
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.ensemble import GradientBoostingClassifier
+        _fold_model = Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", GradientBoostingClassifier(
+                n_estimators=200, max_depth=3,
+                learning_rate=0.05, subsample=0.8, random_state=42
+            ))
+        ])
+        _fold_model.fit(train[avail], train["home_win"])
+        preds = _fold_model.predict(test[avail].values)
+        acc   = (preds == test["home_win"].values).mean()
+        yearly.append({"year": year, "accuracy": acc * 100, "n": len(test)})
+
     if yearly:
         acc_df = pd.DataFrame(yearly)
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=acc_df["year"], y=acc_df["accuracy"],
+        fig.add_trace(go.Scatter(
+            x=acc_df["year"], y=acc_df["accuracy"],
             mode="lines+markers", line=dict(color="#e94560", width=3),
-            marker=dict(size=8), fill="tozeroy", fillcolor="rgba(233,69,96,0.1)"))
+            marker=dict(size=8), fill="tozeroy",
+            fillcolor="rgba(233,69,96,0.1)",
+            text=acc_df.apply(lambda r: f"{r['accuracy']:.1f}% ({r['n']} games)", axis=1),
+            hovertemplate="%{text}<extra></extra>"
+        ))
         fig.add_hline(y=50, line_dash="dash", line_color="#555",
                       annotation_text="50% baseline")
         fig.add_hline(y=acc_df["accuracy"].mean(), line_dash="dot",
                       line_color="#2ecc71",
                       annotation_text=f"avg {acc_df['accuracy'].mean():.1f}%")
         dark_chart(fig)
-        fig.update_layout(yaxis=dict(range=[40, 85], title="Accuracy %"),
-                          xaxis=dict(title="Year"))
+        fig.update_layout(
+            yaxis=dict(range=[40, 85], title="Out-of-Sample Accuracy %"),
+            xaxis=dict(title="Season")
+        )
         st.plotly_chart(fig, width='stretch')
+        st.caption(f"Current season ({_cur_year}) excluded — only {len(df[df['year']==_cur_year])} games played, in-sample accuracy would be misleadingly high.")
+    else:
+        st.info("Not enough historical data to compute out-of-sample accuracy by year.")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PREDICT A GAME
