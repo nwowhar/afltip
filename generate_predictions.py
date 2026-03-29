@@ -82,8 +82,7 @@ def build_and_train():
                            build_odelo_ratings, regress_odelo_to_mean)
     from model.predictor import (build_features, add_season_stat_features,
                                  add_pav_features, add_experience_features,
-                                 add_standings_features, train_models,
-                                 get_team_current_stats as _gts)
+                                 add_standings_features, train_models)
 
     games_df     = get_all_games(START_YEAR)
     season_stats = get_all_team_season_stats(START_YEAR)
