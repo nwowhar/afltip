@@ -108,6 +108,16 @@ def build_and_train():
     print(f"Model trained: {metrics['win_accuracy']*100:.1f}% accuracy, "
           f"{metrics['n_games']} games, {metrics['n_features']} features")
 
+    # Save heavy data to parquet so Streamlit loads fast without HTTP requests
+    try:
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        pav_df.to_parquet(os.path.join(OUTPUT_DIR, "pav_cache.parquet"), index=False)
+        season_stats.to_parquet(os.path.join(OUTPUT_DIR, "season_stats_cache.parquet"), index=False)
+        games_df.to_parquet(os.path.join(OUTPUT_DIR, "games_cache.parquet"), index=False)
+        print("Saved parquet caches: pav, season_stats, games")
+    except Exception as e:
+        print(f"Warning: could not save parquet caches: {e}")
+
     return (df, win_model, margin_model, metrics, current_elos,
             team_stats, season_stats, pav_df, fi_df, exp_df, standings_df)
 
