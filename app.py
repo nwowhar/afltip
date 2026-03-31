@@ -207,6 +207,13 @@ with st.sidebar:
 
 # ── Data loading ──────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600, show_spinner="📡 Fetching game results...")
+def load_games_cached(start_year):
+    if os.path.exists(_GAMES_FILE):
+        try:
+            return pd.read_parquet(_GAMES_FILE)
+        except Exception:
+            pass
+    return get_all_games(start_year)
 
 def find_arbitrage(odds_df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -251,16 +258,25 @@ def find_arbitrage(odds_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_games(start_year):
-    return get_all_games(start_year)
+    return load_games_cached(start_year)
 
-@st.cache_data(ttl=86400, show_spinner="📊 Fetching AFL Tables season stats...")
+@st.cache_data(ttl=86400, show_spinner="📊 Loading season stats...")
 def load_season_stats(start_year):
+    if os.path.exists(_SEASON_STATS_FILE):
+        try:
+            return pd.read_parquet(_SEASON_STATS_FILE)
+        except Exception:
+            pass
     return get_all_team_season_stats(start_year)
 
-@st.cache_data(ttl=86400, show_spinner="⭐ Fetching PAV player ratings...")
+@st.cache_data(ttl=86400, show_spinner="⭐ Loading player ratings...")
 def load_pav(start_year):
-    # PAV fetches from 2010 regardless of training start_year —
-    # career totals need full history to correctly classify veterans
+    if os.path.exists(_PAV_FILE):
+        try:
+            return pd.read_parquet(_PAV_FILE)
+        except Exception:
+            pass
+    # Fall back to live fetch (slow — 288 HTTP requests across 16 years)
     return get_pav_multi_year(2010)
 
 @st.cache_data(ttl=1800, show_spinner="👕 Fetching announced lineups...")
@@ -285,8 +301,11 @@ _MODEL_CACHE_DIR = "/tmp/afltip_cache"
 _os.makedirs(_MODEL_CACHE_DIR, exist_ok=True)
 
 # ── Pre-baked predictions (GitHub Actions) ────────────────────────────────────
-_PREDICTIONS_FILE = os.path.join(os.path.dirname(__file__), "data", "predictions.json")
-_META_FILE        = os.path.join(os.path.dirname(__file__), "data", "model_meta.json")
+_PREDICTIONS_FILE  = os.path.join(os.path.dirname(__file__), "data", "predictions.json")
+_META_FILE         = os.path.join(os.path.dirname(__file__), "data", "model_meta.json")
+_PAV_FILE          = os.path.join(os.path.dirname(__file__), "data", "pav_cache.parquet")
+_SEASON_STATS_FILE = os.path.join(os.path.dirname(__file__), "data", "season_stats_cache.parquet")
+_GAMES_FILE        = os.path.join(os.path.dirname(__file__), "data", "games_cache.parquet")
 
 @st.cache_data(ttl=300, show_spinner=False)  # re-read every 5 mins
 def load_prebaked_predictions() -> tuple[list, dict]:
