@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-03-30T16:29:05.329987+00:00",
+  "generated_at": "2026-03-31T16:01:47.632498+00:00",
   "mode": "pre_bounce",
-  "model_accuracy": 67.3,
-  "model_r2": 0.251,
+  "model_accuracy": 67.7,
+  "model_r2": 0.252,
   "n_games_trained": 2080,
   "n_features": 21,
   "current_round": 4,
