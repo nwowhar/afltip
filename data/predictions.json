@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-04T18:07:41.311024+00:00",
+  "generated_at": "2026-04-04T20:06:58.478919+00:00",
   "predictions": [
     {
       "game_id": "38526",
@@ -8,7 +8,7 @@
       "away": "Sydney",
       "venue": "Perth Stadium",
       "date": "2026-04-04 19:35:00",
-      "timestr": "None",
+      "timestr": "Q3  1:23",
       "home_win_prob": 20.5,
       "away_win_prob": 79.5,
       "predicted_margin": -34.6,
@@ -21,7 +21,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.402916+00:00"
+      "generated_at": "2026-04-04T20:06:53.641928+00:00"
     },
     {
       "game_id": "38527",
@@ -43,7 +43,7 @@
       "home_streak": 1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.430028+00:00"
+      "generated_at": "2026-04-04T20:06:53.669123+00:00"
     },
     {
       "game_id": "38528",
@@ -65,7 +65,7 @@
       "home_streak": 3,
       "away_streak": -16,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.453999+00:00"
+      "generated_at": "2026-04-04T20:06:53.693026+00:00"
     },
     {
       "game_id": "38529",
@@ -87,7 +87,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.477736+00:00"
+      "generated_at": "2026-04-04T20:06:53.716520+00:00"
     },
     {
       "game_id": "38530",
@@ -109,7 +109,7 @@
       "home_streak": -3,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.502449+00:00"
+      "generated_at": "2026-04-04T20:06:53.740504+00:00"
     },
     {
       "game_id": "38531",
@@ -131,7 +131,7 @@
       "home_streak": -1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.530298+00:00"
+      "generated_at": "2026-04-04T20:06:53.768674+00:00"
     },
     {
       "game_id": "38532",
@@ -153,7 +153,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.555534+00:00"
+      "generated_at": "2026-04-04T20:06:53.794332+00:00"
     },
     {
       "game_id": "38533",
@@ -175,7 +175,7 @@
       "home_streak": -16,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.580505+00:00"
+      "generated_at": "2026-04-04T20:06:53.819366+00:00"
     },
     {
       "game_id": "38534",
@@ -197,7 +197,7 @@
       "home_streak": -1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.606695+00:00"
+      "generated_at": "2026-04-04T20:06:53.845785+00:00"
     },
     {
       "game_id": "38535",
@@ -219,7 +219,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.630101+00:00"
+      "generated_at": "2026-04-04T20:06:53.869357+00:00"
     },
     {
       "game_id": "38536",
@@ -241,7 +241,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.657644+00:00"
+      "generated_at": "2026-04-04T20:06:53.897333+00:00"
     },
     {
       "game_id": "38538",
@@ -263,7 +263,7 @@
       "home_streak": 1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.681306+00:00"
+      "generated_at": "2026-04-04T20:06:53.921454+00:00"
     },
     {
       "game_id": "38539",
@@ -285,7 +285,7 @@
       "home_streak": -2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.705600+00:00"
+      "generated_at": "2026-04-04T20:06:53.946608+00:00"
     },
     {
       "game_id": "38540",
@@ -307,7 +307,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.729553+00:00"
+      "generated_at": "2026-04-04T20:06:53.971240+00:00"
     },
     {
       "game_id": "38542",
@@ -329,7 +329,7 @@
       "home_streak": 3,
       "away_streak": -16,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.756031+00:00"
+      "generated_at": "2026-04-04T20:06:53.997560+00:00"
     },
     {
       "game_id": "38543",
@@ -351,7 +351,7 @@
       "home_streak": 2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.779531+00:00"
+      "generated_at": "2026-04-04T20:06:54.021092+00:00"
     },
     {
       "game_id": "38544",
@@ -373,7 +373,7 @@
       "home_streak": -3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.803579+00:00"
+      "generated_at": "2026-04-04T20:06:54.045267+00:00"
     },
     {
       "game_id": "38545",
@@ -395,7 +395,7 @@
       "home_streak": 2,
       "away_streak": -9,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.827413+00:00"
+      "generated_at": "2026-04-04T20:06:54.069870+00:00"
     },
     {
       "game_id": "38546",
@@ -417,7 +417,7 @@
       "home_streak": 1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.853376+00:00"
+      "generated_at": "2026-04-04T20:06:54.096547+00:00"
     },
     {
       "game_id": "38547",
@@ -439,7 +439,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.883939+00:00"
+      "generated_at": "2026-04-04T20:06:54.127803+00:00"
     },
     {
       "game_id": "38548",
@@ -461,7 +461,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.907980+00:00"
+      "generated_at": "2026-04-04T20:06:54.152270+00:00"
     },
     {
       "game_id": "38549",
@@ -483,7 +483,7 @@
       "home_streak": -9,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.932787+00:00"
+      "generated_at": "2026-04-04T20:06:54.177532+00:00"
     },
     {
       "game_id": "38550",
@@ -505,7 +505,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.959084+00:00"
+      "generated_at": "2026-04-04T20:06:54.203476+00:00"
     },
     {
       "game_id": "38551",
@@ -527,7 +527,7 @@
       "home_streak": -16,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:36.983434+00:00"
+      "generated_at": "2026-04-04T20:06:54.228105+00:00"
     },
     {
       "game_id": "38552",
@@ -549,7 +549,7 @@
       "home_streak": 1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.007637+00:00"
+      "generated_at": "2026-04-04T20:06:54.252625+00:00"
     },
     {
       "game_id": "38553",
@@ -571,7 +571,7 @@
       "home_streak": 3,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.034951+00:00"
+      "generated_at": "2026-04-04T20:06:54.280882+00:00"
     },
     {
       "game_id": "38554",
@@ -593,7 +593,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.062217+00:00"
+      "generated_at": "2026-04-04T20:06:54.309310+00:00"
     },
     {
       "game_id": "38555",
@@ -615,7 +615,7 @@
       "home_streak": 2,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.087225+00:00"
+      "generated_at": "2026-04-04T20:06:54.334876+00:00"
     },
     {
       "game_id": "38557",
@@ -637,7 +637,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.110885+00:00"
+      "generated_at": "2026-04-04T20:06:54.359138+00:00"
     },
     {
       "game_id": "38558",
@@ -659,7 +659,7 @@
       "home_streak": 3,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.137947+00:00"
+      "generated_at": "2026-04-04T20:06:54.386913+00:00"
     },
     {
       "game_id": "38559",
@@ -681,7 +681,7 @@
       "home_streak": -3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.161736+00:00"
+      "generated_at": "2026-04-04T20:06:54.410890+00:00"
     },
     {
       "game_id": "38560",
@@ -703,7 +703,7 @@
       "home_streak": -16,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.187144+00:00"
+      "generated_at": "2026-04-04T20:06:54.437393+00:00"
     },
     {
       "game_id": "38561",
@@ -725,7 +725,7 @@
       "home_streak": 2,
       "away_streak": -9,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.214475+00:00"
+      "generated_at": "2026-04-04T20:06:54.465393+00:00"
     },
     {
       "game_id": "38562",
@@ -747,7 +747,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.238659+00:00"
+      "generated_at": "2026-04-04T20:06:54.489718+00:00"
     },
     {
       "game_id": "38563",
@@ -769,7 +769,7 @@
       "home_streak": -2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.262404+00:00"
+      "generated_at": "2026-04-04T20:06:54.514411+00:00"
     },
     {
       "game_id": "38564",
@@ -791,7 +791,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.287058+00:00"
+      "generated_at": "2026-04-04T20:06:54.539191+00:00"
     },
     {
       "game_id": "38566",
@@ -813,7 +813,7 @@
       "home_streak": 3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.313737+00:00"
+      "generated_at": "2026-04-04T20:06:54.566624+00:00"
     },
     {
       "game_id": "38567",
@@ -835,7 +835,7 @@
       "home_streak": 2,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.338992+00:00"
+      "generated_at": "2026-04-04T20:06:54.592419+00:00"
     },
     {
       "game_id": "38568",
@@ -857,7 +857,7 @@
       "home_streak": 1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.362705+00:00"
+      "generated_at": "2026-04-04T20:06:54.615952+00:00"
     },
     {
       "game_id": "38569",
@@ -879,7 +879,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.386651+00:00"
+      "generated_at": "2026-04-04T20:06:54.640290+00:00"
     },
     {
       "game_id": "38571",
@@ -901,7 +901,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.412828+00:00"
+      "generated_at": "2026-04-04T20:06:54.667176+00:00"
     },
     {
       "game_id": "38572",
@@ -923,7 +923,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.437402+00:00"
+      "generated_at": "2026-04-04T20:06:54.691946+00:00"
     },
     {
       "game_id": "38573",
@@ -945,7 +945,7 @@
       "home_streak": 1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.465621+00:00"
+      "generated_at": "2026-04-04T20:06:54.720079+00:00"
     },
     {
       "game_id": "38574",
@@ -967,7 +967,7 @@
       "home_streak": -9,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.489684+00:00"
+      "generated_at": "2026-04-04T20:06:54.743942+00:00"
     },
     {
       "game_id": "38575",
@@ -989,7 +989,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.515270+00:00"
+      "generated_at": "2026-04-04T20:06:54.769718+00:00"
     },
     {
       "game_id": "38576",
@@ -1011,7 +1011,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.539526+00:00"
+      "generated_at": "2026-04-04T20:06:54.794177+00:00"
     },
     {
       "game_id": "38577",
@@ -1033,7 +1033,7 @@
       "home_streak": 3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.565330+00:00"
+      "generated_at": "2026-04-04T20:06:54.820207+00:00"
     },
     {
       "game_id": "38578",
@@ -1055,7 +1055,7 @@
       "home_streak": -3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.589061+00:00"
+      "generated_at": "2026-04-04T20:06:54.843999+00:00"
     },
     {
       "game_id": "38579",
@@ -1077,7 +1077,7 @@
       "home_streak": 1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.613355+00:00"
+      "generated_at": "2026-04-04T20:06:54.868243+00:00"
     },
     {
       "game_id": "38580",
@@ -1099,7 +1099,7 @@
       "home_streak": -2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.637162+00:00"
+      "generated_at": "2026-04-04T20:06:54.892037+00:00"
     },
     {
       "game_id": "38581",
@@ -1121,7 +1121,7 @@
       "home_streak": -16,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.664740+00:00"
+      "generated_at": "2026-04-04T20:06:54.919354+00:00"
     },
     {
       "game_id": "38582",
@@ -1143,7 +1143,7 @@
       "home_streak": -1,
       "away_streak": -9,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.688551+00:00"
+      "generated_at": "2026-04-04T20:06:54.943324+00:00"
     },
     {
       "game_id": "38584",
@@ -1165,7 +1165,7 @@
       "home_streak": 2,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.712022+00:00"
+      "generated_at": "2026-04-04T20:06:54.967137+00:00"
     },
     {
       "game_id": "38585",
@@ -1187,7 +1187,7 @@
       "home_streak": -9,
       "away_streak": -16,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.735939+00:00"
+      "generated_at": "2026-04-04T20:06:54.991223+00:00"
     },
     {
       "game_id": "38586",
@@ -1209,7 +1209,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.762930+00:00"
+      "generated_at": "2026-04-04T20:06:55.018241+00:00"
     },
     {
       "game_id": "38587",
@@ -1231,7 +1231,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.789102+00:00"
+      "generated_at": "2026-04-04T20:06:55.044086+00:00"
     },
     {
       "game_id": "38588",
@@ -1253,7 +1253,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.816088+00:00"
+      "generated_at": "2026-04-04T20:06:55.068010+00:00"
     },
     {
       "game_id": "38589",
@@ -1275,7 +1275,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.843855+00:00"
+      "generated_at": "2026-04-04T20:06:55.095830+00:00"
     },
     {
       "game_id": "38590",
@@ -1297,7 +1297,7 @@
       "home_streak": 1,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.867661+00:00"
+      "generated_at": "2026-04-04T20:06:55.119450+00:00"
     },
     {
       "game_id": "38592",
@@ -1319,7 +1319,7 @@
       "home_streak": 3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.892320+00:00"
+      "generated_at": "2026-04-04T20:06:55.144051+00:00"
     },
     {
       "game_id": "38593",
@@ -1341,7 +1341,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.915686+00:00"
+      "generated_at": "2026-04-04T20:06:55.167608+00:00"
     },
     {
       "game_id": "38594",
@@ -1363,7 +1363,7 @@
       "home_streak": -2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.939811+00:00"
+      "generated_at": "2026-04-04T20:06:55.192009+00:00"
     },
     {
       "game_id": "38595",
@@ -1385,7 +1385,7 @@
       "home_streak": -1,
       "away_streak": -9,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.963987+00:00"
+      "generated_at": "2026-04-04T20:06:55.215999+00:00"
     },
     {
       "game_id": "38596",
@@ -1407,7 +1407,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:37.992276+00:00"
+      "generated_at": "2026-04-04T20:06:55.244904+00:00"
     },
     {
       "game_id": "38597",
@@ -1429,7 +1429,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.016286+00:00"
+      "generated_at": "2026-04-04T20:06:55.269302+00:00"
     },
     {
       "game_id": "38599",
@@ -1451,7 +1451,7 @@
       "home_streak": 2,
       "away_streak": -16,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.043511+00:00"
+      "generated_at": "2026-04-04T20:06:55.296985+00:00"
     },
     {
       "game_id": "38600",
@@ -1473,7 +1473,7 @@
       "home_streak": -3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.067905+00:00"
+      "generated_at": "2026-04-04T20:06:55.321265+00:00"
     },
     {
       "game_id": "38601",
@@ -1495,7 +1495,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.091363+00:00"
+      "generated_at": "2026-04-04T20:06:55.345191+00:00"
     },
     {
       "game_id": "38602",
@@ -1517,7 +1517,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.118714+00:00"
+      "generated_at": "2026-04-04T20:06:55.373163+00:00"
     },
     {
       "game_id": "38603",
@@ -1539,7 +1539,7 @@
       "home_streak": 3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.146421+00:00"
+      "generated_at": "2026-04-04T20:06:55.401514+00:00"
     },
     {
       "game_id": "38604",
@@ -1561,7 +1561,7 @@
       "home_streak": 2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.173657+00:00"
+      "generated_at": "2026-04-04T20:06:55.429455+00:00"
     },
     {
       "game_id": "38605",
@@ -1583,7 +1583,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.197449+00:00"
+      "generated_at": "2026-04-04T20:06:55.453405+00:00"
     },
     {
       "game_id": "38606",
@@ -1605,7 +1605,7 @@
       "home_streak": -16,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.221719+00:00"
+      "generated_at": "2026-04-04T20:06:55.477744+00:00"
     },
     {
       "game_id": "38607",
@@ -1627,7 +1627,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.246820+00:00"
+      "generated_at": "2026-04-04T20:06:55.503527+00:00"
     },
     {
       "game_id": "38608",
@@ -1649,7 +1649,7 @@
       "home_streak": 3,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.270497+00:00"
+      "generated_at": "2026-04-04T20:06:55.527674+00:00"
     },
     {
       "game_id": "38609",
@@ -1671,7 +1671,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.296781+00:00"
+      "generated_at": "2026-04-04T20:06:55.554348+00:00"
     },
     {
       "game_id": "38610",
@@ -1693,7 +1693,7 @@
       "home_streak": 1,
       "away_streak": -16,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.321693+00:00"
+      "generated_at": "2026-04-04T20:06:55.579436+00:00"
     },
     {
       "game_id": "38611",
@@ -1715,7 +1715,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.349080+00:00"
+      "generated_at": "2026-04-04T20:06:55.606857+00:00"
     },
     {
       "game_id": "38612",
@@ -1737,7 +1737,7 @@
       "home_streak": 1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.372871+00:00"
+      "generated_at": "2026-04-04T20:06:55.630506+00:00"
     },
     {
       "game_id": "38613",
@@ -1759,7 +1759,7 @@
       "home_streak": -9,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.398220+00:00"
+      "generated_at": "2026-04-04T20:06:55.655558+00:00"
     },
     {
       "game_id": "38615",
@@ -1781,7 +1781,7 @@
       "home_streak": 3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.425774+00:00"
+      "generated_at": "2026-04-04T20:06:55.682824+00:00"
     },
     {
       "game_id": "38616",
@@ -1803,7 +1803,7 @@
       "home_streak": 3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.451445+00:00"
+      "generated_at": "2026-04-04T20:06:55.708398+00:00"
     },
     {
       "game_id": "38617",
@@ -1825,7 +1825,7 @@
       "home_streak": -3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.476087+00:00"
+      "generated_at": "2026-04-04T20:06:55.732665+00:00"
     },
     {
       "game_id": "38619",
@@ -1847,7 +1847,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.500362+00:00"
+      "generated_at": "2026-04-04T20:06:55.756865+00:00"
     },
     {
       "game_id": "38620",
@@ -1869,7 +1869,7 @@
       "home_streak": -9,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.524304+00:00"
+      "generated_at": "2026-04-04T20:06:55.780555+00:00"
     },
     {
       "game_id": "38621",
@@ -1891,7 +1891,7 @@
       "home_streak": -1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.547804+00:00"
+      "generated_at": "2026-04-04T20:06:55.803986+00:00"
     },
     {
       "game_id": "38622",
@@ -1913,7 +1913,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.573004+00:00"
+      "generated_at": "2026-04-04T20:06:55.829160+00:00"
     },
     {
       "game_id": "38623",
@@ -1935,7 +1935,7 @@
       "home_streak": -2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.600329+00:00"
+      "generated_at": "2026-04-04T20:06:55.856563+00:00"
     },
     {
       "game_id": "38624",
@@ -1957,7 +1957,7 @@
       "home_streak": -1,
       "away_streak": -9,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.624548+00:00"
+      "generated_at": "2026-04-04T20:06:55.880758+00:00"
     },
     {
       "game_id": "38626",
@@ -1979,7 +1979,7 @@
       "home_streak": 2,
       "away_streak": -16,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.648686+00:00"
+      "generated_at": "2026-04-04T20:06:55.904909+00:00"
     },
     {
       "game_id": "38627",
@@ -2001,7 +2001,7 @@
       "home_streak": 1,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.672611+00:00"
+      "generated_at": "2026-04-04T20:06:55.928679+00:00"
     },
     {
       "game_id": "38628",
@@ -2023,7 +2023,7 @@
       "home_streak": 3,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.702133+00:00"
+      "generated_at": "2026-04-04T20:06:55.958174+00:00"
     },
     {
       "game_id": "38629",
@@ -2045,7 +2045,7 @@
       "home_streak": -16,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.726114+00:00"
+      "generated_at": "2026-04-04T20:06:55.981927+00:00"
     },
     {
       "game_id": "38630",
@@ -2067,7 +2067,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.751528+00:00"
+      "generated_at": "2026-04-04T20:06:56.007463+00:00"
     },
     {
       "game_id": "38631",
@@ -2089,7 +2089,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.778107+00:00"
+      "generated_at": "2026-04-04T20:06:56.034286+00:00"
     },
     {
       "game_id": "38633",
@@ -2111,7 +2111,7 @@
       "home_streak": 2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.802477+00:00"
+      "generated_at": "2026-04-04T20:06:56.058955+00:00"
     },
     {
       "game_id": "38634",
@@ -2133,7 +2133,7 @@
       "home_streak": -9,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.826665+00:00"
+      "generated_at": "2026-04-04T20:06:56.082908+00:00"
     },
     {
       "game_id": "38635",
@@ -2155,7 +2155,7 @@
       "home_streak": -1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.850572+00:00"
+      "generated_at": "2026-04-04T20:06:56.106806+00:00"
     },
     {
       "game_id": "38636",
@@ -2177,7 +2177,7 @@
       "home_streak": 1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.874684+00:00"
+      "generated_at": "2026-04-04T20:06:56.130608+00:00"
     },
     {
       "game_id": "38637",
@@ -2199,7 +2199,7 @@
       "home_streak": 2,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.902065+00:00"
+      "generated_at": "2026-04-04T20:06:56.158205+00:00"
     },
     {
       "game_id": "38638",
@@ -2221,7 +2221,7 @@
       "home_streak": 2,
       "away_streak": -16,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.927713+00:00"
+      "generated_at": "2026-04-04T20:06:56.183675+00:00"
     },
     {
       "game_id": "38639",
@@ -2243,7 +2243,7 @@
       "home_streak": -2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.951606+00:00"
+      "generated_at": "2026-04-04T20:06:56.207292+00:00"
     },
     {
       "game_id": "38640",
@@ -2265,7 +2265,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:38.975853+00:00"
+      "generated_at": "2026-04-04T20:06:56.231400+00:00"
     },
     {
       "game_id": "38642",
@@ -2287,7 +2287,7 @@
       "home_streak": 1,
       "away_streak": -9,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.000568+00:00"
+      "generated_at": "2026-04-04T20:06:56.255852+00:00"
     },
     {
       "game_id": "38643",
@@ -2309,7 +2309,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.024486+00:00"
+      "generated_at": "2026-04-04T20:06:56.279420+00:00"
     },
     {
       "game_id": "38644",
@@ -2331,7 +2331,7 @@
       "home_streak": 3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.056143+00:00"
+      "generated_at": "2026-04-04T20:06:56.307600+00:00"
     },
     {
       "game_id": "38645",
@@ -2353,7 +2353,7 @@
       "home_streak": -3,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.082364+00:00"
+      "generated_at": "2026-04-04T20:06:56.333506+00:00"
     },
     {
       "game_id": "38646",
@@ -2375,7 +2375,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.109760+00:00"
+      "generated_at": "2026-04-04T20:06:56.360796+00:00"
     },
     {
       "game_id": "38647",
@@ -2397,7 +2397,7 @@
       "home_streak": -1,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.134378+00:00"
+      "generated_at": "2026-04-04T20:06:56.385016+00:00"
     },
     {
       "game_id": "38649",
@@ -2419,7 +2419,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.158698+00:00"
+      "generated_at": "2026-04-04T20:06:56.408709+00:00"
     },
     {
       "game_id": "38650",
@@ -2441,7 +2441,7 @@
       "home_streak": 3,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.184972+00:00"
+      "generated_at": "2026-04-04T20:06:56.434807+00:00"
     },
     {
       "game_id": "38651",
@@ -2463,7 +2463,7 @@
       "home_streak": 2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.209798+00:00"
+      "generated_at": "2026-04-04T20:06:56.459337+00:00"
     },
     {
       "game_id": "38652",
@@ -2485,7 +2485,7 @@
       "home_streak": -9,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.233288+00:00"
+      "generated_at": "2026-04-04T20:06:56.482698+00:00"
     },
     {
       "game_id": "38653",
@@ -2507,7 +2507,7 @@
       "home_streak": -1,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.257180+00:00"
+      "generated_at": "2026-04-04T20:06:56.506842+00:00"
     },
     {
       "game_id": "38654",
@@ -2529,7 +2529,7 @@
       "home_streak": 1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.284748+00:00"
+      "generated_at": "2026-04-04T20:06:56.533870+00:00"
     },
     {
       "game_id": "38655",
@@ -2551,7 +2551,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.314219+00:00"
+      "generated_at": "2026-04-04T20:06:56.562183+00:00"
     },
     {
       "game_id": "38656",
@@ -2573,7 +2573,7 @@
       "home_streak": 2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.339241+00:00"
+      "generated_at": "2026-04-04T20:06:56.587156+00:00"
     },
     {
       "game_id": "38657",
@@ -2595,7 +2595,7 @@
       "home_streak": -2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.365370+00:00"
+      "generated_at": "2026-04-04T20:06:56.614401+00:00"
     },
     {
       "game_id": "38659",
@@ -2617,7 +2617,7 @@
       "home_streak": 2,
       "away_streak": -16,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.388878+00:00"
+      "generated_at": "2026-04-04T20:06:56.638159+00:00"
     },
     {
       "game_id": "38661",
@@ -2639,7 +2639,7 @@
       "home_streak": 1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.413763+00:00"
+      "generated_at": "2026-04-04T20:06:56.662674+00:00"
     },
     {
       "game_id": "38660",
@@ -2661,7 +2661,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.437408+00:00"
+      "generated_at": "2026-04-04T20:06:56.686243+00:00"
     },
     {
       "game_id": "38662",
@@ -2683,7 +2683,7 @@
       "home_streak": 3,
       "away_streak": -9,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.461101+00:00"
+      "generated_at": "2026-04-04T20:06:56.709712+00:00"
     },
     {
       "game_id": "38663",
@@ -2705,7 +2705,7 @@
       "home_streak": -3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.484994+00:00"
+      "generated_at": "2026-04-04T20:06:56.733738+00:00"
     },
     {
       "game_id": "38664",
@@ -2727,7 +2727,7 @@
       "home_streak": 3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.515630+00:00"
+      "generated_at": "2026-04-04T20:06:56.764612+00:00"
     },
     {
       "game_id": "38665",
@@ -2749,7 +2749,7 @@
       "home_streak": -2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.540922+00:00"
+      "generated_at": "2026-04-04T20:06:56.790152+00:00"
     },
     {
       "game_id": "38666",
@@ -2771,7 +2771,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.565294+00:00"
+      "generated_at": "2026-04-04T20:06:56.814220+00:00"
     },
     {
       "game_id": "38667",
@@ -2793,7 +2793,7 @@
       "home_streak": -16,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.589187+00:00"
+      "generated_at": "2026-04-04T20:06:56.838070+00:00"
     },
     {
       "game_id": "38668",
@@ -2815,7 +2815,7 @@
       "home_streak": 3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.615751+00:00"
+      "generated_at": "2026-04-04T20:06:56.864795+00:00"
     },
     {
       "game_id": "38669",
@@ -2837,7 +2837,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.638954+00:00"
+      "generated_at": "2026-04-04T20:06:56.888214+00:00"
     },
     {
       "game_id": "38670",
@@ -2859,7 +2859,7 @@
       "home_streak": -9,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.666287+00:00"
+      "generated_at": "2026-04-04T20:06:56.915525+00:00"
     },
     {
       "game_id": "38671",
@@ -2881,7 +2881,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.689899+00:00"
+      "generated_at": "2026-04-04T20:06:56.939292+00:00"
     },
     {
       "game_id": "38673",
@@ -2903,7 +2903,7 @@
       "home_streak": 3,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.716929+00:00"
+      "generated_at": "2026-04-04T20:06:56.966266+00:00"
     },
     {
       "game_id": "38674",
@@ -2925,7 +2925,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.741554+00:00"
+      "generated_at": "2026-04-04T20:06:56.990784+00:00"
     },
     {
       "game_id": "38675",
@@ -2947,7 +2947,7 @@
       "home_streak": 2,
       "away_streak": -16,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.765738+00:00"
+      "generated_at": "2026-04-04T20:06:57.014834+00:00"
     },
     {
       "game_id": "38677",
@@ -2969,7 +2969,7 @@
       "home_streak": 1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.793669+00:00"
+      "generated_at": "2026-04-04T20:06:57.043270+00:00"
     },
     {
       "game_id": "38678",
@@ -2991,7 +2991,7 @@
       "home_streak": -1,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.817547+00:00"
+      "generated_at": "2026-04-04T20:06:57.067077+00:00"
     },
     {
       "game_id": "38679",
@@ -3013,7 +3013,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.841510+00:00"
+      "generated_at": "2026-04-04T20:06:57.090954+00:00"
     },
     {
       "game_id": "38680",
@@ -3035,7 +3035,7 @@
       "home_streak": 3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.865269+00:00"
+      "generated_at": "2026-04-04T20:06:57.114515+00:00"
     },
     {
       "game_id": "38681",
@@ -3057,7 +3057,7 @@
       "home_streak": -3,
       "away_streak": -9,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.889048+00:00"
+      "generated_at": "2026-04-04T20:06:57.138140+00:00"
     },
     {
       "game_id": "38682",
@@ -3079,7 +3079,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.916745+00:00"
+      "generated_at": "2026-04-04T20:06:57.165568+00:00"
     },
     {
       "game_id": "38683",
@@ -3101,7 +3101,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.944372+00:00"
+      "generated_at": "2026-04-04T20:06:57.192616+00:00"
     },
     {
       "game_id": "38684",
@@ -3123,7 +3123,7 @@
       "home_streak": -16,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.968575+00:00"
+      "generated_at": "2026-04-04T20:06:57.216508+00:00"
     },
     {
       "game_id": "38686",
@@ -3145,7 +3145,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:39.992601+00:00"
+      "generated_at": "2026-04-04T20:06:57.240063+00:00"
     },
     {
       "game_id": "38687",
@@ -3167,7 +3167,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.016565+00:00"
+      "generated_at": "2026-04-04T20:06:57.264219+00:00"
     },
     {
       "game_id": "38688",
@@ -3189,7 +3189,7 @@
       "home_streak": -9,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.040114+00:00"
+      "generated_at": "2026-04-04T20:06:57.287708+00:00"
     },
     {
       "game_id": "38689",
@@ -3211,7 +3211,7 @@
       "home_streak": 3,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.063934+00:00"
+      "generated_at": "2026-04-04T20:06:57.311539+00:00"
     },
     {
       "game_id": "38690",
@@ -3233,7 +3233,7 @@
       "home_streak": 1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.088582+00:00"
+      "generated_at": "2026-04-04T20:06:57.335940+00:00"
     },
     {
       "game_id": "38691",
@@ -3255,7 +3255,7 @@
       "home_streak": 3,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.115638+00:00"
+      "generated_at": "2026-04-04T20:06:57.362754+00:00"
     },
     {
       "game_id": "38693",
@@ -3277,7 +3277,7 @@
       "home_streak": -2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.143063+00:00"
+      "generated_at": "2026-04-04T20:06:57.389724+00:00"
     },
     {
       "game_id": "38692",
@@ -3299,7 +3299,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.168646+00:00"
+      "generated_at": "2026-04-04T20:06:57.414781+00:00"
     },
     {
       "game_id": "38694",
@@ -3321,7 +3321,7 @@
       "home_streak": -16,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.192611+00:00"
+      "generated_at": "2026-04-04T20:06:57.438594+00:00"
     },
     {
       "game_id": "38695",
@@ -3343,7 +3343,7 @@
       "home_streak": 2,
       "away_streak": -9,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.216735+00:00"
+      "generated_at": "2026-04-04T20:06:57.462602+00:00"
     },
     {
       "game_id": "38696",
@@ -3365,7 +3365,7 @@
       "home_streak": 1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.241251+00:00"
+      "generated_at": "2026-04-04T20:06:57.486797+00:00"
     },
     {
       "game_id": "38697",
@@ -3387,7 +3387,7 @@
       "home_streak": -1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.267152+00:00"
+      "generated_at": "2026-04-04T20:06:57.512919+00:00"
     },
     {
       "game_id": "38698",
@@ -3409,7 +3409,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.290963+00:00"
+      "generated_at": "2026-04-04T20:06:57.536611+00:00"
     },
     {
       "game_id": "38700",
@@ -3431,7 +3431,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-04-04T18:07:40.317931+00:00"
+      "generated_at": "2026-04-04T20:06:57.563155+00:00"
     }
   ]
 }
