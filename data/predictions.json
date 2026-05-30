@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T00:16:19.363612+00:00",
+  "generated_at": "2026-05-31T01:43:31.092758+00:00",
   "predictions": [
     {
       "game_id": "38599",
@@ -9,11 +9,11 @@
       "venue": "Perth Stadium",
       "date": "2026-05-31 19:20:00",
       "timestr": "None",
-      "home_win_prob": 58.8,
-      "away_win_prob": 41.2,
-      "predicted_margin": 5.2,
+      "home_win_prob": 64.6,
+      "away_win_prob": 35.4,
+      "predicted_margin": 9.7,
       "predicted_winner": "West Coast",
-      "predicted_margin_abs": 5.2,
+      "predicted_margin_abs": 9.7,
       "home_elo": 1280.5,
       "away_elo": 1345.9,
       "home_form": -27.4,
@@ -21,7 +21,7 @@
       "home_streak": -1,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.194552+00:00"
+      "generated_at": "2026-05-31T01:43:27.022252+00:00"
     },
     {
       "game_id": "38600",
@@ -31,10 +31,10 @@
       "venue": "Adelaide Oval",
       "date": "2026-06-04 19:30:00",
       "timestr": "None",
-      "home_win_prob": 49.6,
-      "away_win_prob": 50.4,
+      "home_win_prob": 51.8,
+      "away_win_prob": 48.2,
       "predicted_margin": -0.6,
-      "predicted_winner": "Geelong",
+      "predicted_winner": "Adelaide",
       "predicted_margin_abs": 0.6,
       "home_elo": 1555.4,
       "away_elo": 1621.7,
@@ -43,7 +43,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.209426+00:00"
+      "generated_at": "2026-05-31T01:43:27.042716+00:00"
     },
     {
       "game_id": "38601",
@@ -53,11 +53,11 @@
       "venue": "M.C.G.",
       "date": "2026-06-05 19:40:00",
       "timestr": "None",
-      "home_win_prob": 60.1,
-      "away_win_prob": 39.9,
-      "predicted_margin": 19.7,
+      "home_win_prob": 61.0,
+      "away_win_prob": 39.0,
+      "predicted_margin": 18.9,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 19.7,
+      "predicted_margin_abs": 18.9,
       "home_elo": 1614.1,
       "away_elo": 1569.3,
       "home_form": 1.4,
@@ -65,7 +65,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.223708+00:00"
+      "generated_at": "2026-05-31T01:43:27.062687+00:00"
     },
     {
       "game_id": "38602",
@@ -75,11 +75,11 @@
       "venue": "Hands Oval",
       "date": "2026-06-06 14:15:00",
       "timestr": "None",
-      "home_win_prob": 22.6,
-      "away_win_prob": 77.4,
-      "predicted_margin": -31.0,
+      "home_win_prob": 21.6,
+      "away_win_prob": 78.4,
+      "predicted_margin": -30.4,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 31.0,
+      "predicted_margin_abs": 30.4,
       "home_elo": 1357.1,
       "away_elo": 1641.7,
       "home_form": -25.2,
@@ -87,7 +87,7 @@
       "home_streak": 1,
       "away_streak": 11,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.241037+00:00"
+      "generated_at": "2026-05-31T01:43:27.085360+00:00"
     },
     {
       "game_id": "38603",
@@ -97,11 +97,11 @@
       "venue": "Carrara",
       "date": "2026-06-06 17:15:00",
       "timestr": "None",
-      "home_win_prob": 53.5,
-      "away_win_prob": 46.5,
-      "predicted_margin": 10.7,
+      "home_win_prob": 55.9,
+      "away_win_prob": 44.1,
+      "predicted_margin": 8.5,
       "predicted_winner": "Gold Coast",
-      "predicted_margin_abs": 10.7,
+      "predicted_margin_abs": 8.5,
       "home_elo": 1537.5,
       "away_elo": 1602.6,
       "home_form": 3.8,
@@ -109,7 +109,7 @@
       "home_streak": -1,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.258443+00:00"
+      "generated_at": "2026-05-31T01:43:27.108374+00:00"
     },
     {
       "game_id": "38604",
@@ -119,11 +119,11 @@
       "venue": "Perth Stadium",
       "date": "2026-06-06 20:15:00",
       "timestr": "None",
-      "home_win_prob": 36.4,
-      "away_win_prob": 63.6,
-      "predicted_margin": -14.5,
+      "home_win_prob": 41.2,
+      "away_win_prob": 58.8,
+      "predicted_margin": -11.2,
       "predicted_winner": "Port Adelaide",
-      "predicted_margin_abs": 14.5,
+      "predicted_margin_abs": 11.2,
       "home_elo": 1280.5,
       "away_elo": 1441.1,
       "home_form": -27.4,
@@ -131,7 +131,7 @@
       "home_streak": -1,
       "away_streak": -4,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.275773+00:00"
+      "generated_at": "2026-05-31T01:43:27.131030+00:00"
     },
     {
       "game_id": "38605",
@@ -141,11 +141,11 @@
       "venue": "S.C.G.",
       "date": "2026-06-07 15:15:00",
       "timestr": "None",
-      "home_win_prob": 77.9,
-      "away_win_prob": 22.1,
-      "predicted_margin": 35.3,
+      "home_win_prob": 73.5,
+      "away_win_prob": 26.5,
+      "predicted_margin": 26.8,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 35.3,
+      "predicted_margin_abs": 26.8,
       "home_elo": 1609.6,
       "away_elo": 1468.5,
       "home_form": 23.6,
@@ -153,7 +153,7 @@
       "home_streak": 1,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.290489+00:00"
+      "generated_at": "2026-05-31T01:43:27.151193+00:00"
     },
     {
       "game_id": "38606",
@@ -163,11 +163,11 @@
       "venue": "M.C.G.",
       "date": "2026-06-07 19:20:00",
       "timestr": "None",
-      "home_win_prob": 39.1,
-      "away_win_prob": 60.9,
-      "predicted_margin": -10.9,
+      "home_win_prob": 47.6,
+      "away_win_prob": 52.4,
+      "predicted_margin": -8.1,
       "predicted_winner": "Carlton",
-      "predicted_margin_abs": 10.9,
+      "predicted_margin_abs": 8.1,
       "home_elo": 1345.9,
       "away_elo": 1460.9,
       "home_form": -43.2,
@@ -175,7 +175,7 @@
       "home_streak": -6,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.305357+00:00"
+      "generated_at": "2026-05-31T01:43:27.171451+00:00"
     },
     {
       "game_id": "38607",
@@ -185,11 +185,11 @@
       "venue": "M.C.G.",
       "date": "2026-06-08 15:15:00",
       "timestr": "None",
-      "home_win_prob": 55.7,
-      "away_win_prob": 44.3,
-      "predicted_margin": 8.5,
+      "home_win_prob": 62.2,
+      "away_win_prob": 37.8,
+      "predicted_margin": 7.4,
       "predicted_winner": "Collingwood",
-      "predicted_margin_abs": 8.5,
+      "predicted_margin_abs": 7.4,
       "home_elo": 1559.5,
       "away_elo": 1480.9,
       "home_form": -10.8,
@@ -197,7 +197,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.320810+00:00"
+      "generated_at": "2026-05-31T01:43:27.192394+00:00"
     },
     {
       "game_id": "38608",
@@ -207,11 +207,11 @@
       "venue": "Docklands",
       "date": "2026-06-11 19:30:00",
       "timestr": "None",
-      "home_win_prob": 42.8,
-      "away_win_prob": 57.2,
-      "predicted_margin": -16.2,
-      "predicted_winner": "Adelaide",
-      "predicted_margin_abs": 16.2,
+      "home_win_prob": 51.7,
+      "away_win_prob": 48.3,
+      "predicted_margin": -9.3,
+      "predicted_winner": "Western Bulldogs",
+      "predicted_margin_abs": 9.3,
       "home_elo": 1569.3,
       "away_elo": 1555.4,
       "home_form": -3.0,
@@ -219,7 +219,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.335374+00:00"
+      "generated_at": "2026-05-31T01:43:27.212308+00:00"
     },
     {
       "game_id": "38609",
@@ -229,11 +229,11 @@
       "venue": "Kardinia Park",
       "date": "2026-06-12 19:40:00",
       "timestr": "None",
-      "home_win_prob": 65.6,
-      "away_win_prob": 34.4,
-      "predicted_margin": 19.6,
+      "home_win_prob": 69.4,
+      "away_win_prob": 30.6,
+      "predicted_margin": 21.1,
       "predicted_winner": "Geelong",
-      "predicted_margin_abs": 19.6,
+      "predicted_margin_abs": 21.1,
       "home_elo": 1621.7,
       "away_elo": 1537.5,
       "home_form": 33.4,
@@ -241,7 +241,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.351978+00:00"
+      "generated_at": "2026-05-31T01:43:27.234381+00:00"
     },
     {
       "game_id": "38610",
@@ -251,11 +251,11 @@
       "venue": "M.C.G.",
       "date": "2026-06-13 13:15:00",
       "timestr": "None",
-      "home_win_prob": 83.0,
-      "away_win_prob": 17.0,
-      "predicted_margin": 37.4,
+      "home_win_prob": 83.4,
+      "away_win_prob": 16.6,
+      "predicted_margin": 40.2,
       "predicted_winner": "Melbourne",
-      "predicted_margin_abs": 37.4,
+      "predicted_margin_abs": 40.2,
       "home_elo": 1480.9,
       "away_elo": 1345.9,
       "home_form": 21.0,
@@ -263,7 +263,7 @@
       "home_streak": -1,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.367300+00:00"
+      "generated_at": "2026-05-31T01:43:27.255301+00:00"
     },
     {
       "game_id": "38611",
@@ -273,11 +273,11 @@
       "venue": "Perth Stadium",
       "date": "2026-06-13 16:15:00",
       "timestr": "None",
-      "home_win_prob": 67.8,
-      "away_win_prob": 32.2,
-      "predicted_margin": 22.3,
+      "home_win_prob": 66.4,
+      "away_win_prob": 33.6,
+      "predicted_margin": 22.1,
       "predicted_winner": "North Melbourne",
-      "predicted_margin_abs": 22.3,
+      "predicted_margin_abs": 22.1,
       "home_elo": 1357.1,
       "away_elo": 1280.5,
       "home_form": -25.2,
@@ -285,7 +285,7 @@
       "home_streak": 1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.384455+00:00"
+      "generated_at": "2026-05-31T01:43:27.278056+00:00"
     },
     {
       "game_id": "38612",
@@ -295,11 +295,11 @@
       "venue": "Adelaide Oval",
       "date": "2026-06-13 19:35:00",
       "timestr": "None",
-      "home_win_prob": 23.1,
-      "away_win_prob": 76.9,
-      "predicted_margin": -31.8,
+      "home_win_prob": 24.5,
+      "away_win_prob": 75.5,
+      "predicted_margin": -28.0,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 31.8,
+      "predicted_margin_abs": 28.0,
       "home_elo": 1441.1,
       "away_elo": 1609.6,
       "home_form": -6.4,
@@ -307,7 +307,7 @@
       "home_streak": -4,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.399096+00:00"
+      "generated_at": "2026-05-31T01:43:27.298642+00:00"
     },
     {
       "game_id": "38613",
@@ -317,11 +317,11 @@
       "venue": "Bellerive Oval",
       "date": "2026-06-14 13:10:00",
       "timestr": "None",
-      "home_win_prob": 17.0,
-      "away_win_prob": 83.0,
-      "predicted_margin": -32.5,
+      "home_win_prob": 18.7,
+      "away_win_prob": 81.3,
+      "predicted_margin": -43.9,
       "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 32.5,
+      "predicted_margin_abs": 43.9,
       "home_elo": 1311.5,
       "away_elo": 1602.6,
       "home_form": -31.6,
@@ -329,7 +329,7 @@
       "home_streak": -1,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.414794+00:00"
+      "generated_at": "2026-05-31T01:43:27.319814+00:00"
     },
     {
       "game_id": "38615",
@@ -339,11 +339,11 @@
       "venue": "Perth Stadium",
       "date": "2026-06-18 20:10:00",
       "timestr": "None",
-      "home_win_prob": 69.8,
-      "away_win_prob": 30.2,
-      "predicted_margin": 12.6,
+      "home_win_prob": 68.2,
+      "away_win_prob": 31.8,
+      "predicted_margin": 14.9,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 12.6,
+      "predicted_margin_abs": 14.9,
       "home_elo": 1641.7,
       "away_elo": 1621.7,
       "home_form": 25.0,
@@ -351,7 +351,7 @@
       "home_streak": 11,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.432363+00:00"
+      "generated_at": "2026-05-31T01:43:27.342614+00:00"
     },
     {
       "game_id": "38616",
@@ -361,11 +361,11 @@
       "venue": "Carrara",
       "date": "2026-06-19 19:40:00",
       "timestr": "None",
-      "home_win_prob": 54.4,
-      "away_win_prob": 45.6,
-      "predicted_margin": 1.5,
+      "home_win_prob": 54.8,
+      "away_win_prob": 45.2,
+      "predicted_margin": -0.9,
       "predicted_winner": "Gold Coast",
-      "predicted_margin_abs": 1.5,
+      "predicted_margin_abs": 0.9,
       "home_elo": 1537.5,
       "away_elo": 1614.1,
       "home_form": 3.8,
@@ -373,7 +373,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.448532+00:00"
+      "generated_at": "2026-05-31T01:43:27.364226+00:00"
     },
     {
       "game_id": "38617",
@@ -383,11 +383,11 @@
       "venue": "Adelaide Oval",
       "date": "2026-06-20 13:15:00",
       "timestr": "None",
-      "home_win_prob": 63.7,
-      "away_win_prob": 36.3,
-      "predicted_margin": 18.5,
+      "home_win_prob": 64.8,
+      "away_win_prob": 35.2,
+      "predicted_margin": 16.3,
       "predicted_winner": "Adelaide",
-      "predicted_margin_abs": 18.5,
+      "predicted_margin_abs": 16.3,
       "home_elo": 1555.4,
       "away_elo": 1480.9,
       "home_form": 9.0,
@@ -395,7 +395,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.463623+00:00"
+      "generated_at": "2026-05-31T01:43:27.384890+00:00"
     },
     {
       "game_id": "38619",
@@ -405,11 +405,11 @@
       "venue": "M.C.G.",
       "date": "2026-06-20 19:35:00",
       "timestr": "None",
-      "home_win_prob": 63.5,
-      "away_win_prob": 36.5,
-      "predicted_margin": 21.2,
+      "home_win_prob": 58.7,
+      "away_win_prob": 41.3,
+      "predicted_margin": 12.5,
       "predicted_winner": "Collingwood",
-      "predicted_margin_abs": 21.2,
+      "predicted_margin_abs": 12.5,
       "home_elo": 1559.5,
       "away_elo": 1441.1,
       "home_form": -10.8,
@@ -417,7 +417,7 @@
       "home_streak": -1,
       "away_streak": -4,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.478637+00:00"
+      "generated_at": "2026-05-31T01:43:27.405194+00:00"
     },
     {
       "game_id": "38620",
@@ -427,11 +427,11 @@
       "venue": "M.C.G.",
       "date": "2026-06-21 13:10:00",
       "timestr": "None",
-      "home_win_prob": 37.2,
-      "away_win_prob": 62.8,
-      "predicted_margin": -21.2,
+      "home_win_prob": 36.6,
+      "away_win_prob": 63.4,
+      "predicted_margin": -26.8,
       "predicted_winner": "North Melbourne",
-      "predicted_margin_abs": 21.2,
+      "predicted_margin_abs": 26.8,
       "home_elo": 1311.5,
       "away_elo": 1357.1,
       "home_form": -31.6,
@@ -439,7 +439,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.493298+00:00"
+      "generated_at": "2026-05-31T01:43:27.425313+00:00"
     },
     {
       "game_id": "38621",
@@ -449,11 +449,11 @@
       "venue": "Docklands",
       "date": "2026-06-21 15:15:00",
       "timestr": "None",
-      "home_win_prob": 46.8,
-      "away_win_prob": 53.2,
-      "predicted_margin": -12.9,
+      "home_win_prob": 46.4,
+      "away_win_prob": 53.6,
+      "predicted_margin": -9.2,
       "predicted_winner": "Western Bulldogs",
-      "predicted_margin_abs": 12.9,
+      "predicted_margin_abs": 9.2,
       "home_elo": 1468.5,
       "away_elo": 1569.3,
       "home_form": -7.2,
@@ -461,7 +461,7 @@
       "home_streak": -2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.507721+00:00"
+      "generated_at": "2026-05-31T01:43:27.445341+00:00"
     },
     {
       "game_id": "38622",
@@ -471,11 +471,11 @@
       "venue": "Gabba",
       "date": "2026-06-25 19:30:00",
       "timestr": "None",
-      "home_win_prob": 41.5,
-      "away_win_prob": 58.5,
-      "predicted_margin": -7.2,
-      "predicted_winner": "Sydney",
-      "predicted_margin_abs": 7.2,
+      "home_win_prob": 51.6,
+      "away_win_prob": 48.4,
+      "predicted_margin": 2.3,
+      "predicted_winner": "Brisbane Lions",
+      "predicted_margin_abs": 2.3,
       "home_elo": 1602.6,
       "away_elo": 1609.6,
       "home_form": -13.8,
@@ -483,7 +483,7 @@
       "home_streak": -3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.524119+00:00"
+      "generated_at": "2026-05-31T01:43:27.466703+00:00"
     },
     {
       "game_id": "38623",
@@ -493,11 +493,11 @@
       "venue": "Docklands",
       "date": "2026-06-27 13:15:00",
       "timestr": "None",
-      "home_win_prob": 74.5,
-      "away_win_prob": 25.5,
-      "predicted_margin": 27.8,
+      "home_win_prob": 74.1,
+      "away_win_prob": 25.9,
+      "predicted_margin": 27.5,
       "predicted_winner": "Carlton",
-      "predicted_margin_abs": 27.8,
+      "predicted_margin_abs": 27.5,
       "home_elo": 1460.9,
       "away_elo": 1280.5,
       "home_form": 0.0,
@@ -505,7 +505,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.541538+00:00"
+      "generated_at": "2026-05-31T01:43:27.489543+00:00"
     },
     {
       "game_id": "38624",
@@ -515,11 +515,11 @@
       "venue": "M.C.G.",
       "date": "2026-06-27 16:15:00",
       "timestr": "None",
-      "home_win_prob": 87.1,
-      "away_win_prob": 12.9,
-      "predicted_margin": 56.7,
+      "home_win_prob": 85.8,
+      "away_win_prob": 14.2,
+      "predicted_margin": 53.1,
       "predicted_winner": "Collingwood",
-      "predicted_margin_abs": 56.7,
+      "predicted_margin_abs": 53.1,
       "home_elo": 1559.5,
       "away_elo": 1311.5,
       "home_form": -10.8,
@@ -527,7 +527,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.556439+00:00"
+      "generated_at": "2026-05-31T01:43:27.510056+00:00"
     },
     {
       "game_id": "38627",
@@ -537,11 +537,11 @@
       "venue": "Adelaide Oval",
       "date": "2026-06-27 19:35:00",
       "timestr": "None",
-      "home_win_prob": 44.3,
-      "away_win_prob": 55.7,
-      "predicted_margin": -6.8,
+      "home_win_prob": 47.1,
+      "away_win_prob": 52.9,
+      "predicted_margin": -7.4,
       "predicted_winner": "Adelaide",
-      "predicted_margin_abs": 6.8,
+      "predicted_margin_abs": 7.4,
       "home_elo": 1441.1,
       "away_elo": 1555.4,
       "home_form": -6.4,
@@ -549,7 +549,7 @@
       "home_streak": -4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.570974+00:00"
+      "generated_at": "2026-05-31T01:43:27.530010+00:00"
     },
     {
       "game_id": "38626",
@@ -559,11 +559,11 @@
       "venue": "Docklands",
       "date": "2026-06-28 15:15:00",
       "timestr": "None",
-      "home_win_prob": 73.6,
-      "away_win_prob": 26.4,
-      "predicted_margin": 27.8,
+      "home_win_prob": 76.2,
+      "away_win_prob": 23.8,
+      "predicted_margin": 31.5,
       "predicted_winner": "North Melbourne",
-      "predicted_margin_abs": 27.8,
+      "predicted_margin_abs": 31.5,
       "home_elo": 1357.1,
       "away_elo": 1345.9,
       "home_form": -25.2,
@@ -571,7 +571,7 @@
       "home_streak": 1,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.585664+00:00"
+      "generated_at": "2026-05-31T01:43:27.550231+00:00"
     },
     {
       "game_id": "38628",
@@ -581,11 +581,11 @@
       "venue": "Perth Stadium",
       "date": "2026-06-28 17:10:00",
       "timestr": "None",
-      "home_win_prob": 79.3,
-      "away_win_prob": 20.7,
-      "predicted_margin": 30.1,
+      "home_win_prob": 79.4,
+      "away_win_prob": 20.6,
+      "predicted_margin": 29.1,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 30.1,
+      "predicted_margin_abs": 29.1,
       "home_elo": 1641.7,
       "away_elo": 1537.5,
       "home_form": 25.0,
@@ -593,7 +593,7 @@
       "home_streak": 11,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.604704+00:00"
+      "generated_at": "2026-05-31T01:43:27.574600+00:00"
     },
     {
       "game_id": "38630",
@@ -603,11 +603,11 @@
       "venue": "Kardinia Park",
       "date": "2026-07-02 19:30:00",
       "timestr": "None",
-      "home_win_prob": 69.6,
-      "away_win_prob": 30.4,
-      "predicted_margin": 22.3,
+      "home_win_prob": 68.1,
+      "away_win_prob": 31.9,
+      "predicted_margin": 18.9,
       "predicted_winner": "Geelong",
-      "predicted_margin_abs": 22.3,
+      "predicted_margin_abs": 18.9,
       "home_elo": 1621.7,
       "away_elo": 1602.6,
       "home_form": 33.4,
@@ -615,7 +615,7 @@
       "home_streak": -1,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.620536+00:00"
+      "generated_at": "2026-05-31T01:43:27.595825+00:00"
     },
     {
       "game_id": "38635",
@@ -625,11 +625,11 @@
       "venue": "S.C.G.",
       "date": "2026-07-03 19:40:00",
       "timestr": "None",
-      "home_win_prob": 63.7,
-      "away_win_prob": 36.3,
-      "predicted_margin": 25.3,
+      "home_win_prob": 59.7,
+      "away_win_prob": 40.3,
+      "predicted_margin": 17.5,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 25.3,
+      "predicted_margin_abs": 17.5,
       "home_elo": 1609.6,
       "away_elo": 1569.3,
       "home_form": 23.6,
@@ -637,7 +637,7 @@
       "home_streak": 1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.635196+00:00"
+      "generated_at": "2026-05-31T01:43:27.616020+00:00"
     },
     {
       "game_id": "38637",
@@ -647,11 +647,11 @@
       "venue": "Perth Stadium",
       "date": "2026-07-03 20:10:00",
       "timestr": "None",
-      "home_win_prob": 26.9,
-      "away_win_prob": 73.1,
-      "predicted_margin": -35.1,
+      "home_win_prob": 25.2,
+      "away_win_prob": 74.8,
+      "predicted_margin": -29.3,
       "predicted_winner": "Adelaide",
-      "predicted_margin_abs": 35.1,
+      "predicted_margin_abs": 29.3,
       "home_elo": 1280.5,
       "away_elo": 1555.4,
       "home_form": -27.4,
@@ -659,7 +659,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.652524+00:00"
+      "generated_at": "2026-05-31T01:43:27.638787+00:00"
     },
     {
       "game_id": "38633",
@@ -669,11 +669,11 @@
       "venue": "York Park",
       "date": "2026-07-04 13:15:00",
       "timestr": "None",
-      "home_win_prob": 67.5,
-      "away_win_prob": 32.5,
-      "predicted_margin": 24.1,
+      "home_win_prob": 72.0,
+      "away_win_prob": 28.0,
+      "predicted_margin": 25.1,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 24.1,
+      "predicted_margin_abs": 25.1,
       "home_elo": 1614.1,
       "away_elo": 1480.9,
       "home_form": 1.4,
@@ -681,7 +681,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.667529+00:00"
+      "generated_at": "2026-05-31T01:43:27.659130+00:00"
     },
     {
       "game_id": "38631",
@@ -691,11 +691,11 @@
       "venue": "Carrara",
       "date": "2026-07-04 16:15:00",
       "timestr": "None",
-      "home_win_prob": 62.0,
-      "away_win_prob": 38.0,
-      "predicted_margin": 17.8,
+      "home_win_prob": 64.8,
+      "away_win_prob": 35.2,
+      "predicted_margin": 18.4,
       "predicted_winner": "Gold Coast",
-      "predicted_margin_abs": 17.8,
+      "predicted_margin_abs": 18.4,
       "home_elo": 1537.5,
       "away_elo": 1559.5,
       "home_form": 3.8,
@@ -703,7 +703,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.684350+00:00"
+      "generated_at": "2026-05-31T01:43:27.681351+00:00"
     },
     {
       "game_id": "38634",
@@ -713,11 +713,11 @@
       "venue": "M.C.G.",
       "date": "2026-07-04 19:35:00",
       "timestr": "None",
-      "home_win_prob": 31.6,
-      "away_win_prob": 68.4,
-      "predicted_margin": -18.3,
+      "home_win_prob": 33.6,
+      "away_win_prob": 66.4,
+      "predicted_margin": -19.6,
       "predicted_winner": "Carlton",
-      "predicted_margin_abs": 18.3,
+      "predicted_margin_abs": 19.6,
       "home_elo": 1311.5,
       "away_elo": 1460.9,
       "home_form": -31.6,
@@ -725,7 +725,7 @@
       "home_streak": -1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.699194+00:00"
+      "generated_at": "2026-05-31T01:43:27.701713+00:00"
     },
     {
       "game_id": "38629",
@@ -737,9 +737,9 @@
       "timestr": "None",
       "home_win_prob": 40.7,
       "away_win_prob": 59.3,
-      "predicted_margin": -6.8,
+      "predicted_margin": -10.6,
       "predicted_winner": "St Kilda",
-      "predicted_margin_abs": 6.8,
+      "predicted_margin_abs": 10.6,
       "home_elo": 1345.9,
       "away_elo": 1468.5,
       "home_form": -43.2,
@@ -747,7 +747,7 @@
       "home_streak": -6,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.713929+00:00"
+      "generated_at": "2026-05-31T01:43:27.721973+00:00"
     },
     {
       "game_id": "38636",
@@ -757,11 +757,11 @@
       "venue": "Adelaide Oval",
       "date": "2026-07-05 16:40:00",
       "timestr": "None",
-      "home_win_prob": 59.6,
-      "away_win_prob": 40.4,
-      "predicted_margin": 12.2,
+      "home_win_prob": 59.7,
+      "away_win_prob": 40.3,
+      "predicted_margin": 7.7,
       "predicted_winner": "Port Adelaide",
-      "predicted_margin_abs": 12.2,
+      "predicted_margin_abs": 7.7,
       "home_elo": 1441.1,
       "away_elo": 1357.1,
       "home_form": -6.4,
@@ -769,7 +769,7 @@
       "home_streak": -4,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.728443+00:00"
+      "generated_at": "2026-05-31T01:43:27.742027+00:00"
     },
     {
       "game_id": "38646",
@@ -779,11 +779,11 @@
       "venue": "Perth Stadium",
       "date": "2026-07-09 20:10:00",
       "timestr": "None",
-      "home_win_prob": 57.3,
-      "away_win_prob": 42.7,
-      "predicted_margin": 4.9,
+      "home_win_prob": 59.7,
+      "away_win_prob": 40.3,
+      "predicted_margin": 4.1,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 4.9,
+      "predicted_margin_abs": 4.1,
       "home_elo": 1641.7,
       "away_elo": 1609.6,
       "home_form": 25.0,
@@ -791,7 +791,7 @@
       "home_streak": 11,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.745921+00:00"
+      "generated_at": "2026-05-31T01:43:27.764959+00:00"
     },
     {
       "game_id": "38640",
@@ -801,11 +801,11 @@
       "venue": "Docklands",
       "date": "2026-07-10 19:40:00",
       "timestr": "None",
-      "home_win_prob": 71.7,
-      "away_win_prob": 28.3,
-      "predicted_margin": 29.7,
+      "home_win_prob": 65.7,
+      "away_win_prob": 34.3,
+      "predicted_margin": 18.2,
       "predicted_winner": "Collingwood",
-      "predicted_margin_abs": 29.7,
+      "predicted_margin_abs": 18.2,
       "home_elo": 1559.5,
       "away_elo": 1357.1,
       "home_form": -10.8,
@@ -813,7 +813,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.760836+00:00"
+      "generated_at": "2026-05-31T01:43:27.785918+00:00"
     },
     {
       "game_id": "38643",
@@ -825,9 +825,9 @@
       "timestr": "None",
       "home_win_prob": 63.1,
       "away_win_prob": 36.9,
-      "predicted_margin": 17.3,
+      "predicted_margin": 14.7,
       "predicted_winner": "St Kilda",
-      "predicted_margin_abs": 17.3,
+      "predicted_margin_abs": 14.7,
       "home_elo": 1468.5,
       "away_elo": 1441.1,
       "home_form": -7.2,
@@ -835,7 +835,7 @@
       "home_streak": -2,
       "away_streak": -4,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.775544+00:00"
+      "generated_at": "2026-05-31T01:43:27.805954+00:00"
     },
     {
       "game_id": "38639",
@@ -845,11 +845,11 @@
       "venue": "M.C.G.",
       "date": "2026-07-11 19:35:00",
       "timestr": "None",
-      "home_win_prob": 31.9,
-      "away_win_prob": 68.1,
-      "predicted_margin": -14.0,
+      "home_win_prob": 32.6,
+      "away_win_prob": 67.4,
+      "predicted_margin": -14.6,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 14.0,
+      "predicted_margin_abs": 14.6,
       "home_elo": 1460.9,
       "away_elo": 1614.1,
       "home_form": 0.0,
@@ -857,7 +857,7 @@
       "home_streak": 3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.790338+00:00"
+      "generated_at": "2026-05-31T01:43:27.825913+00:00"
     },
     {
       "game_id": "38645",
@@ -867,11 +867,11 @@
       "venue": "Adelaide Oval",
       "date": "2026-07-11 20:10:00",
       "timestr": "None",
-      "home_win_prob": 58.5,
-      "away_win_prob": 41.5,
-      "predicted_margin": 8.4,
+      "home_win_prob": 62.0,
+      "away_win_prob": 38.0,
+      "predicted_margin": 11.0,
       "predicted_winner": "Adelaide",
-      "predicted_margin_abs": 8.4,
+      "predicted_margin_abs": 11.0,
       "home_elo": 1555.4,
       "away_elo": 1537.5,
       "home_form": 9.0,
@@ -879,7 +879,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.806696+00:00"
+      "generated_at": "2026-05-31T01:43:27.847875+00:00"
     },
     {
       "game_id": "38644",
@@ -889,11 +889,11 @@
       "venue": "Docklands",
       "date": "2026-07-12 13:10:00",
       "timestr": "None",
-      "home_win_prob": 83.9,
-      "away_win_prob": 16.1,
-      "predicted_margin": 36.9,
+      "home_win_prob": 82.3,
+      "away_win_prob": 17.7,
+      "predicted_margin": 33.6,
       "predicted_winner": "Western Bulldogs",
-      "predicted_margin_abs": 36.9,
+      "predicted_margin_abs": 33.6,
       "home_elo": 1569.3,
       "away_elo": 1280.5,
       "home_form": -3.0,
@@ -901,7 +901,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.824071+00:00"
+      "generated_at": "2026-05-31T01:43:27.870552+00:00"
     },
     {
       "game_id": "38642",
@@ -911,11 +911,11 @@
       "venue": "M.C.G.",
       "date": "2026-07-12 15:15:00",
       "timestr": "None",
-      "home_win_prob": 85.2,
-      "away_win_prob": 14.8,
-      "predicted_margin": 44.0,
+      "home_win_prob": 86.2,
+      "away_win_prob": 13.8,
+      "predicted_margin": 48.4,
       "predicted_winner": "Melbourne",
-      "predicted_margin_abs": 44.0,
+      "predicted_margin_abs": 48.4,
       "home_elo": 1480.9,
       "away_elo": 1311.5,
       "home_form": 21.0,
@@ -923,7 +923,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.839345+00:00"
+      "generated_at": "2026-05-31T01:43:27.891561+00:00"
     },
     {
       "game_id": "38638",
@@ -933,11 +933,11 @@
       "venue": "Gabba",
       "date": "2026-07-12 16:40:00",
       "timestr": "None",
-      "home_win_prob": 84.5,
-      "away_win_prob": 15.5,
-      "predicted_margin": 44.8,
+      "home_win_prob": 87.2,
+      "away_win_prob": 12.8,
+      "predicted_margin": 47.0,
       "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 44.8,
+      "predicted_margin_abs": 47.0,
       "home_elo": 1602.6,
       "away_elo": 1345.9,
       "home_form": -13.8,
@@ -945,7 +945,7 @@
       "home_streak": -3,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.855166+00:00"
+      "generated_at": "2026-05-31T01:43:27.912828+00:00"
     },
     {
       "game_id": "38649",
@@ -955,11 +955,11 @@
       "venue": "Kardinia Park",
       "date": "2026-07-16 19:30:00",
       "timestr": "None",
-      "home_win_prob": 75.5,
-      "away_win_prob": 24.5,
-      "predicted_margin": 29.0,
+      "home_win_prob": 76.9,
+      "away_win_prob": 23.1,
+      "predicted_margin": 27.8,
       "predicted_winner": "Geelong",
-      "predicted_margin_abs": 29.0,
+      "predicted_margin_abs": 27.8,
       "home_elo": 1621.7,
       "away_elo": 1468.5,
       "home_form": 33.4,
@@ -967,7 +967,7 @@
       "home_streak": -1,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.870057+00:00"
+      "generated_at": "2026-05-31T01:43:27.933026+00:00"
     },
     {
       "game_id": "38653",
@@ -977,11 +977,11 @@
       "venue": "S.C.G.",
       "date": "2026-07-17 19:40:00",
       "timestr": "None",
-      "home_win_prob": 74.6,
-      "away_win_prob": 25.4,
-      "predicted_margin": 21.0,
+      "home_win_prob": 67.4,
+      "away_win_prob": 32.6,
+      "predicted_margin": 13.8,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 21.0,
+      "predicted_margin_abs": 13.8,
       "home_elo": 1609.6,
       "away_elo": 1555.4,
       "home_form": 23.6,
@@ -989,7 +989,7 @@
       "home_streak": 1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.884866+00:00"
+      "generated_at": "2026-05-31T01:43:27.953275+00:00"
     },
     {
       "game_id": "38654",
@@ -999,11 +999,11 @@
       "venue": "Adelaide Oval",
       "date": "2026-07-18 13:15:00",
       "timestr": "None",
-      "home_win_prob": 26.5,
-      "away_win_prob": 73.5,
-      "predicted_margin": -19.2,
+      "home_win_prob": 27.9,
+      "away_win_prob": 72.1,
+      "predicted_margin": -22.3,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 19.2,
+      "predicted_margin_abs": 22.3,
       "home_elo": 1441.1,
       "away_elo": 1641.7,
       "home_form": -6.4,
@@ -1011,7 +1011,7 @@
       "home_streak": -4,
       "away_streak": 11,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.902177+00:00"
+      "generated_at": "2026-05-31T01:43:27.976433+00:00"
     },
     {
       "game_id": "38651",
@@ -1021,11 +1021,11 @@
       "venue": "Docklands",
       "date": "2026-07-18 16:15:00",
       "timestr": "None",
-      "home_win_prob": 45.8,
-      "away_win_prob": 54.2,
-      "predicted_margin": -9.6,
+      "home_win_prob": 47.2,
+      "away_win_prob": 52.8,
+      "predicted_margin": -11.4,
       "predicted_winner": "Melbourne",
-      "predicted_margin_abs": 9.6,
+      "predicted_margin_abs": 11.4,
       "home_elo": 1357.1,
       "away_elo": 1480.9,
       "home_form": -25.2,
@@ -1033,7 +1033,7 @@
       "home_streak": 1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.917427+00:00"
+      "generated_at": "2026-05-31T01:43:27.997094+00:00"
     },
     {
       "game_id": "38647",
@@ -1043,11 +1043,11 @@
       "venue": "M.C.G.",
       "date": "2026-07-18 19:35:00",
       "timestr": "None",
-      "home_win_prob": 68.1,
-      "away_win_prob": 31.9,
-      "predicted_margin": 30.0,
+      "home_win_prob": 61.9,
+      "away_win_prob": 38.1,
+      "predicted_margin": 20.7,
       "predicted_winner": "Collingwood",
-      "predicted_margin_abs": 30.0,
+      "predicted_margin_abs": 20.7,
       "home_elo": 1559.5,
       "away_elo": 1460.9,
       "home_form": -10.8,
@@ -1055,7 +1055,7 @@
       "home_streak": -1,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.932605+00:00"
+      "generated_at": "2026-05-31T01:43:28.017748+00:00"
     },
     {
       "game_id": "38655",
@@ -1065,11 +1065,11 @@
       "venue": "Perth Stadium",
       "date": "2026-07-18 20:10:00",
       "timestr": "None",
-      "home_win_prob": 16.6,
-      "away_win_prob": 83.4,
-      "predicted_margin": -36.1,
+      "home_win_prob": 16.5,
+      "away_win_prob": 83.5,
+      "predicted_margin": -38.4,
       "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 36.1,
+      "predicted_margin_abs": 38.4,
       "home_elo": 1280.5,
       "away_elo": 1602.6,
       "home_form": -27.4,
@@ -1077,7 +1077,7 @@
       "home_streak": -1,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.951036+00:00"
+      "generated_at": "2026-05-31T01:43:28.041648+00:00"
     },
     {
       "game_id": "38652",
@@ -1087,11 +1087,11 @@
       "venue": "M.C.G.",
       "date": "2026-07-19 13:10:00",
       "timestr": "None",
-      "home_win_prob": 11.1,
-      "away_win_prob": 88.9,
-      "predicted_margin": -53.6,
+      "home_win_prob": 13.7,
+      "away_win_prob": 86.3,
+      "predicted_margin": -55.8,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 53.6,
+      "predicted_margin_abs": 55.8,
       "home_elo": 1311.5,
       "away_elo": 1614.1,
       "home_form": -31.6,
@@ -1099,7 +1099,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.965529+00:00"
+      "generated_at": "2026-05-31T01:43:28.061783+00:00"
     },
     {
       "game_id": "38650",
@@ -1109,11 +1109,11 @@
       "venue": "Carrara",
       "date": "2026-07-19 15:15:00",
       "timestr": "None",
-      "home_win_prob": 51.8,
-      "away_win_prob": 48.2,
-      "predicted_margin": 7.8,
+      "home_win_prob": 51.1,
+      "away_win_prob": 48.9,
+      "predicted_margin": 5.0,
       "predicted_winner": "Gold Coast",
-      "predicted_margin_abs": 7.8,
+      "predicted_margin_abs": 5.0,
       "home_elo": 1537.5,
       "away_elo": 1569.3,
       "home_form": 3.8,
@@ -1121,7 +1121,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.981916+00:00"
+      "generated_at": "2026-05-31T01:43:28.083629+00:00"
     },
     {
       "game_id": "38663",
@@ -1131,11 +1131,11 @@
       "venue": "Adelaide Oval",
       "date": "2026-07-23 19:30:00",
       "timestr": "None",
-      "home_win_prob": 60.2,
-      "away_win_prob": 39.8,
-      "predicted_margin": 13.5,
+      "home_win_prob": 68.5,
+      "away_win_prob": 31.5,
+      "predicted_margin": 21.8,
       "predicted_winner": "Adelaide",
-      "predicted_margin_abs": 13.5,
+      "predicted_margin_abs": 21.8,
       "home_elo": 1555.4,
       "away_elo": 1559.5,
       "home_form": 9.0,
@@ -1143,7 +1143,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:16.997019+00:00"
+      "generated_at": "2026-05-31T01:43:28.104229+00:00"
     },
     {
       "game_id": "38661",
@@ -1153,11 +1153,11 @@
       "venue": "M.C.G.",
       "date": "2026-07-24 19:40:00",
       "timestr": "None",
-      "home_win_prob": 40.5,
-      "away_win_prob": 59.5,
-      "predicted_margin": -8.2,
+      "home_win_prob": 44.5,
+      "away_win_prob": 55.5,
+      "predicted_margin": -1.3,
       "predicted_winner": "Geelong",
-      "predicted_margin_abs": 8.2,
+      "predicted_margin_abs": 1.3,
       "home_elo": 1480.9,
       "away_elo": 1621.7,
       "home_form": 21.0,
@@ -1165,7 +1165,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.012408+00:00"
+      "generated_at": "2026-05-31T01:43:28.125232+00:00"
     },
     {
       "game_id": "38664",
@@ -1177,9 +1177,9 @@
       "timestr": "None",
       "home_win_prob": 93.9,
       "away_win_prob": 6.1,
-      "predicted_margin": 74.6,
+      "predicted_margin": 69.7,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 74.6,
+      "predicted_margin_abs": 69.7,
       "home_elo": 1641.7,
       "away_elo": 1280.5,
       "home_form": 25.0,
@@ -1187,7 +1187,7 @@
       "home_streak": 11,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.032415+00:00"
+      "generated_at": "2026-05-31T01:43:28.150761+00:00"
     },
     {
       "game_id": "38657",
@@ -1197,11 +1197,11 @@
       "venue": "Docklands",
       "date": "2026-07-25 13:05:00",
       "timestr": "None",
-      "home_win_prob": 43.9,
-      "away_win_prob": 56.1,
-      "predicted_margin": -6.2,
+      "home_win_prob": 43.2,
+      "away_win_prob": 56.8,
+      "predicted_margin": -4.3,
       "predicted_winner": "Gold Coast",
-      "predicted_margin_abs": 6.2,
+      "predicted_margin_abs": 4.3,
       "home_elo": 1460.9,
       "away_elo": 1537.5,
       "home_form": 0.0,
@@ -1209,7 +1209,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.049026+00:00"
+      "generated_at": "2026-05-31T01:43:28.172797+00:00"
     },
     {
       "game_id": "38659",
@@ -1219,11 +1219,11 @@
       "venue": "M.C.G.",
       "date": "2026-07-25 16:15:00",
       "timestr": "None",
-      "home_win_prob": 90.1,
-      "away_win_prob": 9.9,
-      "predicted_margin": 58.1,
+      "home_win_prob": 90.7,
+      "away_win_prob": 9.3,
+      "predicted_margin": 56.0,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 58.1,
+      "predicted_margin_abs": 56.0,
       "home_elo": 1614.1,
       "away_elo": 1345.9,
       "home_form": 1.4,
@@ -1231,7 +1231,7 @@
       "home_streak": 2,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.063562+00:00"
+      "generated_at": "2026-05-31T01:43:28.192817+00:00"
     },
     {
       "game_id": "38662",
@@ -1243,9 +1243,9 @@
       "timestr": "None",
       "home_win_prob": 84.9,
       "away_win_prob": 15.1,
-      "predicted_margin": 47.9,
+      "predicted_margin": 48.3,
       "predicted_winner": "Western Bulldogs",
-      "predicted_margin_abs": 47.9,
+      "predicted_margin_abs": 48.3,
       "home_elo": 1569.3,
       "away_elo": 1311.5,
       "home_form": -3.0,
@@ -1253,7 +1253,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.078231+00:00"
+      "generated_at": "2026-05-31T01:43:28.212846+00:00"
     },
     {
       "game_id": "38656",
@@ -1263,11 +1263,11 @@
       "venue": "Gabba",
       "date": "2026-07-26 13:10:00",
       "timestr": "None",
-      "home_win_prob": 72.4,
-      "away_win_prob": 27.6,
-      "predicted_margin": 27.0,
+      "home_win_prob": 78.5,
+      "away_win_prob": 21.5,
+      "predicted_margin": 30.7,
       "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 27.0,
+      "predicted_margin_abs": 30.7,
       "home_elo": 1602.6,
       "away_elo": 1441.1,
       "home_form": -13.8,
@@ -1275,7 +1275,7 @@
       "home_streak": -3,
       "away_streak": -4,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.094048+00:00"
+      "generated_at": "2026-05-31T01:43:28.234173+00:00"
     },
     {
       "game_id": "38660",
@@ -1285,11 +1285,11 @@
       "venue": "Docklands",
       "date": "2026-07-26 15:15:00",
       "timestr": "None",
-      "home_win_prob": 49.2,
-      "away_win_prob": 50.8,
-      "predicted_margin": -2.4,
-      "predicted_winner": "St Kilda",
-      "predicted_margin_abs": 2.4,
+      "home_win_prob": 50.8,
+      "away_win_prob": 49.2,
+      "predicted_margin": 1.1,
+      "predicted_winner": "North Melbourne",
+      "predicted_margin_abs": 1.1,
       "home_elo": 1357.1,
       "away_elo": 1468.5,
       "home_form": -25.2,
@@ -1297,7 +1297,7 @@
       "home_streak": 1,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.108874+00:00"
+      "generated_at": "2026-05-31T01:43:28.254206+00:00"
     },
     {
       "game_id": "38666",
@@ -1307,11 +1307,11 @@
       "venue": "M.C.G.",
       "date": "2026-07-30 19:30:00",
       "timestr": "None",
-      "home_win_prob": 45.9,
-      "away_win_prob": 54.1,
-      "predicted_margin": -2.0,
+      "home_win_prob": 41.6,
+      "away_win_prob": 58.4,
+      "predicted_margin": -5.8,
       "predicted_winner": "Geelong",
-      "predicted_margin_abs": 2.0,
+      "predicted_margin_abs": 5.8,
       "home_elo": 1559.5,
       "away_elo": 1621.7,
       "home_form": -10.8,
@@ -1319,7 +1319,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.124094+00:00"
+      "generated_at": "2026-05-31T01:43:28.274913+00:00"
     },
     {
       "game_id": "38673",
@@ -1329,11 +1329,11 @@
       "venue": "Perth Stadium",
       "date": "2026-07-31 20:10:00",
       "timestr": "None",
-      "home_win_prob": 72.4,
-      "away_win_prob": 27.6,
-      "predicted_margin": 23.5,
+      "home_win_prob": 73.8,
+      "away_win_prob": 26.2,
+      "predicted_margin": 24.6,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 23.5,
+      "predicted_margin_abs": 24.6,
       "home_elo": 1641.7,
       "away_elo": 1569.3,
       "home_form": 25.0,
@@ -1341,7 +1341,7 @@
       "home_streak": 11,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.141384+00:00"
+      "generated_at": "2026-05-31T01:43:28.297825+00:00"
     },
     {
       "game_id": "38671",
@@ -1351,11 +1351,11 @@
       "venue": "Docklands",
       "date": "2026-08-01 13:05:00",
       "timestr": "None",
-      "home_win_prob": 26.7,
-      "away_win_prob": 73.3,
-      "predicted_margin": -29.8,
+      "home_win_prob": 32.1,
+      "away_win_prob": 67.9,
+      "predicted_margin": -26.3,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 29.8,
+      "predicted_margin_abs": 26.3,
       "home_elo": 1468.5,
       "away_elo": 1609.6,
       "home_form": -7.2,
@@ -1363,7 +1363,7 @@
       "home_streak": -2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.156595+00:00"
+      "generated_at": "2026-05-31T01:43:28.318194+00:00"
     },
     {
       "game_id": "38669",
@@ -1373,11 +1373,11 @@
       "venue": "York Park",
       "date": "2026-08-01 13:35:00",
       "timestr": "None",
-      "home_win_prob": 84.3,
-      "away_win_prob": 15.7,
-      "predicted_margin": 41.2,
+      "home_win_prob": 84.6,
+      "away_win_prob": 15.4,
+      "predicted_margin": 36.4,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 41.2,
+      "predicted_margin_abs": 36.4,
       "home_elo": 1614.1,
       "away_elo": 1357.1,
       "home_form": 1.4,
@@ -1385,7 +1385,7 @@
       "home_streak": 2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.171109+00:00"
+      "generated_at": "2026-05-31T01:43:28.338152+00:00"
     },
     {
       "game_id": "38665",
@@ -1395,11 +1395,11 @@
       "venue": "Docklands",
       "date": "2026-08-01 19:40:00",
       "timestr": "None",
-      "home_win_prob": 39.1,
-      "away_win_prob": 60.9,
-      "predicted_margin": -5.2,
+      "home_win_prob": 40.2,
+      "away_win_prob": 59.8,
+      "predicted_margin": -10.2,
       "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 5.2,
+      "predicted_margin_abs": 10.2,
       "home_elo": 1460.9,
       "away_elo": 1602.6,
       "home_form": 0.0,
@@ -1407,7 +1407,7 @@
       "home_streak": 3,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.187056+00:00"
+      "generated_at": "2026-05-31T01:43:28.359504+00:00"
     },
     {
       "game_id": "38670",
@@ -1417,11 +1417,11 @@
       "venue": "M.C.G.",
       "date": "2026-08-02 13:10:00",
       "timestr": "None",
-      "home_win_prob": 47.4,
-      "away_win_prob": 52.6,
-      "predicted_margin": -5.9,
+      "home_win_prob": 44.6,
+      "away_win_prob": 55.4,
+      "predicted_margin": -5.7,
       "predicted_winner": "West Coast",
-      "predicted_margin_abs": 5.9,
+      "predicted_margin_abs": 5.7,
       "home_elo": 1311.5,
       "away_elo": 1280.5,
       "home_form": -31.6,
@@ -1429,7 +1429,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.204508+00:00"
+      "generated_at": "2026-05-31T01:43:28.382267+00:00"
     },
     {
       "game_id": "38668",
@@ -1441,9 +1441,9 @@
       "timestr": "None",
       "home_win_prob": 64.6,
       "away_win_prob": 35.4,
-      "predicted_margin": 15.2,
+      "predicted_margin": 16.0,
       "predicted_winner": "Gold Coast",
-      "predicted_margin_abs": 15.2,
+      "predicted_margin_abs": 16.0,
       "home_elo": 1537.5,
       "away_elo": 1480.9,
       "home_form": 3.8,
@@ -1451,7 +1451,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.221543+00:00"
+      "generated_at": "2026-05-31T01:43:28.404858+00:00"
     },
     {
       "game_id": "38667",
@@ -1461,11 +1461,11 @@
       "venue": "Docklands",
       "date": "2026-08-02 16:40:00",
       "timestr": "None",
-      "home_win_prob": 28.5,
-      "away_win_prob": 71.5,
-      "predicted_margin": -30.0,
+      "home_win_prob": 27.0,
+      "away_win_prob": 73.0,
+      "predicted_margin": -28.4,
       "predicted_winner": "Adelaide",
-      "predicted_margin_abs": 30.0,
+      "predicted_margin_abs": 28.4,
       "home_elo": 1345.9,
       "away_elo": 1555.4,
       "home_form": -43.2,
@@ -1473,7 +1473,7 @@
       "home_streak": -6,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.236296+00:00"
+      "generated_at": "2026-05-31T01:43:28.425162+00:00"
     },
     {
       "game_id": "38680",
@@ -1483,11 +1483,11 @@
       "venue": "Docklands",
       "date": "2026-08-06 19:30:00",
       "timestr": "None",
-      "home_win_prob": 63.6,
-      "away_win_prob": 36.4,
-      "predicted_margin": 21.1,
+      "home_win_prob": 64.9,
+      "away_win_prob": 35.1,
+      "predicted_margin": 14.8,
       "predicted_winner": "Western Bulldogs",
-      "predicted_margin_abs": 21.1,
+      "predicted_margin_abs": 14.8,
       "home_elo": 1569.3,
       "away_elo": 1357.1,
       "home_form": -3.0,
@@ -1495,7 +1495,7 @@
       "home_streak": 2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.250807+00:00"
+      "generated_at": "2026-05-31T01:43:28.445295+00:00"
     },
     {
       "game_id": "38674",
@@ -1505,11 +1505,11 @@
       "venue": "Gabba",
       "date": "2026-08-07 19:40:00",
       "timestr": "None",
-      "home_win_prob": 56.5,
-      "away_win_prob": 43.5,
-      "predicted_margin": 3.2,
+      "home_win_prob": 59.6,
+      "away_win_prob": 40.4,
+      "predicted_margin": 7.1,
       "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 3.2,
+      "predicted_margin_abs": 7.1,
       "home_elo": 1602.6,
       "away_elo": 1614.1,
       "home_form": -13.8,
@@ -1517,7 +1517,7 @@
       "home_streak": -3,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.266197+00:00"
+      "generated_at": "2026-05-31T01:43:28.466583+00:00"
     },
     {
       "game_id": "38677",
@@ -1527,11 +1527,11 @@
       "venue": "M.C.G.",
       "date": "2026-08-08 13:15:00",
       "timestr": "None",
-      "home_win_prob": 30.9,
-      "away_win_prob": 69.1,
-      "predicted_margin": -11.1,
+      "home_win_prob": 37.7,
+      "away_win_prob": 62.3,
+      "predicted_margin": -8.6,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 11.1,
+      "predicted_margin_abs": 8.6,
       "home_elo": 1480.9,
       "away_elo": 1641.7,
       "home_form": 21.0,
@@ -1539,7 +1539,7 @@
       "home_streak": -1,
       "away_streak": 11,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.284152+00:00"
+      "generated_at": "2026-05-31T01:43:28.490072+00:00"
     },
     {
       "game_id": "38679",
@@ -1549,11 +1549,11 @@
       "venue": "S.C.G.",
       "date": "2026-08-08 16:15:00",
       "timestr": "None",
-      "home_win_prob": 76.8,
-      "away_win_prob": 23.2,
-      "predicted_margin": 29.3,
+      "home_win_prob": 71.7,
+      "away_win_prob": 28.3,
+      "predicted_margin": 22.4,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 29.3,
+      "predicted_margin_abs": 22.4,
       "home_elo": 1609.6,
       "away_elo": 1441.1,
       "home_form": 23.6,
@@ -1561,7 +1561,7 @@
       "home_streak": 1,
       "away_streak": -4,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.298889+00:00"
+      "generated_at": "2026-05-31T01:43:28.510447+00:00"
     },
     {
       "game_id": "38675",
@@ -1571,11 +1571,11 @@
       "venue": "Kardinia Park",
       "date": "2026-08-08 16:35:00",
       "timestr": "None",
-      "home_win_prob": 91.4,
-      "away_win_prob": 8.6,
-      "predicted_margin": 65.6,
+      "home_win_prob": 91.6,
+      "away_win_prob": 8.4,
+      "predicted_margin": 59.6,
       "predicted_winner": "Geelong",
-      "predicted_margin_abs": 65.6,
+      "predicted_margin_abs": 59.6,
       "home_elo": 1621.7,
       "away_elo": 1345.9,
       "home_form": 33.4,
@@ -1583,7 +1583,7 @@
       "home_streak": -1,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.313713+00:00"
+      "generated_at": "2026-05-31T01:43:28.531107+00:00"
     },
     {
       "game_id": "38681",
@@ -1593,11 +1593,11 @@
       "venue": "Adelaide Oval",
       "date": "2026-08-08 19:35:00",
       "timestr": "None",
-      "home_win_prob": 88.9,
-      "away_win_prob": 11.1,
-      "predicted_margin": 54.8,
+      "home_win_prob": 86.7,
+      "away_win_prob": 13.3,
+      "predicted_margin": 54.5,
       "predicted_winner": "Adelaide",
-      "predicted_margin_abs": 54.8,
+      "predicted_margin_abs": 54.5,
       "home_elo": 1555.4,
       "away_elo": 1311.5,
       "home_form": 9.0,
@@ -1605,7 +1605,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.328535+00:00"
+      "generated_at": "2026-05-31T01:43:28.551302+00:00"
     },
     {
       "game_id": "38682",
@@ -1615,11 +1615,11 @@
       "venue": "Perth Stadium",
       "date": "2026-08-09 16:10:00",
       "timestr": "None",
-      "home_win_prob": 29.4,
-      "away_win_prob": 70.6,
-      "predicted_margin": -26.7,
+      "home_win_prob": 38.2,
+      "away_win_prob": 61.8,
+      "predicted_margin": -17.5,
       "predicted_winner": "Collingwood",
-      "predicted_margin_abs": 26.7,
+      "predicted_margin_abs": 17.5,
       "home_elo": 1280.5,
       "away_elo": 1559.5,
       "home_form": -27.4,
@@ -1627,7 +1627,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.347065+00:00"
+      "generated_at": "2026-05-31T01:43:28.574478+00:00"
     },
     {
       "game_id": "38678",
@@ -1637,11 +1637,11 @@
       "venue": "Docklands",
       "date": "2026-08-09 19:20:00",
       "timestr": "None",
-      "home_win_prob": 62.4,
-      "away_win_prob": 37.6,
-      "predicted_margin": 16.0,
+      "home_win_prob": 66.9,
+      "away_win_prob": 33.1,
+      "predicted_margin": 19.5,
       "predicted_winner": "St Kilda",
-      "predicted_margin_abs": 16.0,
+      "predicted_margin_abs": 19.5,
       "home_elo": 1468.5,
       "away_elo": 1460.9,
       "home_form": -7.2,
@@ -1649,7 +1649,7 @@
       "home_streak": -2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.361859+00:00"
+      "generated_at": "2026-05-31T01:43:28.594750+00:00"
     },
     {
       "game_id": "38683",
@@ -1659,11 +1659,11 @@
       "venue": "Gabba",
       "date": "2026-08-10 12:00:00",
       "timestr": "None",
-      "home_win_prob": 69.4,
-      "away_win_prob": 30.6,
-      "predicted_margin": 11.7,
+      "home_win_prob": 73.4,
+      "away_win_prob": 26.6,
+      "predicted_margin": 19.2,
       "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 11.7,
+      "predicted_margin_abs": 19.2,
       "home_elo": 1602.6,
       "away_elo": 1537.5,
       "home_form": -13.8,
@@ -1671,7 +1671,7 @@
       "home_streak": -3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.379350+00:00"
+      "generated_at": "2026-05-31T01:43:28.617839+00:00"
     },
     {
       "game_id": "38684",
@@ -1681,11 +1681,11 @@
       "venue": "M.C.G.",
       "date": "2026-08-10 12:00:00",
       "timestr": "None",
-      "home_win_prob": 19.8,
-      "away_win_prob": 80.2,
-      "predicted_margin": -47.4,
+      "home_win_prob": 27.3,
+      "away_win_prob": 72.7,
+      "predicted_margin": -32.9,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 47.4,
+      "predicted_margin_abs": 32.9,
       "home_elo": 1345.9,
       "away_elo": 1609.6,
       "home_form": -43.2,
@@ -1693,7 +1693,7 @@
       "home_streak": -6,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.394122+00:00"
+      "generated_at": "2026-05-31T01:43:28.638308+00:00"
     },
     {
       "game_id": "38686",
@@ -1703,11 +1703,11 @@
       "venue": "M.C.G.",
       "date": "2026-08-10 12:00:00",
       "timestr": "None",
-      "home_win_prob": 69.8,
-      "away_win_prob": 30.2,
-      "predicted_margin": 23.4,
+      "home_win_prob": 75.5,
+      "away_win_prob": 24.5,
+      "predicted_margin": 31.0,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 23.4,
+      "predicted_margin_abs": 31.0,
       "home_elo": 1614.1,
       "away_elo": 1559.5,
       "home_form": 1.4,
@@ -1715,7 +1715,7 @@
       "home_streak": 2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.408816+00:00"
+      "generated_at": "2026-05-31T01:43:28.658643+00:00"
     },
     {
       "game_id": "38687",
@@ -1725,11 +1725,11 @@
       "venue": "Docklands",
       "date": "2026-08-10 12:00:00",
       "timestr": "None",
-      "home_win_prob": 27.8,
-      "away_win_prob": 72.2,
-      "predicted_margin": -22.1,
+      "home_win_prob": 28.8,
+      "away_win_prob": 71.2,
+      "predicted_margin": -25.8,
       "predicted_winner": "Geelong",
-      "predicted_margin_abs": 22.1,
+      "predicted_margin_abs": 25.8,
       "home_elo": 1357.1,
       "away_elo": 1621.7,
       "home_form": -25.2,
@@ -1737,7 +1737,7 @@
       "home_streak": 1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.423690+00:00"
+      "generated_at": "2026-05-31T01:43:28.678943+00:00"
     },
     {
       "game_id": "38688",
@@ -1747,11 +1747,11 @@
       "venue": "M.C.G.",
       "date": "2026-08-10 12:00:00",
       "timestr": "None",
-      "home_win_prob": 27.3,
-      "away_win_prob": 72.7,
-      "predicted_margin": -32.2,
+      "home_win_prob": 29.4,
+      "away_win_prob": 70.6,
+      "predicted_margin": -33.2,
       "predicted_winner": "St Kilda",
-      "predicted_margin_abs": 32.2,
+      "predicted_margin_abs": 33.2,
       "home_elo": 1311.5,
       "away_elo": 1468.5,
       "home_form": -31.6,
@@ -1759,7 +1759,7 @@
       "home_streak": -1,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.438461+00:00"
+      "generated_at": "2026-05-31T01:43:28.699382+00:00"
     },
     {
       "game_id": "38689",
@@ -1769,11 +1769,11 @@
       "venue": "Docklands",
       "date": "2026-08-10 12:00:00",
       "timestr": "None",
-      "home_win_prob": 63.4,
-      "away_win_prob": 36.6,
-      "predicted_margin": 14.4,
+      "home_win_prob": 69.4,
+      "away_win_prob": 30.6,
+      "predicted_margin": 19.5,
       "predicted_winner": "Western Bulldogs",
-      "predicted_margin_abs": 14.4,
+      "predicted_margin_abs": 19.5,
       "home_elo": 1569.3,
       "away_elo": 1460.9,
       "home_form": -3.0,
@@ -1781,7 +1781,7 @@
       "home_streak": 2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.453294+00:00"
+      "generated_at": "2026-05-31T01:43:28.719556+00:00"
     },
     {
       "game_id": "38690",
@@ -1791,11 +1791,11 @@
       "venue": "Adelaide Oval",
       "date": "2026-08-10 12:30:00",
       "timestr": "None",
-      "home_win_prob": 44.3,
-      "away_win_prob": 55.7,
-      "predicted_margin": 0.0,
+      "home_win_prob": 49.1,
+      "away_win_prob": 50.9,
+      "predicted_margin": -3.3,
       "predicted_winner": "Melbourne",
-      "predicted_margin_abs": 0.0,
+      "predicted_margin_abs": 3.3,
       "home_elo": 1441.1,
       "away_elo": 1480.9,
       "home_form": -6.4,
@@ -1803,7 +1803,7 @@
       "home_streak": -4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.468483+00:00"
+      "generated_at": "2026-05-31T01:43:28.740170+00:00"
     },
     {
       "game_id": "38691",
@@ -1813,11 +1813,11 @@
       "venue": "Perth Stadium",
       "date": "2026-08-10 14:00:00",
       "timestr": "None",
-      "home_win_prob": 76.8,
-      "away_win_prob": 23.2,
-      "predicted_margin": 26.1,
+      "home_win_prob": 76.3,
+      "away_win_prob": 23.7,
+      "predicted_margin": 28.9,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 26.1,
+      "predicted_margin_abs": 28.9,
       "home_elo": 1641.7,
       "away_elo": 1555.4,
       "home_form": 25.0,
@@ -1825,7 +1825,7 @@
       "home_streak": 11,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.486293+00:00"
+      "generated_at": "2026-05-31T01:43:28.763037+00:00"
     },
     {
       "game_id": "38693",
@@ -1835,11 +1835,11 @@
       "venue": "Docklands",
       "date": "2026-08-17 12:00:00",
       "timestr": "None",
-      "home_win_prob": 26.7,
-      "away_win_prob": 73.3,
-      "predicted_margin": -19.8,
+      "home_win_prob": 29.3,
+      "away_win_prob": 70.7,
+      "predicted_margin": -22.5,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 19.8,
+      "predicted_margin_abs": 22.5,
       "home_elo": 1460.9,
       "away_elo": 1641.7,
       "home_form": 0.0,
@@ -1847,7 +1847,7 @@
       "home_streak": 3,
       "away_streak": 11,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.503879+00:00"
+      "generated_at": "2026-05-31T01:43:28.786169+00:00"
     },
     {
       "game_id": "38692",
@@ -1857,11 +1857,11 @@
       "venue": "M.C.G.",
       "date": "2026-08-17 12:00:00",
       "timestr": "None",
-      "home_win_prob": 43.2,
-      "away_win_prob": 56.8,
-      "predicted_margin": -0.7,
+      "home_win_prob": 42.7,
+      "away_win_prob": 57.3,
+      "predicted_margin": -5.9,
       "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 0.7,
+      "predicted_margin_abs": 5.9,
       "home_elo": 1559.5,
       "away_elo": 1602.6,
       "home_form": -10.8,
@@ -1869,7 +1869,7 @@
       "home_streak": -1,
       "away_streak": -3,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.519949+00:00"
+      "generated_at": "2026-05-31T01:43:28.807532+00:00"
     },
     {
       "game_id": "38694",
@@ -1879,11 +1879,11 @@
       "venue": "Docklands",
       "date": "2026-08-17 12:00:00",
       "timestr": "None",
-      "home_win_prob": 50.8,
-      "away_win_prob": 49.2,
-      "predicted_margin": -2.9,
-      "predicted_winner": "Essendon",
-      "predicted_margin_abs": 2.9,
+      "home_win_prob": 49.1,
+      "away_win_prob": 50.9,
+      "predicted_margin": -2.8,
+      "predicted_winner": "Port Adelaide",
+      "predicted_margin_abs": 2.8,
       "home_elo": 1345.9,
       "away_elo": 1441.1,
       "home_form": -43.2,
@@ -1891,7 +1891,7 @@
       "home_streak": -6,
       "away_streak": -4,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.534813+00:00"
+      "generated_at": "2026-05-31T01:43:28.827706+00:00"
     },
     {
       "game_id": "38695",
@@ -1901,11 +1901,11 @@
       "venue": "Kardinia Park",
       "date": "2026-08-17 12:00:00",
       "timestr": "None",
-      "home_win_prob": 92.2,
-      "away_win_prob": 7.8,
-      "predicted_margin": 62.3,
+      "home_win_prob": 91.4,
+      "away_win_prob": 8.6,
+      "predicted_margin": 60.9,
       "predicted_winner": "Geelong",
-      "predicted_margin_abs": 62.3,
+      "predicted_margin_abs": 60.9,
       "home_elo": 1621.7,
       "away_elo": 1311.5,
       "home_form": 33.4,
@@ -1913,7 +1913,7 @@
       "home_streak": -1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.549777+00:00"
+      "generated_at": "2026-05-31T01:43:28.847980+00:00"
     },
     {
       "game_id": "38696",
@@ -1923,11 +1923,11 @@
       "venue": "M.C.G.",
       "date": "2026-08-17 12:00:00",
       "timestr": "None",
-      "home_win_prob": 48.1,
-      "away_win_prob": 51.9,
-      "predicted_margin": 3.5,
+      "home_win_prob": 48.0,
+      "away_win_prob": 52.0,
+      "predicted_margin": -0.7,
       "predicted_winner": "Western Bulldogs",
-      "predicted_margin_abs": 3.5,
+      "predicted_margin_abs": 0.7,
       "home_elo": 1480.9,
       "away_elo": 1569.3,
       "home_form": 21.0,
@@ -1935,7 +1935,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.564894+00:00"
+      "generated_at": "2026-05-31T01:43:28.868544+00:00"
     },
     {
       "game_id": "38697",
@@ -1945,11 +1945,11 @@
       "venue": "Docklands",
       "date": "2026-08-17 12:00:00",
       "timestr": "None",
-      "home_win_prob": 52.8,
-      "away_win_prob": 47.2,
-      "predicted_margin": -4.0,
+      "home_win_prob": 57.8,
+      "away_win_prob": 42.2,
+      "predicted_margin": -0.2,
       "predicted_winner": "St Kilda",
-      "predicted_margin_abs": 4.0,
+      "predicted_margin_abs": 0.2,
       "home_elo": 1468.5,
       "away_elo": 1537.5,
       "home_form": -7.2,
@@ -1957,7 +1957,7 @@
       "home_streak": -2,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.581516+00:00"
+      "generated_at": "2026-05-31T01:43:28.890555+00:00"
     },
     {
       "game_id": "38698",
@@ -1967,11 +1967,11 @@
       "venue": "S.C.G.",
       "date": "2026-08-17 12:00:00",
       "timestr": "None",
-      "home_win_prob": 87.7,
-      "away_win_prob": 12.3,
-      "predicted_margin": 51.1,
+      "home_win_prob": 79.0,
+      "away_win_prob": 21.0,
+      "predicted_margin": 42.2,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 51.1,
+      "predicted_margin_abs": 42.2,
       "home_elo": 1609.6,
       "away_elo": 1357.1,
       "home_form": 23.6,
@@ -1979,7 +1979,7 @@
       "home_streak": 1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.600219+00:00"
+      "generated_at": "2026-05-31T01:43:28.910873+00:00"
     },
     {
       "game_id": "38700",
@@ -1989,11 +1989,11 @@
       "venue": "Perth Stadium",
       "date": "2026-08-17 14:00:00",
       "timestr": "None",
-      "home_win_prob": 14.7,
-      "away_win_prob": 85.3,
-      "predicted_margin": -39.1,
+      "home_win_prob": 20.0,
+      "away_win_prob": 80.0,
+      "predicted_margin": -36.9,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 39.1,
+      "predicted_margin_abs": 36.9,
       "home_elo": 1280.5,
       "away_elo": 1614.1,
       "home_form": -27.4,
@@ -2001,7 +2001,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-05-31T00:16:17.617404+00:00"
+      "generated_at": "2026-05-31T01:43:28.933511+00:00"
     }
   ]
 }
