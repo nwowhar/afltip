@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-09T22:04:22.735776+00:00",
+  "generated_at": "2026-08-09T23:28:29.124071+00:00",
   "predictions": [
     {
       "game_id": "38691",
@@ -21,7 +21,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.447105+00:00"
+      "generated_at": "2026-08-09T23:28:24.806004+00:00"
     },
     {
       "game_id": "38688",
@@ -43,7 +43,7 @@
       "home_streak": -1,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.472827+00:00"
+      "generated_at": "2026-08-09T23:28:24.827244+00:00"
     },
     {
       "game_id": "38687",
@@ -65,7 +65,7 @@
       "home_streak": 1,
       "away_streak": 4,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.498521+00:00"
+      "generated_at": "2026-08-09T23:28:24.848799+00:00"
     },
     {
       "game_id": "38683",
@@ -87,7 +87,7 @@
       "home_streak": 1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.528444+00:00"
+      "generated_at": "2026-08-09T23:28:24.873035+00:00"
     },
     {
       "game_id": "38686",
@@ -109,7 +109,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.554350+00:00"
+      "generated_at": "2026-08-09T23:28:24.894438+00:00"
     },
     {
       "game_id": "38690",
@@ -131,7 +131,7 @@
       "home_streak": -5,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.581880+00:00"
+      "generated_at": "2026-08-09T23:28:24.916112+00:00"
     },
     {
       "game_id": "38689",
@@ -153,7 +153,7 @@
       "home_streak": -2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.608089+00:00"
+      "generated_at": "2026-08-09T23:28:24.937340+00:00"
     },
     {
       "game_id": "38684",
@@ -175,7 +175,7 @@
       "home_streak": -3,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.634317+00:00"
+      "generated_at": "2026-08-09T23:28:24.958858+00:00"
     },
     {
       "game_id": "38697",
@@ -197,7 +197,7 @@
       "home_streak": -2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.662709+00:00"
+      "generated_at": "2026-08-09T23:28:24.982249+00:00"
     },
     {
       "game_id": "38692",
@@ -219,7 +219,7 @@
       "home_streak": 1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.690620+00:00"
+      "generated_at": "2026-08-09T23:28:25.004837+00:00"
     },
     {
       "game_id": "38693",
@@ -241,7 +241,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.720249+00:00"
+      "generated_at": "2026-08-09T23:28:25.029061+00:00"
     },
     {
       "game_id": "38696",
@@ -263,7 +263,7 @@
       "home_streak": 2,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.746435+00:00"
+      "generated_at": "2026-08-09T23:28:25.051236+00:00"
     },
     {
       "game_id": "38695",
@@ -285,7 +285,7 @@
       "home_streak": 4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.773096+00:00"
+      "generated_at": "2026-08-09T23:28:25.072894+00:00"
     },
     {
       "game_id": "38694",
@@ -307,7 +307,7 @@
       "home_streak": -3,
       "away_streak": -5,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.799049+00:00"
+      "generated_at": "2026-08-09T23:28:25.094693+00:00"
     },
     {
       "game_id": "38698",
@@ -329,7 +329,7 @@
       "home_streak": 3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.825076+00:00"
+      "generated_at": "2026-08-09T23:28:25.116013+00:00"
     },
     {
       "game_id": "38700",
@@ -351,7 +351,7 @@
       "home_streak": -9,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-09T22:04:17.854360+00:00"
+      "generated_at": "2026-08-09T23:28:25.139731+00:00"
     }
   ]
 }
