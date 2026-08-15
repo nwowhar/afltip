@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-16T01:30:03.797868+00:00",
+  "generated_at": "2026-08-16T01:59:11.964708+00:00",
   "predictions": [
     {
       "game_id": "38689",
@@ -21,7 +21,7 @@
       "home_streak": -2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.715996+00:00"
+      "generated_at": "2026-08-16T01:59:07.901192+00:00"
     },
     {
       "game_id": "38684",
@@ -43,7 +43,7 @@
       "home_streak": -3,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.735645+00:00"
+      "generated_at": "2026-08-16T01:59:07.920817+00:00"
     },
     {
       "game_id": "38697",
@@ -65,7 +65,7 @@
       "home_streak": 1,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.757627+00:00"
+      "generated_at": "2026-08-16T01:59:07.942592+00:00"
     },
     {
       "game_id": "38692",
@@ -87,7 +87,7 @@
       "home_streak": 0,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.778697+00:00"
+      "generated_at": "2026-08-16T01:59:07.963413+00:00"
     },
     {
       "game_id": "38693",
@@ -109,7 +109,7 @@
       "home_streak": 3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.801878+00:00"
+      "generated_at": "2026-08-16T01:59:07.986350+00:00"
     },
     {
       "game_id": "38696",
@@ -131,7 +131,7 @@
       "home_streak": 3,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.821987+00:00"
+      "generated_at": "2026-08-16T01:59:08.006525+00:00"
     },
     {
       "game_id": "38695",
@@ -153,7 +153,7 @@
       "home_streak": 5,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.841242+00:00"
+      "generated_at": "2026-08-16T01:59:08.025708+00:00"
     },
     {
       "game_id": "38694",
@@ -175,7 +175,7 @@
       "home_streak": -3,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.860651+00:00"
+      "generated_at": "2026-08-16T01:59:08.045008+00:00"
     },
     {
       "game_id": "38698",
@@ -197,7 +197,7 @@
       "home_streak": 3,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.879975+00:00"
+      "generated_at": "2026-08-16T01:59:08.064117+00:00"
     },
     {
       "game_id": "38700",
@@ -219,7 +219,7 @@
       "home_streak": -9,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-16T01:29:59.902973+00:00"
+      "generated_at": "2026-08-16T01:59:08.086595+00:00"
     }
   ]
 }
