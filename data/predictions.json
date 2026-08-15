@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-15T14:36:27.865228+00:00",
+  "generated_at": "2026-08-15T15:04:17.692280+00:00",
   "predictions": [
     {
       "game_id": "38688",
@@ -8,7 +8,7 @@
       "away": "St Kilda",
       "venue": "M.C.G.",
       "date": "2026-08-15 12:35:00",
-      "timestr": "3/4 Time",
+      "timestr": "Q4 23:46",
       "home_win_prob": 28.3,
       "away_win_prob": 71.7,
       "predicted_margin": -31.2,
@@ -21,7 +21,7 @@
       "home_streak": -1,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.525839+00:00"
+      "generated_at": "2026-08-15T15:04:11.769770+00:00"
     },
     {
       "game_id": "38687",
@@ -43,7 +43,7 @@
       "home_streak": 1,
       "away_streak": 4,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.547189+00:00"
+      "generated_at": "2026-08-15T15:04:11.795509+00:00"
     },
     {
       "game_id": "38683",
@@ -65,7 +65,7 @@
       "home_streak": 1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.571700+00:00"
+      "generated_at": "2026-08-15T15:04:11.825169+00:00"
     },
     {
       "game_id": "38686",
@@ -87,7 +87,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.592869+00:00"
+      "generated_at": "2026-08-15T15:04:11.850684+00:00"
     },
     {
       "game_id": "38690",
@@ -109,7 +109,7 @@
       "home_streak": -5,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.614777+00:00"
+      "generated_at": "2026-08-15T15:04:11.876964+00:00"
     },
     {
       "game_id": "38689",
@@ -131,7 +131,7 @@
       "home_streak": -2,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.636008+00:00"
+      "generated_at": "2026-08-15T15:04:11.902479+00:00"
     },
     {
       "game_id": "38684",
@@ -153,7 +153,7 @@
       "home_streak": -3,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.657317+00:00"
+      "generated_at": "2026-08-15T15:04:11.928348+00:00"
     },
     {
       "game_id": "38697",
@@ -175,7 +175,7 @@
       "home_streak": -2,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.680337+00:00"
+      "generated_at": "2026-08-15T15:04:11.956273+00:00"
     },
     {
       "game_id": "38692",
@@ -197,7 +197,7 @@
       "home_streak": 1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.703056+00:00"
+      "generated_at": "2026-08-15T15:04:11.983618+00:00"
     },
     {
       "game_id": "38693",
@@ -219,7 +219,7 @@
       "home_streak": 3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.726910+00:00"
+      "generated_at": "2026-08-15T15:04:12.013090+00:00"
     },
     {
       "game_id": "38696",
@@ -241,7 +241,7 @@
       "home_streak": 2,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.748608+00:00"
+      "generated_at": "2026-08-15T15:04:12.039203+00:00"
     },
     {
       "game_id": "38695",
@@ -263,7 +263,7 @@
       "home_streak": 4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.769989+00:00"
+      "generated_at": "2026-08-15T15:04:12.064879+00:00"
     },
     {
       "game_id": "38694",
@@ -285,7 +285,7 @@
       "home_streak": -3,
       "away_streak": -5,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.791337+00:00"
+      "generated_at": "2026-08-15T15:04:12.090791+00:00"
     },
     {
       "game_id": "38698",
@@ -307,7 +307,7 @@
       "home_streak": 3,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.812805+00:00"
+      "generated_at": "2026-08-15T15:04:12.116752+00:00"
     },
     {
       "game_id": "38700",
@@ -329,7 +329,7 @@
       "home_streak": -9,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-15T14:36:23.836526+00:00"
+      "generated_at": "2026-08-15T15:04:12.145881+00:00"
     }
   ]
 }
