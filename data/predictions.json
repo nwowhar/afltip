@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-21T22:33:31.184366+00:00",
+  "generated_at": "2026-08-22T13:47:23.458113+00:00",
   "predictions": [
     {
       "game_id": "38693",
@@ -8,7 +8,7 @@
       "away": "Fremantle",
       "venue": "Docklands",
       "date": "2026-08-22 13:15:00",
-      "timestr": "None",
+      "timestr": "Q1 31:32",
       "home_win_prob": 38.0,
       "away_win_prob": 62.0,
       "predicted_margin": -16.8,
@@ -21,7 +21,7 @@
       "home_streak": 0,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-21T22:33:27.992449+00:00"
+      "generated_at": "2026-08-22T13:47:08.062726+00:00"
     },
     {
       "game_id": "38696",
@@ -43,7 +43,7 @@
       "home_streak": 3,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-21T22:33:28.008764+00:00"
+      "generated_at": "2026-08-22T13:47:08.090271+00:00"
     },
     {
       "game_id": "38695",
@@ -65,7 +65,7 @@
       "home_streak": 5,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-08-21T22:33:28.024641+00:00"
+      "generated_at": "2026-08-22T13:47:08.117544+00:00"
     },
     {
       "game_id": "38694",
@@ -87,7 +87,7 @@
       "home_streak": -4,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-08-21T22:33:28.039907+00:00"
+      "generated_at": "2026-08-22T13:47:08.144639+00:00"
     },
     {
       "game_id": "38698",
@@ -109,7 +109,7 @@
       "home_streak": 4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-21T22:33:28.055161+00:00"
+      "generated_at": "2026-08-22T13:47:08.171895+00:00"
     },
     {
       "game_id": "38700",
@@ -131,7 +131,7 @@
       "home_streak": -10,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-21T22:33:28.072294+00:00"
+      "generated_at": "2026-08-22T13:47:08.202019+00:00"
     }
   ]
 }
