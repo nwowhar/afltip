@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-22T17:35:50.936269+00:00",
+  "generated_at": "2026-08-22T18:02:06.138158+00:00",
   "predictions": [
     {
       "game_id": "38696",
@@ -8,7 +8,7 @@
       "away": "Western Bulldogs",
       "venue": "M.C.G.",
       "date": "2026-08-22 16:15:00",
-      "timestr": "1/2 Time",
+      "timestr": "Q3 15:38",
       "home_win_prob": 69.4,
       "away_win_prob": 30.6,
       "predicted_margin": 18.8,
@@ -21,7 +21,7 @@
       "home_streak": 3,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-22T17:35:45.726516+00:00"
+      "generated_at": "2026-08-22T18:02:01.611188+00:00"
     },
     {
       "game_id": "38695",
@@ -43,7 +43,7 @@
       "home_streak": 5,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-08-22T17:35:45.753091+00:00"
+      "generated_at": "2026-08-22T18:02:01.634278+00:00"
     },
     {
       "game_id": "38694",
@@ -65,7 +65,7 @@
       "home_streak": -4,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-08-22T17:35:45.779747+00:00"
+      "generated_at": "2026-08-22T18:02:01.657292+00:00"
     },
     {
       "game_id": "38698",
@@ -87,7 +87,7 @@
       "home_streak": 4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-22T17:35:45.806182+00:00"
+      "generated_at": "2026-08-22T18:02:01.679910+00:00"
     },
     {
       "game_id": "38700",
@@ -109,7 +109,7 @@
       "home_streak": -10,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-22T17:35:45.836067+00:00"
+      "generated_at": "2026-08-22T18:02:01.704684+00:00"
     }
   ]
 }
