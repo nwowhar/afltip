@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-22T22:45:14.643598+00:00",
+  "generated_at": "2026-08-22T23:36:14.903635+00:00",
   "predictions": [
     {
       "game_id": "38694",
@@ -9,11 +9,11 @@
       "venue": "Docklands",
       "date": "2026-08-23 12:20:00",
       "timestr": "None",
-      "home_win_prob": 48.3,
-      "away_win_prob": 51.7,
-      "predicted_margin": -9.6,
-      "predicted_winner": "Port Adelaide",
-      "predicted_margin_abs": 9.6,
+      "home_win_prob": 50.6,
+      "away_win_prob": 49.4,
+      "predicted_margin": -3.4,
+      "predicted_winner": "Essendon",
+      "predicted_margin_abs": 3.4,
       "home_elo": 1318.1,
       "away_elo": 1421.6,
       "home_form": -53.0,
@@ -21,7 +21,7 @@
       "home_streak": -4,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-08-22T22:45:08.909938+00:00"
+      "generated_at": "2026-08-22T23:36:10.212145+00:00"
     },
     {
       "game_id": "38698",
@@ -31,11 +31,11 @@
       "venue": "S.C.G.",
       "date": "2026-08-23 15:20:00",
       "timestr": "None",
-      "home_win_prob": 83.7,
-      "away_win_prob": 16.3,
-      "predicted_margin": 36.3,
+      "home_win_prob": 84.7,
+      "away_win_prob": 15.3,
+      "predicted_margin": 34.0,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 36.3,
+      "predicted_margin_abs": 34.0,
       "home_elo": 1618.1,
       "away_elo": 1369.7,
       "home_form": 37.4,
@@ -43,7 +43,7 @@
       "home_streak": 4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-22T22:45:08.938429+00:00"
+      "generated_at": "2026-08-22T23:36:10.234509+00:00"
     },
     {
       "game_id": "38700",
@@ -53,11 +53,11 @@
       "venue": "Perth Stadium",
       "date": "2026-08-23 19:20:00",
       "timestr": "None",
-      "home_win_prob": 16.0,
-      "away_win_prob": 84.0,
-      "predicted_margin": -44.9,
+      "home_win_prob": 15.2,
+      "away_win_prob": 84.8,
+      "predicted_margin": -46.1,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 44.9,
+      "predicted_margin_abs": 46.1,
       "home_elo": 1258.4,
       "away_elo": 1598.7,
       "home_form": -35.6,
@@ -65,7 +65,7 @@
       "home_streak": -10,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-22T22:45:08.971179+00:00"
+      "generated_at": "2026-08-22T23:36:10.259453+00:00"
     }
   ]
 }
