@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-22T20:28:19.718337+00:00",
+  "generated_at": "2026-08-22T21:00:06.226670+00:00",
   "predictions": [
     {
       "game_id": "38695",
@@ -8,7 +8,7 @@
       "away": "Richmond",
       "venue": "Kardinia Park",
       "date": "2026-08-22 19:45:00",
-      "timestr": "Q2  3:55",
+      "timestr": "1/2 Time",
       "home_win_prob": 91.7,
       "away_win_prob": 8.3,
       "predicted_margin": 70.4,
@@ -21,7 +21,7 @@
       "home_streak": 5,
       "away_streak": -2,
       "pav_available": 0,
-      "generated_at": "2026-08-22T20:28:16.363501+00:00"
+      "generated_at": "2026-08-22T21:00:01.917548+00:00"
     },
     {
       "game_id": "38694",
@@ -43,7 +43,7 @@
       "home_streak": -4,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-08-22T20:28:16.380108+00:00"
+      "generated_at": "2026-08-22T21:00:01.934351+00:00"
     },
     {
       "game_id": "38698",
@@ -65,7 +65,7 @@
       "home_streak": 4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-22T20:28:16.396714+00:00"
+      "generated_at": "2026-08-22T21:00:01.951341+00:00"
     },
     {
       "game_id": "38700",
@@ -87,7 +87,7 @@
       "home_streak": -10,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-22T20:28:16.415114+00:00"
+      "generated_at": "2026-08-22T21:00:01.971290+00:00"
     }
   ]
 }
