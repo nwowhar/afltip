@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T13:56:32.253310+00:00",
+  "generated_at": "2026-08-23T14:44:26.011924+00:00",
   "predictions": [
     {
       "game_id": "38694",
@@ -8,7 +8,7 @@
       "away": "Port Adelaide",
       "venue": "Docklands",
       "date": "2026-08-23 12:20:00",
-      "timestr": "Q3  9:31",
+      "timestr": "Q4 22:39",
       "home_win_prob": 50.6,
       "away_win_prob": 49.4,
       "predicted_margin": -3.4,
@@ -21,7 +21,7 @@
       "home_streak": -4,
       "away_streak": -6,
       "pav_available": 0,
-      "generated_at": "2026-08-23T13:56:26.672238+00:00"
+      "generated_at": "2026-08-23T14:44:22.524746+00:00"
     },
     {
       "game_id": "38698",
@@ -43,7 +43,7 @@
       "home_streak": 4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-23T13:56:26.700966+00:00"
+      "generated_at": "2026-08-23T14:44:22.541214+00:00"
     },
     {
       "game_id": "38700",
@@ -65,7 +65,7 @@
       "home_streak": -10,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-23T13:56:26.732963+00:00"
+      "generated_at": "2026-08-23T14:44:22.559441+00:00"
     }
   ]
 }
