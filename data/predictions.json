@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T19:36:18.549081+00:00",
+  "generated_at": "2026-08-23T20:00:54.115482+00:00",
   "predictions": [
     {
       "game_id": "38700",
@@ -8,20 +8,20 @@
       "away": "Hawthorn",
       "venue": "Perth Stadium",
       "date": "2026-08-23 19:20:00",
-      "timestr": "Q1 15:05",
-      "home_win_prob": 12.1,
-      "away_win_prob": 87.9,
-      "predicted_margin": -60.6,
+      "timestr": "Q2  2:00",
+      "home_win_prob": 13.3,
+      "away_win_prob": 86.7,
+      "predicted_margin": -44.0,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 60.6,
-      "home_elo": 1271.7,
-      "away_elo": 1597.9,
+      "predicted_margin_abs": 44.0,
+      "home_elo": 1258.4,
+      "away_elo": 1598.7,
       "home_form": -35.6,
       "away_form": 22.4,
       "home_streak": -10,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-23T19:36:14.465039+00:00"
+      "generated_at": "2026-08-23T20:00:49.831416+00:00"
     }
   ]
 }
