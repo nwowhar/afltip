@@ -1,28 +1,6 @@
 {
-  "generated_at": "2026-08-23T18:03:04.178083+00:00",
+  "generated_at": "2026-08-23T18:45:41.317497+00:00",
   "predictions": [
-    {
-      "game_id": "38698",
-      "round": 24,
-      "home": "Sydney",
-      "away": "North Melbourne",
-      "venue": "S.C.G.",
-      "date": "2026-08-23 15:20:00",
-      "timestr": "Q4 35:10",
-      "home_win_prob": 80.4,
-      "away_win_prob": 19.6,
-      "predicted_margin": 33.1,
-      "predicted_winner": "Sydney",
-      "predicted_margin_abs": 33.1,
-      "home_elo": 1618.1,
-      "away_elo": 1369.7,
-      "home_form": 37.4,
-      "away_form": -11.0,
-      "home_streak": 4,
-      "away_streak": -1,
-      "pav_available": 0,
-      "generated_at": "2026-08-23T18:03:00.647644+00:00"
-    },
     {
       "game_id": "38700",
       "round": 24,
@@ -31,11 +9,11 @@
       "venue": "Perth Stadium",
       "date": "2026-08-23 19:20:00",
       "timestr": "None",
-      "home_win_prob": 17.6,
-      "away_win_prob": 82.4,
-      "predicted_margin": -41.5,
+      "home_win_prob": 13.3,
+      "away_win_prob": 86.7,
+      "predicted_margin": -44.0,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 41.5,
+      "predicted_margin_abs": 44.0,
       "home_elo": 1258.4,
       "away_elo": 1598.7,
       "home_form": -35.6,
@@ -43,7 +21,7 @@
       "home_streak": -10,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-23T18:03:00.666254+00:00"
+      "generated_at": "2026-08-23T18:45:36.916440+00:00"
     }
   ]
 }
