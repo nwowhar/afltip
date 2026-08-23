@@ -1,28 +1,6 @@
 {
-  "generated_at": "2026-08-23T14:44:26.011924+00:00",
+  "generated_at": "2026-08-23T15:35:44.298041+00:00",
   "predictions": [
-    {
-      "game_id": "38694",
-      "round": 24,
-      "home": "Essendon",
-      "away": "Port Adelaide",
-      "venue": "Docklands",
-      "date": "2026-08-23 12:20:00",
-      "timestr": "Q4 22:39",
-      "home_win_prob": 50.6,
-      "away_win_prob": 49.4,
-      "predicted_margin": -3.4,
-      "predicted_winner": "Essendon",
-      "predicted_margin_abs": 3.4,
-      "home_elo": 1318.1,
-      "away_elo": 1421.6,
-      "home_form": -53.0,
-      "away_form": -54.4,
-      "home_streak": -4,
-      "away_streak": -6,
-      "pav_available": 0,
-      "generated_at": "2026-08-23T14:44:22.524746+00:00"
-    },
     {
       "game_id": "38698",
       "round": 24,
@@ -30,12 +8,12 @@
       "away": "North Melbourne",
       "venue": "S.C.G.",
       "date": "2026-08-23 15:20:00",
-      "timestr": "None",
-      "home_win_prob": 84.7,
-      "away_win_prob": 15.3,
-      "predicted_margin": 34.0,
+      "timestr": "Q1 14:14",
+      "home_win_prob": 80.4,
+      "away_win_prob": 19.6,
+      "predicted_margin": 33.1,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 34.0,
+      "predicted_margin_abs": 33.1,
       "home_elo": 1618.1,
       "away_elo": 1369.7,
       "home_form": 37.4,
@@ -43,7 +21,7 @@
       "home_streak": 4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-23T14:44:22.541214+00:00"
+      "generated_at": "2026-08-23T15:35:40.902275+00:00"
     },
     {
       "game_id": "38700",
@@ -53,11 +31,11 @@
       "venue": "Perth Stadium",
       "date": "2026-08-23 19:20:00",
       "timestr": "None",
-      "home_win_prob": 15.2,
-      "away_win_prob": 84.8,
-      "predicted_margin": -46.1,
+      "home_win_prob": 17.6,
+      "away_win_prob": 82.4,
+      "predicted_margin": -41.5,
       "predicted_winner": "Hawthorn",
-      "predicted_margin_abs": 46.1,
+      "predicted_margin_abs": 41.5,
       "home_elo": 1258.4,
       "away_elo": 1598.7,
       "home_form": -35.6,
@@ -65,7 +43,7 @@
       "home_streak": -10,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-23T14:44:22.559441+00:00"
+      "generated_at": "2026-08-23T15:35:40.920970+00:00"
     }
   ]
 }
