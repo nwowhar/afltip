@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T16:03:09.610169+00:00",
+  "generated_at": "2026-08-23T16:58:42.872054+00:00",
   "predictions": [
     {
       "game_id": "38698",
@@ -8,7 +8,7 @@
       "away": "North Melbourne",
       "venue": "S.C.G.",
       "date": "2026-08-23 15:20:00",
-      "timestr": "Q2  3:00",
+      "timestr": "Q3  6:34",
       "home_win_prob": 80.4,
       "away_win_prob": 19.6,
       "predicted_margin": 33.1,
@@ -21,7 +21,7 @@
       "home_streak": 4,
       "away_streak": -1,
       "pav_available": 0,
-      "generated_at": "2026-08-23T16:03:04.980634+00:00"
+      "generated_at": "2026-08-23T16:58:39.425644+00:00"
     },
     {
       "game_id": "38700",
@@ -43,7 +43,7 @@
       "home_streak": -10,
       "away_streak": 0,
       "pav_available": 0,
-      "generated_at": "2026-08-23T16:03:05.007476+00:00"
+      "generated_at": "2026-08-23T16:58:39.444329+00:00"
     }
   ]
 }
