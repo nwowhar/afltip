@@ -1,28 +1,6 @@
 {
-  "generated_at": "2026-08-27T18:18:08.868707+00:00",
+  "generated_at": "2026-08-29T07:40:06.681163+00:00",
   "predictions": [
-    {
-      "game_id": "38720",
-      "round": 25,
-      "home": "Western Bulldogs",
-      "away": "Collingwood",
-      "venue": "M.C.G.",
-      "date": "2026-08-28 19:40:00",
-      "timestr": "None",
-      "home_win_prob": 67.3,
-      "away_win_prob": 32.7,
-      "predicted_margin": 12.3,
-      "predicted_winner": "Western Bulldogs",
-      "predicted_margin_abs": 12.3,
-      "home_elo": 1564.9,
-      "away_elo": 1567.2,
-      "home_form": 3.6,
-      "away_form": -7.0,
-      "home_streak": 1,
-      "away_streak": -1,
-      "pav_available": 0,
-      "generated_at": "2026-08-27T18:18:04.295961+00:00"
-    },
     {
       "game_id": "38719",
       "round": 25,
@@ -31,11 +9,11 @@
       "venue": "M.C.G.",
       "date": "2026-08-29 19:35:00",
       "timestr": "None",
-      "home_win_prob": 63.1,
-      "away_win_prob": 36.9,
-      "predicted_margin": 10.7,
+      "home_win_prob": 60.9,
+      "away_win_prob": 39.1,
+      "predicted_margin": 12.1,
       "predicted_winner": "Melbourne",
-      "predicted_margin_abs": 10.7,
+      "predicted_margin_abs": 12.1,
       "home_elo": 1526.6,
       "away_elo": 1533.9,
       "home_form": 9.6,
@@ -43,7 +21,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-27T18:18:04.318001+00:00"
+      "generated_at": "2026-08-29T07:40:00.943201+00:00"
     },
     {
       "game_id": "38723",
@@ -53,11 +31,11 @@
       "venue": "Perth Stadium",
       "date": "2026-09-03 20:10:00",
       "timestr": "None",
-      "home_win_prob": 57.9,
-      "away_win_prob": 42.1,
-      "predicted_margin": 9.8,
+      "home_win_prob": 60.5,
+      "away_win_prob": 39.5,
+      "predicted_margin": 8.0,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 9.8,
+      "predicted_margin_abs": 8.0,
       "home_elo": 1637.0,
       "away_elo": 1600.4,
       "home_form": 18.0,
@@ -65,7 +43,7 @@
       "home_streak": -1,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-08-27T18:18:04.342786+00:00"
+      "generated_at": "2026-08-29T07:40:00.975921+00:00"
     },
     {
       "game_id": "38724",
@@ -75,11 +53,11 @@
       "venue": "S.C.G.",
       "date": "2026-09-05 15:15:00",
       "timestr": "None",
-      "home_win_prob": 60.9,
-      "away_win_prob": 39.1,
-      "predicted_margin": 7.0,
+      "home_win_prob": 60.5,
+      "away_win_prob": 39.5,
+      "predicted_margin": 11.7,
       "predicted_winner": "Sydney",
-      "predicted_margin_abs": 7.0,
+      "predicted_margin_abs": 11.7,
       "home_elo": 1620.0,
       "away_elo": 1648.4,
       "home_form": 51.2,
@@ -87,7 +65,7 @@
       "home_streak": 5,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-08-27T18:18:04.365468+00:00"
+      "generated_at": "2026-08-29T07:40:01.006037+00:00"
     }
   ]
 }
