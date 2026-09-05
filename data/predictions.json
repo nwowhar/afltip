@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T01:38:14.437470+00:00",
+  "generated_at": "2026-09-05T17:33:21.458060+00:00",
   "predictions": [
     {
       "game_id": "38724",
@@ -8,7 +8,7 @@
       "away": "Brisbane Lions",
       "venue": "S.C.G.",
       "date": "2026-09-05 15:15:00",
-      "timestr": "None",
+      "timestr": "Q4  2:37",
       "home_win_prob": 57.4,
       "away_win_prob": 42.6,
       "predicted_margin": 6.5,
@@ -21,7 +21,7 @@
       "home_streak": 5,
       "away_streak": 3,
       "pav_available": 0,
-      "generated_at": "2026-09-05T01:38:02.807317+00:00"
+      "generated_at": "2026-09-05T17:33:16.938454+00:00"
     },
     {
       "game_id": "38722",
@@ -43,7 +43,7 @@
       "home_streak": 1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-09-05T01:38:02.826860+00:00"
+      "generated_at": "2026-09-05T17:33:16.960212+00:00"
     },
     {
       "game_id": "38725",
@@ -65,7 +65,7 @@
       "home_streak": -2,
       "away_streak": 7,
       "pav_available": 0,
-      "generated_at": "2026-09-05T01:38:02.849350+00:00"
+      "generated_at": "2026-09-05T17:33:16.984699+00:00"
     }
   ]
 }
