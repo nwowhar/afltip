@@ -1,28 +1,6 @@
 {
-  "generated_at": "2026-09-05T17:33:21.458060+00:00",
+  "generated_at": "2026-09-05T21:26:12.965897+00:00",
   "predictions": [
-    {
-      "game_id": "38724",
-      "round": 26,
-      "home": "Sydney",
-      "away": "Brisbane Lions",
-      "venue": "S.C.G.",
-      "date": "2026-09-05 15:15:00",
-      "timestr": "Q4  2:37",
-      "home_win_prob": 57.4,
-      "away_win_prob": 42.6,
-      "predicted_margin": 6.5,
-      "predicted_winner": "Sydney",
-      "predicted_margin_abs": 6.5,
-      "home_elo": 1620.0,
-      "away_elo": 1648.4,
-      "home_form": 51.2,
-      "away_form": 31.0,
-      "home_streak": 5,
-      "away_streak": 3,
-      "pav_available": 0,
-      "generated_at": "2026-09-05T17:33:16.938454+00:00"
-    },
     {
       "game_id": "38722",
       "round": 26,
@@ -30,12 +8,12 @@
       "away": "Western Bulldogs",
       "venue": "Adelaide Oval",
       "date": "2026-09-05 19:35:00",
-      "timestr": "None",
-      "home_win_prob": 64.4,
-      "away_win_prob": 35.6,
-      "predicted_margin": 17.6,
+      "timestr": "Q3 21:01",
+      "home_win_prob": 65.1,
+      "away_win_prob": 34.9,
+      "predicted_margin": 19.3,
       "predicted_winner": "Adelaide",
-      "predicted_margin_abs": 17.6,
+      "predicted_margin_abs": 19.3,
       "home_elo": 1584.7,
       "away_elo": 1574.6,
       "home_form": 15.8,
@@ -43,7 +21,7 @@
       "home_streak": 1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-09-05T17:33:16.960212+00:00"
+      "generated_at": "2026-09-05T21:26:08.824082+00:00"
     },
     {
       "game_id": "38725",
@@ -53,11 +31,11 @@
       "venue": "M.C.G.",
       "date": "2026-09-12 19:20:00",
       "timestr": "None",
-      "home_win_prob": 61.0,
-      "away_win_prob": 39.0,
-      "predicted_margin": 5.5,
+      "home_win_prob": 54.4,
+      "away_win_prob": 45.6,
+      "predicted_margin": 9.4,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 5.5,
+      "predicted_margin_abs": 9.4,
       "home_elo": 1622.6,
       "away_elo": 1622.5,
       "home_form": -2.4,
@@ -65,7 +43,7 @@
       "home_streak": -2,
       "away_streak": 7,
       "pav_available": 0,
-      "generated_at": "2026-09-05T17:33:16.984699+00:00"
+      "generated_at": "2026-09-05T21:26:08.840577+00:00"
     }
   ]
 }
