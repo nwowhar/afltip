@@ -1,28 +1,6 @@
 {
-  "generated_at": "2026-09-10T13:48:18.276986+00:00",
+  "generated_at": "2026-09-12T01:40:26.773245+00:00",
   "predictions": [
-    {
-      "game_id": "38725",
-      "round": 27,
-      "home": "Fremantle",
-      "away": "Geelong",
-      "venue": "Perth Stadium",
-      "date": "2026-09-11 20:10:00",
-      "timestr": "None",
-      "home_win_prob": 60.2,
-      "away_win_prob": 39.8,
-      "predicted_margin": 6.7,
-      "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 6.7,
-      "home_elo": 1622.6,
-      "away_elo": 1622.5,
-      "home_form": -2.4,
-      "away_form": 39.4,
-      "home_streak": -2,
-      "away_streak": 7,
-      "pav_available": 0,
-      "generated_at": "2026-09-10T13:48:13.371412+00:00"
-    },
     {
       "game_id": "38726",
       "round": 27,
@@ -31,11 +9,11 @@
       "venue": "Gabba",
       "date": "2026-09-12 19:35:00",
       "timestr": "None",
-      "home_win_prob": 63.4,
-      "away_win_prob": 36.6,
-      "predicted_margin": 11.2,
+      "home_win_prob": 63.1,
+      "away_win_prob": 36.9,
+      "predicted_margin": 11.9,
       "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 11.2,
+      "predicted_margin_abs": 11.9,
       "home_elo": 1637.5,
       "away_elo": 1593.8,
       "home_form": 8.6,
@@ -43,7 +21,29 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-09-10T13:48:13.396077+00:00"
+      "generated_at": "2026-09-12T01:40:22.001818+00:00"
+    },
+    {
+      "game_id": "38728",
+      "round": 28,
+      "home": "Sydney",
+      "away": "Fremantle",
+      "venue": "M.C.G.",
+      "date": "2026-09-19 19:20:00",
+      "timestr": "None",
+      "home_win_prob": 64.9,
+      "away_win_prob": 35.1,
+      "predicted_margin": 13.4,
+      "predicted_winner": "Sydney",
+      "predicted_margin_abs": 13.4,
+      "home_elo": 1630.9,
+      "away_elo": 1632.2,
+      "home_form": 51.6,
+      "away_form": -7.0,
+      "home_streak": 6,
+      "away_streak": 1,
+      "pav_available": 0,
+      "generated_at": "2026-09-12T01:40:22.026658+00:00"
     }
   ]
 }
