@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-09-12T22:04:14.120684+00:00",
+  "generated_at": "2026-09-13T01:43:43.940423+00:00",
   "mode": "pre_bounce",
-  "model_accuracy": 67.3,
-  "model_r2": 0.265,
-  "n_games_trained": 2266,
+  "model_accuracy": 67.4,
+  "model_r2": 0.258,
+  "n_games_trained": 2267,
   "n_features": 21,
-  "current_round": 27,
-  "n_upcoming": 4,
-  "tips_correct": 150,
-  "tips_total": 191,
-  "tips_pct": 78.5,
+  "current_round": 28,
+  "n_upcoming": 3,
+  "tips_correct": 152,
+  "tips_total": 192,
+  "tips_pct": 79.2,
   "year": 2026
 }
