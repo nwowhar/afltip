@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-12T17:49:10.289563+00:00",
+  "generated_at": "2026-09-12T22:04:14.120863+00:00",
   "predictions": [
     {
       "game_id": "38726",
@@ -8,7 +8,7 @@
       "away": "Adelaide",
       "venue": "Gabba",
       "date": "2026-09-12 19:35:00",
-      "timestr": "None",
+      "timestr": "Q4 19:08",
       "home_win_prob": 63.1,
       "away_win_prob": 36.9,
       "predicted_margin": 11.9,
@@ -21,7 +21,7 @@
       "home_streak": -1,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-09-12T17:49:05.504755+00:00"
+      "generated_at": "2026-09-12T22:04:10.897815+00:00"
     },
     {
       "game_id": "38728",
@@ -43,7 +43,7 @@
       "home_streak": 6,
       "away_streak": 1,
       "pav_available": 0,
-      "generated_at": "2026-09-12T17:49:05.529187+00:00"
+      "generated_at": "2026-09-12T22:04:10.914339+00:00"
     }
   ]
 }
