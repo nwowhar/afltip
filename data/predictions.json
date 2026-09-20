@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-09-20T02:06:09.427498+00:00",
+  "generated_at": "2026-09-20T18:28:29.321890+00:00",
   "predictions": [
     {
-      "game_id": "39880",
+      "game_id": "38729",
       "round": 29,
       "home": "Fremantle",
       "away": "Brisbane Lions",
       "venue": "M.C.G.",
       "date": "2026-09-26 14:30:00",
       "timestr": "None",
-      "home_win_prob": 62.6,
-      "away_win_prob": 37.4,
-      "predicted_margin": 8.7,
+      "home_win_prob": 64.5,
+      "away_win_prob": 35.5,
+      "predicted_margin": 8.6,
       "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 8.7,
+      "predicted_margin_abs": 8.6,
       "home_elo": 1644.9,
       "away_elo": 1656.6,
       "home_form": -3.8,
@@ -21,29 +21,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-09-20T02:06:05.558789+00:00"
-    },
-    {
-      "game_id": "38729",
-      "round": 29,
-      "home": "Brisbane Lions",
-      "away": "Fremantle",
-      "venue": "M.C.G.",
-      "date": "2026-09-26 19:20:00",
-      "timestr": "None",
-      "home_win_prob": 62.3,
-      "away_win_prob": 37.7,
-      "predicted_margin": 7.7,
-      "predicted_winner": "Brisbane Lions",
-      "predicted_margin_abs": 7.7,
-      "home_elo": 1656.6,
-      "away_elo": 1644.9,
-      "home_form": 22.8,
-      "away_form": -3.8,
-      "home_streak": 2,
-      "away_streak": 2,
-      "pav_available": 0,
-      "generated_at": "2026-09-20T02:06:05.578135+00:00"
+      "generated_at": "2026-09-20T18:28:23.576722+00:00"
     }
   ]
 }
