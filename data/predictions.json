@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-20T18:28:29.321890+00:00",
+  "generated_at": "2026-09-20T23:16:00.020260+00:00",
   "predictions": [
     {
       "game_id": "38729",
@@ -21,7 +21,7 @@
       "home_streak": 2,
       "away_streak": 2,
       "pav_available": 0,
-      "generated_at": "2026-09-20T18:28:23.576722+00:00"
+      "generated_at": "2026-09-20T23:15:54.315074+00:00"
     }
   ]
 }
