@@ -1,27 +1,4 @@
 {
-  "generated_at": "2026-09-26T02:17:16.545916+00:00",
-  "predictions": [
-    {
-      "game_id": "38729",
-      "round": 29,
-      "home": "Fremantle",
-      "away": "Brisbane Lions",
-      "venue": "M.C.G.",
-      "date": "2026-09-26 14:30:00",
-      "timestr": "None",
-      "home_win_prob": 64.5,
-      "away_win_prob": 35.5,
-      "predicted_margin": 8.6,
-      "predicted_winner": "Fremantle",
-      "predicted_margin_abs": 8.6,
-      "home_elo": 1644.9,
-      "away_elo": 1656.6,
-      "home_form": -3.8,
-      "away_form": 22.8,
-      "home_streak": 2,
-      "away_streak": 2,
-      "pav_available": 0,
-      "generated_at": "2026-09-26T02:17:10.833787+00:00"
-    }
-  ]
+  "generated_at": "2026-09-26T18:27:06.112331+00:00",
+  "predictions": []
 }
